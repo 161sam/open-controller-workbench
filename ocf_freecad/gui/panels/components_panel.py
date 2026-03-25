@@ -19,6 +19,7 @@ from ocf_freecad.gui.panels._common import (
     widget_value,
 )
 from ocf_freecad.services.controller_service import ControllerService
+from ocf_freecad.services.interaction_service import InteractionService
 from ocf_freecad.services.library_service import LibraryService
 
 
@@ -28,6 +29,7 @@ class ComponentsPanel:
         doc: Any,
         controller_service: ControllerService | None = None,
         library_service: LibraryService | None = None,
+        interaction_service: InteractionService | None = None,
         on_selection_changed: Any | None = None,
         on_components_changed: Any | None = None,
         on_status: Any | None = None,
@@ -35,6 +37,7 @@ class ComponentsPanel:
         self.doc = doc
         self.controller_service = controller_service or ControllerService()
         self.library_service = library_service or LibraryService()
+        self.interaction_service = interaction_service or InteractionService(self.controller_service)
         self.on_selection_changed = on_selection_changed
         self.on_components_changed = on_components_changed
         self.on_status = on_status
@@ -67,7 +70,9 @@ class ComponentsPanel:
             self._set_selected_component(selected_id)
         if labels:
             self.load_selected_component()
-            set_label_text(self.form["status"], f"{len(labels)} components loaded.")
+            move_mode = self.interaction_service.get_settings(self.doc).get("move_component_id")
+            suffix = f" Move armed: {move_mode}." if move_mode else ""
+            set_label_text(self.form["status"], f"{len(labels)} components loaded.{suffix}")
         else:
             set_text(self.form["details"], "No components in controller.")
             set_label_text(self.form["status"], "Add a component from the library to continue.")
@@ -149,6 +154,34 @@ class ComponentsPanel:
             self.on_components_changed(state)
         return state
 
+    def arm_move_for_selected(self) -> dict[str, Any]:
+        component_id = self.selected_component_id()
+        if component_id is None:
+            raise ValueError("No component selected")
+        settings = self.interaction_service.arm_move(self.doc, component_id)
+        self._publish_status(f"Move mode armed for '{component_id}'.")
+        return settings
+
+    def move_selected_component(self) -> dict[str, Any]:
+        result = self.interaction_service.move_selected_component(
+            self.doc,
+            target_x=widget_value(self.form["x"]),
+            target_y=widget_value(self.form["y"]),
+        )
+        self.refresh_components()
+        self._publish_status(f"Moved '{result['component_id']}' to {result['x']:.2f}, {result['y']:.2f} mm.")
+        if self.on_components_changed is not None:
+            self.on_components_changed(result["state"])
+        return result
+
+    def snap_selected_component(self) -> dict[str, Any]:
+        result = self.interaction_service.snap_selected_component(self.doc)
+        self.refresh_components()
+        self._publish_status(f"Snapped '{result['component_id']}' to grid.")
+        if self.on_components_changed is not None:
+            self.on_components_changed(result["state"])
+        return result
+
     def handle_component_changed(self, *_args: Any) -> None:
         try:
             self.load_selected_component()
@@ -167,6 +200,24 @@ class ComponentsPanel:
     def handle_add_clicked(self) -> None:
         try:
             self.add_component()
+        except Exception as exc:
+            self._publish_status(str(exc))
+
+    def handle_arm_move_clicked(self) -> None:
+        try:
+            self.arm_move_for_selected()
+        except Exception as exc:
+            self._publish_status(str(exc))
+
+    def handle_move_clicked(self) -> None:
+        try:
+            self.move_selected_component()
+        except Exception as exc:
+            self._publish_status(str(exc))
+
+    def handle_snap_clicked(self) -> None:
+        try:
+            self.snap_selected_component()
         except Exception as exc:
             self._publish_status(str(exc))
 
@@ -196,6 +247,12 @@ class ComponentsPanel:
             self.form["add_category"].currentIndexChanged.connect(self.handle_category_changed)
         if hasattr(self.form["update_button"], "clicked"):
             self.form["update_button"].clicked.connect(self.handle_update_clicked)
+        if hasattr(self.form["arm_move_button"], "clicked"):
+            self.form["arm_move_button"].clicked.connect(self.handle_arm_move_clicked)
+        if hasattr(self.form["move_button"], "clicked"):
+            self.form["move_button"].clicked.connect(self.handle_move_clicked)
+        if hasattr(self.form["snap_button"], "clicked"):
+            self.form["snap_button"].clicked.connect(self.handle_snap_clicked)
         if hasattr(self.form["add_button"], "clicked"):
             self.form["add_button"].clicked.connect(self.handle_add_clicked)
 
@@ -211,6 +268,9 @@ def _build_form() -> dict[str, Any]:
             "rotation": FallbackValue(0.0),
             "library_ref": FallbackText(),
             "update_button": FallbackButton("Update Component"),
+            "arm_move_button": FallbackButton("Arm Move"),
+            "move_button": FallbackButton("Move Selected"),
+            "snap_button": FallbackButton("Snap To Grid"),
             "add_category": FallbackCombo(["all"]),
             "add_component": FallbackCombo(),
             "add_x": FallbackValue(10.0),
@@ -231,15 +291,23 @@ def _build_form() -> dict[str, Any]:
     rotation = qtwidgets.QDoubleSpinBox()
     library_ref = qtwidgets.QLineEdit()
     update_button = qtwidgets.QPushButton("Update Component")
+    arm_move_button = qtwidgets.QPushButton("Arm Move")
+    move_button = qtwidgets.QPushButton("Move Selected")
+    snap_button = qtwidgets.QPushButton("Snap To Grid")
     for spinbox in (x, y, rotation):
         spinbox.setRange(-1000.0, 1000.0)
         spinbox.setDecimals(2)
+    selector_actions = qtwidgets.QHBoxLayout()
+    selector_actions.addWidget(update_button)
+    selector_actions.addWidget(arm_move_button)
+    selector_actions.addWidget(move_button)
+    selector_actions.addWidget(snap_button)
     selector_layout.addRow("Component", component)
     selector_layout.addRow("X (mm)", x)
     selector_layout.addRow("Y (mm)", y)
     selector_layout.addRow("Rotation", rotation)
     selector_layout.addRow("Library Ref", library_ref)
-    selector_layout.addRow("", update_button)
+    selector_layout.addRow("", selector_actions)
     add_box = qtwidgets.QGroupBox("Add Component")
     add_layout = qtwidgets.QFormLayout(add_box)
     add_category = qtwidgets.QComboBox()
@@ -275,6 +343,9 @@ def _build_form() -> dict[str, Any]:
         "rotation": rotation,
         "library_ref": library_ref,
         "update_button": update_button,
+        "arm_move_button": arm_move_button,
+        "move_button": move_button,
+        "snap_button": snap_button,
         "add_category": add_category,
         "add_component": add_component,
         "add_x": add_x,

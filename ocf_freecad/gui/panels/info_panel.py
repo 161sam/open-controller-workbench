@@ -18,6 +18,7 @@ class InfoPanel:
         context = self.controller_service.get_ui_context(self.doc)
         overrides = context.get("overrides") or {}
         override_lines = [f"{key}: {value}" for key, value in sorted(overrides.items())]
+        ui = context.get("ui") or {}
         lines = [
             f"Template: {context['template_id'] or '-'}",
             f"Variant: {context['variant_id'] or '-'}",
@@ -38,6 +39,15 @@ class InfoPanel:
             lines.append(
                 f"Validation: {summary.get('error_count', 0)} errors / {summary.get('warning_count', 0)} warnings"
             )
+        if ui:
+            lines.append(
+                "Overlay: "
+                f"{'on' if ui.get('overlay_enabled', True) else 'off'}, "
+                f"constraints {'on' if ui.get('show_constraints', True) else 'off'}, "
+                f"grid {ui.get('grid_mm', 1.0)} mm"
+            )
+            if ui.get("move_component_id"):
+                lines.append(f"Move Mode: {ui['move_component_id']}")
         if override_lines:
             lines.append("")
             lines.append("Overrides:")

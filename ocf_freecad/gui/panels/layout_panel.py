@@ -15,6 +15,7 @@ from ocf_freecad.gui.panels._common import (
     widget_value,
 )
 from ocf_freecad.services.controller_service import ControllerService
+from ocf_freecad.services.interaction_service import InteractionService
 
 
 class LayoutPanel:
@@ -22,12 +23,16 @@ class LayoutPanel:
         self,
         doc: Any,
         controller_service: ControllerService | None = None,
+        interaction_service: InteractionService | None = None,
         on_applied: Any | None = None,
+        on_overlay_changed: Any | None = None,
         on_status: Any | None = None,
     ) -> None:
         self.doc = doc
         self.controller_service = controller_service or ControllerService()
+        self.interaction_service = interaction_service or InteractionService(self.controller_service)
         self.on_applied = on_applied
+        self.on_overlay_changed = on_overlay_changed
         self.on_status = on_status
         self.form = _build_form()
         self.widget = self.form["widget"]
@@ -36,6 +41,19 @@ class LayoutPanel:
 
     def refresh(self) -> None:
         context = self.controller_service.get_ui_context(self.doc)
+        settings = self.interaction_service.get_settings(self.doc)
+        set_text(
+            self.form["overlay_status"],
+            "\n".join(
+                [
+                    f"Overlay: {'on' if settings['overlay_enabled'] else 'off'}",
+                    f"Constraint Overlay: {'on' if settings['show_constraints'] else 'off'}",
+                    f"Snap: {'on' if settings['snap_enabled'] else 'off'}",
+                    f"Grid: {settings['grid_mm']} mm",
+                ]
+            ),
+        )
+        self.form["grid_mm"].setValue(float(settings["grid_mm"]))
         layout = context.get("layout") or {}
         if not layout:
             set_text(self.form["summary"], "No auto layout result yet.")
@@ -59,6 +77,7 @@ class LayoutPanel:
     def apply_auto_layout(self) -> dict[str, Any]:
         preset = current_text(self.form["preset"]) or "grid"
         strategy = preset if preset in {"grid", "row", "column"} else "grid"
+        self.interaction_service.set_grid(self.doc, widget_value(self.form["grid_mm"]))
         config = {
             "grid_mm": widget_value(self.form["grid_mm"]),
             "spacing_mm": widget_value(self.form["spacing_mm"]),
@@ -82,13 +101,53 @@ class LayoutPanel:
             self.on_applied(result)
         return result
 
+    def toggle_overlay(self) -> dict[str, Any]:
+        settings = self.interaction_service.toggle_overlay(self.doc)
+        self.refresh()
+        self._publish_status(f"Overlay {'enabled' if settings['overlay_enabled'] else 'disabled'}.")
+        return settings
+
+    def toggle_constraint_overlay(self) -> dict[str, Any]:
+        settings = self.interaction_service.toggle_constraint_overlay(self.doc)
+        self.refresh()
+        self._publish_status(
+            f"Constraint overlay {'enabled' if settings['show_constraints'] else 'disabled'}."
+        )
+        return settings
+
+    def toggle_snap(self) -> dict[str, Any]:
+        settings = self.interaction_service.get_settings(self.doc)
+        updated = self.interaction_service.update_settings(
+            self.doc,
+            {"snap_enabled": not settings["snap_enabled"], "grid_mm": widget_value(self.form["grid_mm"])},
+        )
+        self.refresh()
+        self._publish_status(f"Snap {'enabled' if updated['snap_enabled'] else 'disabled'}.")
+        return updated
+
     def handle_apply_clicked(self) -> None:
         try:
             self.apply_auto_layout()
         except Exception as exc:
-            set_label_text(self.form["status"], str(exc))
-            if self.on_status is not None:
-                self.on_status(str(exc))
+            self._publish_status(str(exc))
+
+    def handle_overlay_clicked(self) -> None:
+        try:
+            self.toggle_overlay()
+        except Exception as exc:
+            self._publish_status(str(exc))
+
+    def handle_constraint_overlay_clicked(self) -> None:
+        try:
+            self.toggle_constraint_overlay()
+        except Exception as exc:
+            self._publish_status(str(exc))
+
+    def handle_snap_clicked(self) -> None:
+        try:
+            self.toggle_snap()
+        except Exception as exc:
+            self._publish_status(str(exc))
 
     def accept(self) -> bool:
         self.apply_auto_layout()
@@ -99,6 +158,19 @@ class LayoutPanel:
             button = self.form[key]
             if hasattr(button, "clicked"):
                 button.clicked.connect(self.handle_apply_clicked)
+        if hasattr(self.form["overlay_button"], "clicked"):
+            self.form["overlay_button"].clicked.connect(self.handle_overlay_clicked)
+        if hasattr(self.form["constraint_overlay_button"], "clicked"):
+            self.form["constraint_overlay_button"].clicked.connect(self.handle_constraint_overlay_clicked)
+        if hasattr(self.form["snap_button"], "clicked"):
+            self.form["snap_button"].clicked.connect(self.handle_snap_clicked)
+
+    def _publish_status(self, message: str) -> None:
+        set_label_text(self.form["status"], message)
+        if self.on_status is not None:
+            self.on_status(message)
+        if self.on_overlay_changed is not None:
+            self.on_overlay_changed()
 
 
 def _build_form() -> dict[str, Any]:
@@ -112,7 +184,11 @@ def _build_form() -> dict[str, Any]:
             "padding_mm": FallbackValue(8.0),
             "apply_button": FallbackButton("Apply Auto Layout"),
             "rerun_button": FallbackButton("Re-run Layout"),
+            "overlay_button": FallbackButton("Toggle Overlay"),
+            "constraint_overlay_button": FallbackButton("Constraint Overlay"),
+            "snap_button": FallbackButton("Toggle Snap"),
             "summary": FallbackText(),
+            "overlay_status": FallbackText(),
             "status": FallbackLabel(),
         }
 
@@ -134,11 +210,19 @@ def _build_form() -> dict[str, Any]:
     padding_mm.setValue(8.0)
     apply_button = qtwidgets.QPushButton("Apply Auto Layout")
     rerun_button = qtwidgets.QPushButton("Re-run Layout")
+    overlay_button = qtwidgets.QPushButton("Toggle Overlay")
+    constraint_overlay_button = qtwidgets.QPushButton("Constraint Overlay")
+    snap_button = qtwidgets.QPushButton("Toggle Snap")
     button_row = qtwidgets.QHBoxLayout()
     button_row.addWidget(apply_button)
     button_row.addWidget(rerun_button)
+    button_row.addWidget(overlay_button)
+    button_row.addWidget(constraint_overlay_button)
+    button_row.addWidget(snap_button)
     summary = qtwidgets.QPlainTextEdit()
     summary.setReadOnly(True)
+    overlay_status = qtwidgets.QPlainTextEdit()
+    overlay_status.setReadOnly(True)
     status = qtwidgets.QLabel()
     status.setWordWrap(True)
     form.addRow("Preset", preset)
@@ -148,6 +232,7 @@ def _build_form() -> dict[str, Any]:
     layout.addWidget(intro)
     layout.addLayout(form)
     layout.addLayout(button_row)
+    layout.addWidget(overlay_status)
     layout.addWidget(summary)
     layout.addWidget(status)
     return {
@@ -158,6 +243,10 @@ def _build_form() -> dict[str, Any]:
         "padding_mm": padding_mm,
         "apply_button": apply_button,
         "rerun_button": rerun_button,
+        "overlay_button": overlay_button,
+        "constraint_overlay_button": constraint_overlay_button,
+        "snap_button": snap_button,
+        "overlay_status": overlay_status,
         "summary": summary,
         "status": status,
     }

@@ -33,6 +33,13 @@ DEFAULT_META = {
     "overrides": {},
     "layout": {},
     "validation": None,
+    "ui": {
+        "overlay_enabled": True,
+        "show_constraints": True,
+        "grid_mm": 1.0,
+        "snap_enabled": True,
+        "move_component_id": None,
+    },
 }
 
 
@@ -136,6 +143,7 @@ class ControllerService:
             "component_types": self._component_type_counts(state["components"]),
             "layout": deepcopy(state["meta"].get("layout", {})),
             "validation": deepcopy(state["meta"].get("validation")),
+            "ui": deepcopy(state["meta"].get("ui", {})),
         }
 
     def add_component(
@@ -423,6 +431,8 @@ class ControllerService:
         for obj in getattr(doc, "Objects", []):
             label = str(getattr(obj, "Label", getattr(obj, "Name", "")))
             if not label.startswith("OCF_"):
+                continue
+            if label.startswith("OCF_OVERLAY_"):
                 continue
             view = getattr(obj, "ViewObject", None)
             if view is None:

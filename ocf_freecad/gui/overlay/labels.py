@@ -1,0 +1,27 @@
+from __future__ import annotations
+
+from typing import Any
+
+
+def component_label(component: dict[str, Any], severity: str | None = None) -> str:
+    base = f"{component['id']} [{component['type']}]"
+    if severity == "error":
+        return f"{base} !"
+    if severity == "warning":
+        return f"{base} ?"
+    return base
+
+
+def zone_label(zone: dict[str, Any]) -> str:
+    zone_id = zone.get("id", "zone")
+    strategy = zone.get("strategy")
+    return f"{zone_id} ({strategy})" if strategy else str(zone_id)
+
+
+def issue_label(component_id: str, error_count: int, warning_count: int) -> str:
+    parts: list[str] = []
+    if error_count:
+        parts.append(f"E{error_count}")
+    if warning_count:
+        parts.append(f"W{warning_count}")
+    return f"{component_id}: {' / '.join(parts)}"
