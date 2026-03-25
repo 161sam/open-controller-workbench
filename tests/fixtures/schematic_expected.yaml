@@ -1,0 +1,10 @@
+schema_version: "1.0"
+export_type: "controller.schematic"
+symbols:
+  encoder: "rotary_encoder"
+  button: "switch"
+  display: "oled_display"
+  fallback: "generic_component"
+power_nets:
+  - "net.3v3"
+  - "net.gnd"
