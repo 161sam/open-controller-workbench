@@ -22,7 +22,7 @@ class TemplateResolver:
             raise ValueError("Template overrides must be a mapping")
 
         resolved = deepcopy(template)
-        for field in ("template", "controller", "layout", "constraints", "defaults"):
+        for field in ("template", "controller", "layout", "constraints", "defaults", "firmware", "ocf"):
             if field in overrides:
                 if not isinstance(overrides[field], dict):
                     raise ValueError(f"Template override field '{field}' must be a mapping")

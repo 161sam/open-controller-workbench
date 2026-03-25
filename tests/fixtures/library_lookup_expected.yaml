@@ -2,6 +2,7 @@ expected_components:
   - "alps_ec11e15204a3"
   - "generic_ec11_encoder_with_push"
   - "omron_b3f_1000"
+  - "generic_45mm_linear_fader"
   - "generic_60mm_linear_fader"
   - "generic_mpc_pad_30mm"
   - "generic_rgb_arcade_button_24mm"

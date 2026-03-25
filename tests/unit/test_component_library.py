@@ -32,8 +32,8 @@ def test_list_components_by_category():
 
     assert len(displays) == 1
     assert displays[0]["id"] == "adafruit_oled_096_i2c_ssd1306"
-    assert len(faders) == 1
-    assert faders[0]["id"] == "generic_60mm_linear_fader"
+    assert len(faders) == 2
+    assert {item["id"] for item in faders} == {"generic_45mm_linear_fader", "generic_60mm_linear_fader"}
     assert len(pads) == 1
     assert pads[0]["id"] == "generic_mpc_pad_30mm"
     assert len(rgb_buttons) == 1
@@ -72,10 +72,12 @@ def test_encoder_with_push_resolves_switch_data():
 
 def test_new_component_categories_have_required_fields():
     manager = ComponentLibraryManager()
+    compact_fader = manager.get_component("generic_45mm_linear_fader")
     fader = manager.get_component("generic_60mm_linear_fader")
     pad = manager.get_component("generic_mpc_pad_30mm")
     rgb_button = manager.get_component("generic_rgb_arcade_button_24mm")
 
+    assert compact_fader["mechanical"]["travel_mm"] == 45.0
     assert fader["electrical"]["type"] == "potentiometer"
     assert fader["mechanical"]["slot_cutout"]["length_mm"] == 68.0
     assert pad["ocf"]["control_type"] == "pad"

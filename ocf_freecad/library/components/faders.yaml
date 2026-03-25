@@ -1,4 +1,61 @@
 components:
+  - id: "generic_45mm_linear_fader"
+    category: "fader"
+    manufacturer: "Generic"
+    part_number: "SLIDE-45K"
+    description: "45 mm linear potentiometer fader with panel slot and solder lugs"
+    tags:
+      - "fader"
+      - "linear"
+      - "potentiometer"
+      - "45mm"
+    mechanical:
+      body_size_mm:
+        width: 56.0
+        depth: 10.0
+        height: 12.0
+      slot_cutout:
+        length_mm: 53.0
+        width_mm: 2.2
+      travel_mm: 45.0
+      mounting_holes:
+        spacing_mm: 60.0
+        diameter_mm: 3.0
+      panel:
+        recommended_window_mm:
+          width: 53.0
+          height: 2.2
+        recommended_keepout_top_mm:
+          width: 72.0
+          height: 18.0
+        recommended_keepout_bottom_mm:
+          width: 64.0
+          height: 14.0
+          depth: 16.0
+      mounting:
+        method: "screw_mount"
+      orientation: "vertical"
+    electrical:
+      type: "potentiometer"
+      taper: "linear"
+      resistance_ohms: 10000
+      pins:
+        - "VCC"
+        - "WIPER"
+        - "GND"
+    pcb:
+      default_footprint: "Potentiometer_THT:SlidePot_45mm"
+      placement_side: "top"
+      anchor: "slot_center"
+      tht: true
+      estimated_height_above_pcb_mm: 15.0
+      estimated_height_below_pcb_mm: 4.0
+    ocf:
+      control_type: "fader"
+      supports:
+        - "analog_input"
+      default_logical_role: "generic_fader"
+
   - id: "generic_60mm_linear_fader"
     category: "fader"
     manufacturer: "Generic"

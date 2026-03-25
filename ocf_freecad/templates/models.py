@@ -15,6 +15,8 @@ class TemplateModel:
     layout: dict[str, Any]
     constraints: dict[str, Any]
     defaults: dict[str, Any]
+    firmware: dict[str, Any]
+    ocf: dict[str, Any]
     category: str | None = None
     tags: list[str] | None = None
     version: str | None = None
@@ -39,4 +41,6 @@ class TemplateModel:
             "layout": self.layout,
             "constraints": self.constraints,
             "defaults": self.defaults,
+            "firmware": self.firmware,
+            "ocf": self.ocf,
         }

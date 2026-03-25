@@ -26,9 +26,12 @@ class TemplateGenerator:
     ) -> dict[str, Any]:
         template = self.registry.get_template(template_id)
         resolved = self.resolver.resolve(template, overrides=overrides)
+        return self.build_project_from_resolved_template(resolved)
+
+    def build_project_from_resolved_template(self, resolved: dict[str, Any]) -> dict[str, Any]:
         controller = self._build_controller(resolved)
         components = self._build_components(resolved)
-        return {
+        project = {
             "template": deepcopy(resolved["template"]),
             "controller": controller,
             "components": components,
@@ -37,6 +40,13 @@ class TemplateGenerator:
             "defaults": deepcopy(resolved.get("defaults", {})),
             "zones": deepcopy(resolved.get("zones", [])),
         }
+        if resolved.get("firmware"):
+            project["firmware"] = deepcopy(resolved["firmware"])
+        if resolved.get("ocf"):
+            project["ocf"] = deepcopy(resolved["ocf"])
+        if resolved.get("variant"):
+            project["variant"] = deepcopy(resolved["variant"])
+        return project
 
     def _build_controller(self, template: dict[str, Any]) -> dict[str, Any]:
         controller_data = deepcopy(template["controller"])

@@ -1,0 +1,8 @@
+expected_variants:
+  - "display_nav_left"
+  - "display_nav_right"
+  - "encoder_module_compact"
+  - "encoder_module_wide"
+  - "fader_strip_45mm"
+  - "fader_strip_60mm"
+  - "pad_grid_4x4_oled"
