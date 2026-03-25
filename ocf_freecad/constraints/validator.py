@@ -96,6 +96,8 @@ class ConstraintValidator:
     ) -> None:
         for index, first in enumerate(areas):
             for second in areas[index + 1 :]:
+                if first.component_id == second.component_id:
+                    continue
                 finding = validate_spacing(first, second, min_spacing_mm, rule_id, label)
                 if finding is not None:
                     report.add(finding)

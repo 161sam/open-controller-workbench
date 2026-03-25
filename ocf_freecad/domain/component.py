@@ -24,6 +24,8 @@ class Component:
         row: int | None = None,
         col: int | None = None,
         pins: dict[str, Any] | None = None,
+        rotation: float | None = None,
+        zone_id: str | None = None,
         cutout_radius: float | None = None,
     ) -> None:
         self.id = id
@@ -43,4 +45,6 @@ class Component:
         self.row = row
         self.col = col
         self.pins = deepcopy(pins) if pins is not None else None
+        self.rotation = rotation
+        self.zone_id = zone_id
         self.cutout_radius = cutout_radius

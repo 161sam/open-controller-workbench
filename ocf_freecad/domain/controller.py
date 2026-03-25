@@ -15,6 +15,7 @@ class Controller:
         surface: dict[str, Any] | None = None,
         mounting_holes: list[dict[str, Any]] | None = None,
         reserved_zones: list[dict[str, Any]] | None = None,
+        layout_zones: list[dict[str, Any]] | None = None,
     ):
         self.id = id
         self.width = width
@@ -24,3 +25,4 @@ class Controller:
         self.surface = deepcopy(surface) if surface is not None else None
         self.mounting_holes = deepcopy(mounting_holes) if mounting_holes is not None else []
         self.reserved_zones = deepcopy(reserved_zones) if reserved_zones is not None else []
+        self.layout_zones = deepcopy(layout_zones) if layout_zones is not None else []
