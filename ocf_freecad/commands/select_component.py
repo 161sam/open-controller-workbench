@@ -3,11 +3,11 @@ from __future__ import annotations
 from ocf_freecad.commands.base import BaseCommand
 
 
-class AddComponentCommand(BaseCommand):
+class SelectComponentCommand(BaseCommand):
     def GetResources(self):
         return {
-            "MenuText": "Add Component",
-            "ToolTip": "Open the components panel with library picker",
+            "MenuText": "Components",
+            "ToolTip": "Open the components panel for selection and editing",
         }
 
     def Activated(self):

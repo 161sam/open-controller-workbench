@@ -60,3 +60,46 @@ def test_move_component_updates_state():
     assert state["components"][0]["x"] == 55.0
     assert state["components"][0]["y"] == 35.0
     assert state["components"][0]["rotation"] == 15.0
+
+
+def test_create_from_template_populates_metadata_and_components():
+    service = ControllerService()
+    doc = FakeDocument()
+
+    state = service.create_from_template(doc, "encoder_module")
+
+    assert state["meta"]["template_id"] == "encoder_module"
+    assert state["meta"]["variant_id"] is None
+    assert len(state["components"]) == 4
+    assert state["meta"]["selection"] == "enc1"
+
+
+def test_create_from_variant_populates_variant_metadata():
+    service = ControllerService()
+    doc = FakeDocument()
+
+    state = service.create_from_variant(doc, "display_nav_right")
+
+    assert state["meta"]["template_id"] == "display_nav_module"
+    assert state["meta"]["variant_id"] == "display_nav_right"
+    assert state["controller"]["surface"]["width"] == 200.0
+
+
+def test_update_select_and_context_work_together():
+    service = ControllerService()
+    doc = FakeDocument()
+
+    service.create_from_template(doc, "transport_module")
+    service.select_component(doc, "play")
+    service.update_component(doc, "play", {"x": 44.0, "y": 22.0, "rotation": 5.0})
+    service.auto_layout(doc, strategy="row", config={"spacing_mm": 24.0, "padding_mm": 8.0})
+    service.validate_layout(doc)
+
+    component = service.get_component(doc, "play")
+    context = service.get_ui_context(doc)
+
+    assert component["rotation"] == 5.0 or component["rotation"] == 0.0
+    assert context["selection"] == "play"
+    assert context["template_id"] == "transport_module"
+    assert context["layout"]["strategy"] == "row"
+    assert isinstance(context["validation"], dict)

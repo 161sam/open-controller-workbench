@@ -1,5 +1,6 @@
 import FreeCADGui as Gui
 
+
 class OpenControllerWorkbench(Gui.Workbench):
     MenuText = "Open Controller"
     ToolTip = "Modular MIDI Controller Design"
@@ -7,26 +8,29 @@ class OpenControllerWorkbench(Gui.Workbench):
 
     def Initialize(self):
         from ocf_freecad.commands.add_component import AddComponentCommand
-        from ocf_freecad.commands.auto_layout import AutoLayoutCommand
-        from ocf_freecad.commands.create_controller import CreateControllerCommand
-        from ocf_freecad.commands.move_component import MoveComponentCommand
-        from ocf_freecad.commands.validate_layout import ValidateLayoutCommand
+        from ocf_freecad.commands.apply_layout import ApplyLayoutCommand
+        from ocf_freecad.commands.create_from_template import CreateFromTemplateCommand
+        from ocf_freecad.commands.select_component import SelectComponentCommand
+        from ocf_freecad.commands.validate_constraints import ValidateConstraintsCommand
 
-        Gui.addCommand("OCF_CreateController", CreateControllerCommand())
+        Gui.addCommand("OCF_CreateController", CreateFromTemplateCommand())
         Gui.addCommand("OCF_AddComponent", AddComponentCommand())
-        Gui.addCommand("OCF_AutoLayout", AutoLayoutCommand())
-        Gui.addCommand("OCF_MoveComponent", MoveComponentCommand())
-        Gui.addCommand("OCF_ValidateLayout", ValidateLayoutCommand())
+        Gui.addCommand("OCF_ApplyLayout", ApplyLayoutCommand())
+        Gui.addCommand("OCF_SelectComponent", SelectComponentCommand())
+        Gui.addCommand("OCF_ValidateConstraints", ValidateConstraintsCommand())
 
-        commands = [
-            "OCF_CreateController",
+        create_commands = ["OCF_CreateController"]
+        edit_commands = [
             "OCF_AddComponent",
-            "OCF_MoveComponent",
-            "OCF_AutoLayout",
-            "OCF_ValidateLayout",
+            "OCF_SelectComponent",
+            "OCF_ApplyLayout",
+            "OCF_ValidateConstraints",
         ]
-        self.appendToolbar("OCF", commands)
-        self.appendMenu("OCF", commands)
+        self.appendToolbar("OCF Create", create_commands)
+        self.appendToolbar("OCF Edit", edit_commands)
+        self.appendMenu("OCF", create_commands + edit_commands)
+        self.appendMenu("OCF/Create", create_commands)
+        self.appendMenu("OCF/Edit", edit_commands)
 
     def Activated(self):
         pass
