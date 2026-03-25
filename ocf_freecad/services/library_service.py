@@ -21,3 +21,10 @@ class LibraryService:
         overrides: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         return self.manager.resolve_component(library_ref, overrides)
+
+    def get_mechanical_defaults(self, library_ref: str) -> dict[str, Any]:
+        component = self.get(library_ref)
+        mechanical = component.get("mechanical", {})
+        if not isinstance(mechanical, dict):
+            raise ValueError(f"Library component '{library_ref}' has invalid mechanical defaults")
+        return mechanical

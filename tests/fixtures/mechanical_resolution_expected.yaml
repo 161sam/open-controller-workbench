@@ -1,0 +1,52 @@
+encoder:
+  cutout:
+    shape: "circle"
+    diameter: 7.2
+  keepout_top:
+    shape: "circle"
+    diameter: 20.0
+  keepout_bottom:
+    shape: "circle"
+    diameter: 24.0
+    depth: 18.0
+  mounting:
+    method: "threaded_bushing"
+    thread_diameter_mm: 7.0
+    nut_outer_diameter_mm: 11.8
+    washer_outer_diameter_mm: 13.0
+button:
+  cutout:
+    shape: "rect"
+    width: 6.2
+    height: 6.2
+  keepout_top:
+    shape: "rect"
+    width: 14.0
+    height: 14.0
+  keepout_bottom:
+    shape: "rect"
+    width: 8.0
+    height: 8.0
+    depth: 10.0
+  mounting:
+    method: "pcb_only"
+display:
+  cutout:
+    shape: "rect"
+    width: 27.0
+    height: 14.0
+  keepout_top:
+    shape: "rect"
+    width: 32.0
+    height: 20.0
+  keepout_bottom:
+    shape: "rect"
+    width: 29.2
+    height: 26.7
+    depth: 8.0
+  mounting:
+    method: "screw_mount"
+    hole_spacing_mm:
+      x: 24.0
+      y: 24.0
+    hole_diameter_mm: 2.5

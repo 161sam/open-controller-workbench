@@ -9,6 +9,10 @@ def create_box(doc, name, width, depth, height, x=0, y=0, z=0):
     return obj
 
 
+def create_rect_prism(doc, name, width, depth, height, x, y, z=0):
+    return create_box(doc, name, width, depth, height, x=x, y=y, z=z)
+
+
 def create_cylinder(doc, name, radius, height, x, y, z=0):
     import FreeCAD as App
     import Part
