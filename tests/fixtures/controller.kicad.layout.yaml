@@ -1,0 +1,23 @@
+board:
+  name: "TestBoard"
+  width_mm: 120.0
+  height_mm: 80.0
+coordinate_system:
+  unit: "mm"
+  origin: "top_left"
+footprints:
+  - reference: "ENC1"
+    footprint: "RotaryEncoder_Alps:EC11E_Vertical"
+    x_mm: 40.0
+    y_mm: 30.0
+    rotation_deg: 0.0
+    side: "top"
+  - reference: "BTN1"
+    footprint: "Button_Switch_THT:SW_PUSH_6mm"
+    x_mm: 70.0
+    y_mm: 30.0
+    rotation_deg: 90.0
+    side: "bottom"
+mounting_holes: []
+keepouts: []
+warnings: []
