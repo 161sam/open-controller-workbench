@@ -7,6 +7,7 @@ OVERLAY_COLORS = {
     "zone": {"rgb": (0.25, 0.85, 0.75), "line_rgb": (0.1, 0.55, 0.45), "transparency": 84},
     "component": {"rgb": (0.7, 0.74, 0.78), "line_rgb": (0.35, 0.39, 0.45), "transparency": 70},
     "component_selected": {"rgb": (0.18, 0.47, 0.95), "line_rgb": (0.08, 0.23, 0.68), "transparency": 45},
+    "component_selected_secondary": {"rgb": (0.34, 0.67, 0.96), "line_rgb": (0.14, 0.4, 0.72), "transparency": 58},
     "component_warning": {"rgb": (0.93, 0.72, 0.16), "line_rgb": (0.72, 0.5, 0.08), "transparency": 45},
     "component_error": {"rgb": (0.89, 0.26, 0.22), "line_rgb": (0.66, 0.12, 0.12), "transparency": 35},
     "component_preview": {"rgb": (0.42, 0.76, 0.92), "line_rgb": (0.12, 0.42, 0.62), "transparency": 82, "draw_style": "Dashdot"},

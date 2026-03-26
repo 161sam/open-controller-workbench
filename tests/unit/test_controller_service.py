@@ -197,6 +197,27 @@ def test_select_component_uses_visual_refresh_without_recompute():
     assert doc.OCWLastSync["requested_sync_mode"] == "visual_only"
 
 
+def test_multi_selection_apis_use_visual_refresh_without_recompute():
+    service = ControllerService()
+    doc = FakeDocument()
+
+    service.create_controller(doc, {"id": "demo"})
+    service.add_component(doc, "alps_ec11e15204a3", component_id="enc1", x=10.0, y=10.0)
+    service.add_component(doc, "omron_b3f_1000", component_id="btn1", x=20.0, y=10.0)
+    recomputes_before = doc.recompute_count
+
+    state = service.set_selected_component_ids(doc, ["enc1", "btn1"], primary_id="btn1")
+    toggled = service.toggle_selection(doc, "enc1")
+    cleared = service.clear_selection(doc)
+
+    assert state["meta"]["selection"] == "btn1"
+    assert state["meta"]["selected_ids"] == ["btn1", "enc1"]
+    assert toggled["meta"]["selected_ids"] == ["btn1"]
+    assert cleared["meta"]["selected_ids"] == []
+    assert doc.recompute_count == recomputes_before
+    assert doc.OCWLastSync["sync_mode"] == "visual_only"
+
+
 def test_refresh_document_visuals_does_not_recompute_when_not_requested():
     service = ControllerService()
     doc = FakeDocument()

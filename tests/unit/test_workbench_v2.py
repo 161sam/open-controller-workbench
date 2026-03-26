@@ -197,6 +197,22 @@ def test_layout_components_constraints_and_info_panels_share_document_state():
     assert "Components: 4" in info_text
 
 
+def test_info_panel_shows_multi_selection_count_and_ids():
+    doc = FakeDocument()
+    service = ControllerService()
+    service.create_controller(doc, {"id": "demo", "width": 200.0, "depth": 120.0})
+    service.add_component(doc, "alps_ec11e15204a3", component_id="enc1", x=20.0, y=20.0)
+    service.add_component(doc, "omron_b3f_1000", component_id="btn1", x=40.0, y=20.0)
+    service.set_selected_component_ids(doc, ["enc1", "btn1"], primary_id="enc1")
+
+    panel = InfoPanel(doc, controller_service=service)
+    info_text = panel.refresh()
+
+    assert panel.form["selection"].text == "enc1 (+1)"
+    assert panel.form["selection_count"].text == "2"
+    assert "Selected ids: enc1, btn1" in info_text
+
+
 def test_layout_panel_reads_active_project_layout_defaults():
     doc = FakeDocument()
     service = ControllerService()

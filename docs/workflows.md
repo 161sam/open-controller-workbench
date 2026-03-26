@@ -97,6 +97,16 @@
 - reine Metadatenänderungen bleiben state-only und vermeiden unnötige Voll-Rebuilds
 - bei Bedarf Constraints erneut validieren oder Overlay-/Preview-Feedback prüfen
 
+## Workflow 10a – Multi-Select Basics
+
+- erste Komponente auswählen
+- weitere Komponenten per modifier-basierter Auswahl hinzufügen oder entfernen
+- die Auswahl behält eine Primary Selection für bestehende Single-Component-Flows
+- Overlay zeigt Primary und Secondary Selection unterschiedlich an
+- Components-Panel bearbeitet weiterhin die Primary Selection
+- Info-/Status-Bereiche zeigen die Größe der aktuellen Auswahl
+- Folgefeatures wie Bulk Edit, Align/Distribute oder Duplicate können dieselbe Selection-Menge später direkt wiederverwenden
+
 ## Stage A And Stage B Compatibility
 
 - Stage A and Stage B use the same registry, template loader, and template inspector flow.
@@ -145,6 +155,18 @@
   - state services persist the updates
   - sync services choose between full rebuild and state-only refresh
 - The current panel keeps generic placement and metadata fields stable across all component families and adds a type-specific subsection for fader, display, encoder, and pad-like components.
+
+## Selection Model
+
+- Selection is now persisted as:
+  - `meta.selection` for the primary selected component id
+  - `meta.selected_ids` for the full ordered selection set
+- Compatibility is preserved because older single-selection flows still read `meta.selection`.
+- New APIs build on top of that model:
+  - `get_selected_component_ids()`
+  - `set_selected_component_ids(...)`
+  - `clear_selection()`
+  - `toggle_selection(...)`
 
 ## Project Parameter Roundtrip
 

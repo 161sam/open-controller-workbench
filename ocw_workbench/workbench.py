@@ -609,6 +609,13 @@ class ProductWorkbenchPanel:
     def _handle_selection_changed(self, _component_id: str | None) -> None:
         self.info_panel.refresh()
         self.refresh_overlay()
+        context = self.controller_service.get_ui_context(self.doc)
+        selection_count = int(context.get("selection_count", 0))
+        if selection_count <= 0:
+            self.set_status("Selection cleared.")
+            return
+        label = "component" if selection_count == 1 else "components"
+        self.set_status(f"{selection_count} {label} selected.")
 
     def _handle_validated(self, _report: dict[str, Any]) -> None:
         self.info_panel.refresh()

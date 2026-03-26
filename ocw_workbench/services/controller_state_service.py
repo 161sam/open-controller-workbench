@@ -33,6 +33,7 @@ DEFAULT_META = {
     "template_id": None,
     "variant_id": None,
     "selection": None,
+    "selected_ids": [],
     "overrides": {},
     "parameters": {
         "values": {},
@@ -150,6 +151,8 @@ class ControllerStateService:
             "template_id": state["meta"].get("template_id"),
             "variant_id": state["meta"].get("variant_id"),
             "selection": state["meta"].get("selection"),
+            "selected_ids": deepcopy(state["meta"].get("selected_ids", [])),
+            "selection_count": len(state["meta"].get("selected_ids", [])),
             "overrides": deepcopy(state["meta"].get("overrides", {})),
             "parameters": deepcopy(state["meta"].get("parameters", {})),
             "component_count": len(state["components"]),
@@ -186,6 +189,7 @@ class ControllerStateService:
             }
         )
         state["meta"]["selection"] = component_id
+        state["meta"]["selected_ids"] = [component_id]
         self.save_state(doc, state)
         log_to_console(
             f"Adding component '{component_id}' from '{library_ref}' "
@@ -276,17 +280,60 @@ class ControllerStateService:
                 component["properties"] = deepcopy(existing) if isinstance(existing, dict) else {}
                 component["properties"].update(deepcopy(properties))
             state["meta"]["selection"] = component_id
+            state["meta"]["selected_ids"] = [component_id]
             self.save_state(doc, state)
             return deepcopy(state)
         raise KeyError(f"Unknown component id: {component_id}")
 
     def select_component(self, doc: Any, component_id: str | None) -> dict[str, Any]:
+        return self.set_selected_component_ids(doc, [component_id] if component_id is not None else [], primary_id=component_id)
+
+    def get_selected_component_ids(self, doc: Any) -> list[str]:
         state = self.get_state(doc)
-        if component_id is not None and component_id not in {component["id"] for component in state["components"]}:
-            raise KeyError(f"Unknown component id: {component_id}")
-        state["meta"]["selection"] = component_id
+        return list(state["meta"].get("selected_ids", []))
+
+    def set_selected_component_ids(
+        self,
+        doc: Any,
+        component_ids: list[str],
+        primary_id: str | None = None,
+    ) -> dict[str, Any]:
+        state = self.get_state(doc)
+        available_ids = {component["id"] for component in state["components"]}
+        normalized_ids: list[str] = []
+        seen: set[str] = set()
+        for component_id in component_ids:
+            if component_id not in available_ids:
+                raise KeyError(f"Unknown component id: {component_id}")
+            if component_id in seen:
+                continue
+            seen.add(component_id)
+            normalized_ids.append(component_id)
+        if primary_id is not None and primary_id not in available_ids:
+            raise KeyError(f"Unknown component id: {primary_id}")
+        resolved_primary = primary_id if primary_id in normalized_ids else (normalized_ids[0] if normalized_ids else None)
+        if resolved_primary is not None:
+            normalized_ids = [resolved_primary] + [component_id for component_id in normalized_ids if component_id != resolved_primary]
+        state["meta"]["selection"] = resolved_primary
+        state["meta"]["selected_ids"] = normalized_ids
         self.save_state(doc, state)
         return deepcopy(state)
+
+    def clear_selection(self, doc: Any) -> dict[str, Any]:
+        return self.set_selected_component_ids(doc, [], primary_id=None)
+
+    def toggle_selection(self, doc: Any, component_id: str, make_primary: bool = True) -> dict[str, Any]:
+        state = self.get_state(doc)
+        current_ids = list(state["meta"].get("selected_ids", []))
+        if component_id in current_ids:
+            remaining = [item for item in current_ids if item != component_id]
+            next_primary = state["meta"].get("selection")
+            if next_primary == component_id:
+                next_primary = remaining[0] if remaining else None
+            return self.set_selected_component_ids(doc, remaining, primary_id=next_primary)
+        next_ids = current_ids + [component_id]
+        primary_id = component_id if make_primary else state["meta"].get("selection")
+        return self.set_selected_component_ids(doc, next_ids, primary_id=primary_id)
 
     def get_component(self, doc: Any, component_id: str) -> dict[str, Any]:
         state = self.get_state(doc)
@@ -345,6 +392,7 @@ class ControllerStateService:
         }
         if state["components"]:
             state["meta"]["selection"] = state["components"][0]["id"]
+            state["meta"]["selected_ids"] = [state["components"][0]["id"]]
         layout_spec = deepcopy(project.get("layout", {})) if isinstance(project.get("layout"), dict) else {}
         log_to_console(
             f"Generated project loaded for document '{getattr(doc, 'Name', '<unnamed>')}': "
@@ -551,6 +599,30 @@ class ControllerStateService:
             ui = meta.get("ui")
             if isinstance(ui, dict):
                 normalized["meta"]["ui"].update(deepcopy(ui))
+        selected_ids = normalized["meta"].get("selected_ids")
+        if not isinstance(selected_ids, list):
+            selected_ids = []
+        available_ids = {str(component.get("id")) for component in normalized["components"] if component.get("id")}
+        deduped_ids: list[str] = []
+        seen_ids: set[str] = set()
+        for component_id in selected_ids:
+            component_key = str(component_id)
+            if component_key not in available_ids or component_key in seen_ids:
+                continue
+            seen_ids.add(component_key)
+            deduped_ids.append(component_key)
+        primary_id = normalized["meta"].get("selection")
+        if isinstance(primary_id, str) and primary_id in available_ids:
+            if primary_id not in deduped_ids:
+                deduped_ids.insert(0, primary_id)
+            else:
+                deduped_ids = [primary_id] + [component_id for component_id in deduped_ids if component_id != primary_id]
+        elif deduped_ids:
+            primary_id = deduped_ids[0]
+        else:
+            primary_id = None
+        normalized["meta"]["selection"] = primary_id
+        normalized["meta"]["selected_ids"] = deduped_ids
         return normalized
 
     def _positive_float(self, value: Any, field_name: str) -> float:

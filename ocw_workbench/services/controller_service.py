@@ -179,6 +179,44 @@ class ControllerService:
         )
         return state
 
+    def get_selected_component_ids(self, doc: Any) -> list[str]:
+        return self.state_service.get_selected_component_ids(doc)
+
+    def set_selected_component_ids(
+        self,
+        doc: Any,
+        component_ids: list[str],
+        primary_id: str | None = None,
+    ) -> dict[str, Any]:
+        state = self.state_service.set_selected_component_ids(doc, component_ids, primary_id=primary_id)
+        self.update_document(
+            doc,
+            mode=SyncMode.VISUAL_ONLY,
+            selection=state["meta"].get("selection"),
+            recompute=False,
+        )
+        return state
+
+    def clear_selection(self, doc: Any) -> dict[str, Any]:
+        state = self.state_service.clear_selection(doc)
+        self.update_document(
+            doc,
+            mode=SyncMode.VISUAL_ONLY,
+            selection=state["meta"].get("selection"),
+            recompute=False,
+        )
+        return state
+
+    def toggle_selection(self, doc: Any, component_id: str, make_primary: bool = True) -> dict[str, Any]:
+        state = self.state_service.toggle_selection(doc, component_id, make_primary=make_primary)
+        self.update_document(
+            doc,
+            mode=SyncMode.VISUAL_ONLY,
+            selection=state["meta"].get("selection"),
+            recompute=False,
+        )
+        return state
+
     def get_component(self, doc: Any, component_id: str) -> dict[str, Any]:
         return self.state_service.get_component(doc, component_id)
 

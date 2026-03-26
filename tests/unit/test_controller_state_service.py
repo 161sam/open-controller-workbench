@@ -74,6 +74,39 @@ def test_state_service_select_and_validate_touch_only_state():
     assert doc.recompute_count == 0
 
 
+def test_state_service_supports_multi_selection_with_primary():
+    service = ControllerStateService()
+    doc = FakeDocument()
+
+    service.create_controller(doc, {"id": "demo", "width": 120.0, "depth": 80.0, "height": 30.0})
+    service.add_component(doc, "omron_b3f_1000", component_id="btn1", x=25.0, y=25.0)
+    service.add_component(doc, "alps_ec11e15204a3", component_id="enc1", x=45.0, y=25.0)
+    state = service.set_selected_component_ids(doc, ["btn1", "enc1"], primary_id="enc1")
+
+    assert state["meta"]["selection"] == "enc1"
+    assert state["meta"]["selected_ids"] == ["enc1", "btn1"]
+    assert service.get_selected_component_ids(doc) == ["enc1", "btn1"]
+
+
+def test_state_service_toggle_and_clear_selection():
+    service = ControllerStateService()
+    doc = FakeDocument()
+
+    service.create_controller(doc, {"id": "demo", "width": 120.0, "depth": 80.0, "height": 30.0})
+    service.add_component(doc, "omron_b3f_1000", component_id="btn1", x=25.0, y=25.0)
+    service.add_component(doc, "alps_ec11e15204a3", component_id="enc1", x=45.0, y=25.0)
+    service.select_component(doc, "btn1")
+    toggled = service.toggle_selection(doc, "enc1", make_primary=False)
+    reduced = service.toggle_selection(doc, "btn1")
+    cleared = service.clear_selection(doc)
+
+    assert toggled["meta"]["selected_ids"] == ["btn1", "enc1"]
+    assert reduced["meta"]["selection"] == "enc1"
+    assert reduced["meta"]["selected_ids"] == ["enc1"]
+    assert cleared["meta"]["selection"] is None
+    assert cleared["meta"]["selected_ids"] == []
+
+
 def test_state_service_updates_component_metadata_and_properties():
     service = ControllerStateService()
     doc = FakeDocument()

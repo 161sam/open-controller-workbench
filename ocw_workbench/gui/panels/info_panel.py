@@ -51,7 +51,11 @@ class InfoPanel:
         shape_name = str(surface.get("shape") or "rectangle")
         set_label_text(self.form["template"], context["template_id"] or "-")
         set_label_text(self.form["variant"], context["variant_id"] or "-")
-        set_label_text(self.form["selection"], context["selection"] or "-")
+        selected_ids = context.get("selected_ids", [])
+        primary_selection = context["selection"] or "-"
+        selection_label = primary_selection if len(selected_ids) <= 1 else f"{primary_selection} (+{len(selected_ids) - 1})"
+        set_label_text(self.form["selection"], selection_label)
+        set_label_text(self.form["selection_count"], str(context.get("selection_count", len(selected_ids))))
         set_label_text(self.form["component_count"], str(context["component_count"]))
         set_value(self.form["width"], float(controller.get("width", 0.0)))
         set_value(self.form["depth"], float(controller.get("depth", 0.0)))
@@ -84,7 +88,9 @@ class InfoPanel:
             [
                 f"Template: {context['template_id'] or '-'}",
                 f"Variant: {context['variant_id'] or '-'}",
-                f"Selected: {context['selection'] or '-'}",
+                f"Primary selected: {context['selection'] or '-'}",
+                f"Selected count: {context.get('selection_count', len(selected_ids))}",
+                f"Selected ids: {', '.join(selected_ids) if selected_ids else '-'}",
                 f"Components: {context['component_count']}",
                 layout_text,
                 validation_text,
@@ -171,6 +177,7 @@ def _build_form() -> dict[str, Any]:
             "template": FallbackLabel("-"),
             "variant": FallbackLabel("-"),
             "selection": FallbackLabel("-"),
+            "selection_count": FallbackLabel("0"),
             "component_count": FallbackLabel("0"),
             "width": FallbackValue(160.0),
             "depth": FallbackValue(100.0),
@@ -194,10 +201,12 @@ def _build_form() -> dict[str, Any]:
     template = qtwidgets.QLabel("-")
     variant = qtwidgets.QLabel("-")
     selection = qtwidgets.QLabel("-")
+    selection_count = qtwidgets.QLabel("0")
     component_count = qtwidgets.QLabel("0")
     meta_layout.addRow("Template", template)
     meta_layout.addRow("Variant", variant)
-    meta_layout.addRow("Selected", selection)
+    meta_layout.addRow("Primary selected", selection)
+    meta_layout.addRow("Selected count", selection_count)
     meta_layout.addRow("Components", component_count)
 
     settings_box = qtwidgets.QGroupBox("Controller Geometry")
@@ -267,6 +276,7 @@ def _build_form() -> dict[str, Any]:
         "template": template,
         "variant": variant,
         "selection": selection,
+        "selection_count": selection_count,
         "component_count": component_count,
         "width": width,
         "depth": depth,

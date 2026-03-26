@@ -3,8 +3,12 @@ from __future__ import annotations
 from typing import Any
 
 
-def component_label(component: dict[str, Any], severity: str | None = None) -> str:
+def component_label(component: dict[str, Any], severity: str | None = None, selected_role: str | None = None) -> str:
     base = f"{component['id']} [{component['type']}]"
+    if selected_role == "primary":
+        base = f"{base} *"
+    elif selected_role == "secondary":
+        base = f"{base} +"
     if severity == "error":
         return f"{base} !"
     if severity == "warning":

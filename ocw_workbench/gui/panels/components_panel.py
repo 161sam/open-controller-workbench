@@ -84,10 +84,11 @@ class ComponentsPanel:
         if labels:
             self.load_selected_component(notify=False)
             move_mode = self.interaction_service.get_settings(self.doc).get("move_component_id")
+            selection_count = len(state["meta"].get("selected_ids", []))
             suffix = f" 3D move active for {move_mode}." if move_mode else ""
             apply_status_message(
                 self.form["status"],
-                f"{len(labels)} components ready. Adjust values below and save.{suffix}",
+                f"{len(labels)} components ready. {selection_count} selected. Adjust the primary selection below and save.{suffix}",
                 level="info",
             )
         else:

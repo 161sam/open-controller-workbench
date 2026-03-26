@@ -139,6 +139,43 @@ def test_selection_controller_can_select_component_from_overlay_hit_test():
     assert controller_service.get_ui_context(doc)["selection"] == "btn1"
 
 
+def test_selection_controller_supports_additive_and_toggle_multi_select():
+    doc = FakeDocument()
+    controller_service = ControllerService()
+    controller_service.create_controller(doc, {"id": "demo", "width": 120.0, "depth": 80.0, "height": 30.0, "top_thickness": 3.0})
+    controller_service.add_component(doc, "omron_b3f_1000", component_id="btn1", x=25.0, y=25.0)
+    controller_service.add_component(doc, "alps_ec11e15204a3", component_id="enc1", x=50.0, y=25.0)
+    selection = SelectionController(controller_service)
+
+    selection.select_component(doc, "btn1")
+    selection.select_component(doc, "enc1", additive=True)
+    context = controller_service.get_ui_context(doc)
+    selection.select_component(doc, "btn1", toggle=True)
+    reduced = controller_service.get_ui_context(doc)
+
+    assert context["selection"] == "btn1"
+    assert context["selected_ids"] == ["btn1", "enc1"]
+    assert reduced["selection"] == "enc1"
+    assert reduced["selected_ids"] == ["enc1"]
+
+
+def test_overlay_service_marks_primary_and_secondary_selected_components():
+    doc = FakeDocument()
+    controller_service = ControllerService()
+    controller_service.create_controller(doc, {"id": "demo", "width": 120.0, "depth": 80.0, "height": 30.0, "top_thickness": 3.0})
+    controller_service.add_component(doc, "omron_b3f_1000", component_id="btn1", x=25.0, y=25.0)
+    controller_service.add_component(doc, "alps_ec11e15204a3", component_id="enc1", x=50.0, y=25.0)
+    controller_service.set_selected_component_ids(doc, ["btn1", "enc1"], primary_id="enc1")
+
+    overlay = OverlayService(controller_service=controller_service).build_overlay(doc)
+    primary_item = next(item for item in overlay["items"] if item["id"] == "component:enc1")
+    secondary_item = next(item for item in overlay["items"] if item["id"] == "component:btn1")
+
+    assert primary_item["style"]["kind"] == "component_selected"
+    assert secondary_item["style"]["kind"] == "component_selected_secondary"
+    assert overlay["summary"]["selected_count"] == 2
+
+
 def test_overlay_service_and_hit_test_respect_rect_rotation():
     doc = FakeDocument()
     controller_service = ControllerService()

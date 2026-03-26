@@ -94,6 +94,11 @@
 ## Component Property Panel
 
 - Selecting a component updates the Components panel into a context-sensitive property editor.
+- Multi-selection keeps one primary selected component plus additional selected component ids.
+- A normal selection action replaces the current selection with one primary component.
+- A modifier-based selection action in the 3D selection flow can add or remove components from the current selection.
+- The Components panel continues to edit the primary selected component.
+- Secondary selected components stay visible in overlay and project summary views so later bulk actions can reuse the same selection set.
 - The panel always shows:
   - selected component `ID`
   - component `Type`
@@ -110,6 +115,17 @@
 - Metadata-only edits, such as `Label`, `Tags`, `Visible`, or component-specific metadata fields, stay lightweight and do not force a full rebuild on their own.
 - `Reset Properties` reloads the selected component from current project state and discards unsaved panel edits.
 - If no component is selected, the panel falls back to a neutral empty state.
+
+## Multi-Select
+
+- OCW now stores selection as:
+  - one primary selection
+  - a list of selected component ids
+- Overlay feedback distinguishes:
+  - primary selected component
+  - secondary selected components
+- The info and workbench status areas report the current selected component count.
+- Existing single-selection workflows remain valid because the primary selection still drives property editing, single-component move, and other current tools.
 
 ## Undo And Redo
 

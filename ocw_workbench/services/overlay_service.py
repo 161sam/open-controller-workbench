@@ -48,6 +48,7 @@ class OverlayService:
             validation = self.constraint_service.validate(controller_data, components)
 
         selected_component_id = context.get("selection")
+        selected_component_ids = set(context.get("selected_ids", []))
         move_component_id = settings.get("move_component_id")
         findings_by_component = self._group_findings(validation)
         items: list[dict[str, Any]] = []
@@ -97,11 +98,25 @@ class OverlayService:
 
         for component in resolved_components:
             severity = self._component_severity(findings_by_component, component["id"])
-            item_kind = "component_selected" if component["id"] == selected_component_id else "component"
+            selected_role: str | None = None
+            if component["id"] == selected_component_id:
+                selected_role = "primary"
+            elif component["id"] in selected_component_ids:
+                selected_role = "secondary"
+            item_kind = "component"
+            if selected_role == "primary":
+                item_kind = "component_selected"
+            elif selected_role == "secondary":
+                item_kind = "component_selected_secondary"
             if severity == "error":
                 item_kind = "component_error"
             elif severity == "warning":
-                item_kind = "component_warning" if component["id"] != selected_component_id else "component_selected"
+                if selected_role == "primary":
+                    item_kind = "component_selected"
+                elif selected_role == "secondary":
+                    item_kind = "component_selected_secondary"
+                else:
+                    item_kind = "component_warning"
             shape = component["resolved_mechanical"].keepout_top
             items.append(
                 self._shape_item(
@@ -112,7 +127,7 @@ class OverlayService:
                     rotation=float(component.get("rotation", 0.0) or 0.0),
                     shape=shape.to_dict(),
                     style=overlay_style(item_kind),
-                    label=component_label(component, severity=severity),
+                    label=component_label(component, severity=severity, selected_role=selected_role),
                     source_component_id=component["id"],
                     severity=severity,
                 )
@@ -172,6 +187,7 @@ class OverlayService:
             "summary": {
                 "item_count": len(items),
                 "component_count": len(resolved_components),
+                "selected_count": len(selected_component_ids),
                 "zone_count": len(controller_data.get("layout_zones", [])),
                 "finding_count": validation["summary"]["total_count"],
             },
