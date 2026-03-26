@@ -46,6 +46,14 @@ Keine Runtime. Kein OCF-Core.
 - layout_service.py
 - constraint_service.py
 
+### 7a. Project State
+- freecad_api/model.py
+- freecad_api/state.py
+
+Project state is persisted on the `OCF_Controller` document object.
+`ProjectJson` is the primary source of truth for controller projects.
+Legacy document metadata and `OCF_State` containers are migration inputs only.
+
 ### 8. Export
 - exporters/
 - ocf_kicad/

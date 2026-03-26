@@ -35,6 +35,17 @@ def has_document_data(doc: Any, key: str) -> bool:
     return key in bucket
 
 
+def clear_document_data(doc: Any, key: str) -> None:
+    try:
+        if hasattr(doc, key):
+            delattr(doc, key)
+    except Exception:
+        pass
+    bucket = _get_bucket(doc)
+    if key in bucket:
+        del bucket[key]
+
+
 def update_document_data(doc: Any, key: str, updates: dict[str, Any]) -> dict[str, Any]:
     current = get_document_data(doc, key, {})
     merged = dict(current) if isinstance(current, dict) else {}

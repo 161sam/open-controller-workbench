@@ -4,17 +4,101 @@ import json
 from copy import deepcopy
 from typing import Any
 
-from ocf_freecad.freecad_api.metadata import get_document_data, has_document_data, set_document_data
-from ocf_freecad.freecad_api.model import has_project_state, read_project_state, write_project_state
+from ocf_freecad.freecad_api.metadata import (
+    clear_document_data,
+    get_document_data,
+    set_document_data,
+)
+from ocf_freecad.freecad_api.model import read_project_state, write_project_state
 
+# Deprecated legacy persistence path. Keep read support for migration only.
 STATE_CONTAINER_NAME = "OCF_State"
 STATE_CONTAINER_LABEL = "OCF State"
 STATE_PROPERTY_NAME = "StateJson"
 STATE_GROUP_NAME = "OpenController"
+
+# Runtime cache for environments where document objects are partially mocked.
 STATE_CACHE_KEY = "OCFStateCache"
 STATE_CACHE_JSON_KEY = "OCFStateCacheJson"
+
+# Deprecated document metadata keys. Read-only for migration.
 LEGACY_STATE_KEY = "OCFState"
 LEGACY_STATE_JSON_KEY = "OCF_State_JSON"
+
+
+class ProjectStateStore:
+    def __init__(self, doc: Any) -> None:
+        self.doc = doc
+
+    def has_state(self) -> bool:
+        self.migrate_legacy_state()
+        return self._read_primary_state() is not None or self._read_runtime_cache() is not None
+
+    def load(self) -> dict[str, Any] | None:
+        self.migrate_legacy_state()
+        state = self._read_primary_state()
+        if state is not None:
+            return state
+        return self._read_runtime_cache()
+
+    def save(self, state: dict[str, Any]) -> dict[str, Any]:
+        normalized = deepcopy(state)
+        write_project_state(self.doc, normalized)
+        set_document_data(self.doc, STATE_CACHE_KEY, normalized)
+        self._clear_redundant_paths()
+        return deepcopy(normalized)
+
+    def migrate_legacy_state(self) -> dict[str, Any] | None:
+        if self._read_primary_state() is not None:
+            return None
+        legacy_state = self._read_legacy_state()
+        if legacy_state is None:
+            return None
+        self.save(legacy_state)
+        return deepcopy(legacy_state)
+
+    def _read_primary_state(self) -> dict[str, Any] | None:
+        state = read_project_state(self.doc)
+        if isinstance(state, dict):
+            return deepcopy(state)
+        return None
+
+    def _read_runtime_cache(self) -> dict[str, Any] | None:
+        state = get_document_data(self.doc, STATE_CACHE_KEY)
+        if isinstance(state, dict):
+            return deepcopy(state)
+        payload = get_document_data(self.doc, STATE_CACHE_JSON_KEY)
+        if isinstance(payload, str) and payload.strip():
+            return _load_json(payload)
+        return None
+
+    def _read_legacy_state(self) -> dict[str, Any] | None:
+        container = get_state_container(self.doc, create=False)
+        payload = getattr(container, STATE_PROPERTY_NAME, "") if container is not None else ""
+        if isinstance(payload, str) and payload.strip():
+            try:
+                return _load_json(payload)
+            except ValueError:
+                return None
+        legacy_state = get_document_data(self.doc, LEGACY_STATE_KEY)
+        if isinstance(legacy_state, dict):
+            return deepcopy(legacy_state)
+        payload = get_document_data(self.doc, LEGACY_STATE_JSON_KEY)
+        if isinstance(payload, str) and payload.strip():
+            try:
+                return _load_json(payload)
+            except ValueError:
+                return None
+        return None
+
+    def _clear_redundant_paths(self) -> None:
+        clear_document_data(self.doc, STATE_CACHE_JSON_KEY)
+        clear_document_data(self.doc, LEGACY_STATE_KEY)
+        clear_document_data(self.doc, LEGACY_STATE_JSON_KEY)
+
+
+def get_project_state_store(doc: Any) -> ProjectStateStore:
+    return ProjectStateStore(doc)
 
 
 def get_state_container(doc: Any, create: bool = True) -> Any | None:
@@ -30,58 +114,19 @@ def get_state_container(doc: Any, create: bool = True) -> Any | None:
 
 
 def has_persisted_state(doc: Any) -> bool:
-    migrate_legacy_state(doc)
-    if has_project_state(doc):
-        return True
-    return has_document_data(doc, STATE_CACHE_KEY) or has_document_data(doc, STATE_CACHE_JSON_KEY)
+    return get_project_state_store(doc).has_state()
 
 
 def read_state(doc: Any) -> dict[str, Any] | None:
-    migrate_legacy_state(doc)
-    state = read_project_state(doc)
-    if isinstance(state, dict):
-        return deepcopy(state)
-    state = get_document_data(doc, STATE_CACHE_KEY)
-    if isinstance(state, dict):
-        return deepcopy(state)
-    payload = get_document_data(doc, STATE_CACHE_JSON_KEY)
-    if isinstance(payload, str) and payload.strip():
-        return _load_json(payload)
-    return None
+    return get_project_state_store(doc).load()
 
 
 def write_state(doc: Any, state: dict[str, Any]) -> None:
-    normalized = deepcopy(state)
-    payload = json.dumps(normalized, sort_keys=True)
-    controller = write_project_state(doc, normalized)
-    set_document_data(doc, STATE_CACHE_KEY, normalized)
-    set_document_data(doc, STATE_CACHE_JSON_KEY, payload)
-    if controller is None:
-        set_document_data(doc, LEGACY_STATE_KEY, normalized)
-        set_document_data(doc, LEGACY_STATE_JSON_KEY, payload)
+    get_project_state_store(doc).save(state)
 
 
 def migrate_legacy_state(doc: Any) -> None:
-    if has_project_state(doc):
-        return
-    container = get_state_container(doc, create=False)
-    existing = getattr(container, STATE_PROPERTY_NAME, "") if container is not None else ""
-    if isinstance(existing, str) and existing.strip():
-        try:
-            write_state(doc, _load_json(existing))
-        except ValueError:
-            return
-        return
-    state = get_document_data(doc, LEGACY_STATE_KEY)
-    if isinstance(state, dict):
-        write_state(doc, state)
-        return
-    payload = get_document_data(doc, LEGACY_STATE_JSON_KEY)
-    if isinstance(payload, str) and payload.strip():
-        try:
-            write_state(doc, _load_json(payload))
-        except ValueError:
-            return
+    get_project_state_store(doc).migrate_legacy_state()
 
 
 def _find_state_container(doc: Any) -> Any | None:

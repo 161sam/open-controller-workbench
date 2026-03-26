@@ -10,9 +10,12 @@ from ocf_freecad.freecad_api.model import (
     get_generated_group,
 )
 from ocf_freecad.freecad_api.state import (
+    LEGACY_STATE_JSON_KEY,
+    LEGACY_STATE_KEY,
     STATE_CACHE_JSON_KEY,
     STATE_CACHE_KEY,
     STATE_PROPERTY_NAME,
+    get_project_state_store,
     get_state_container,
     has_persisted_state,
     read_state,
@@ -126,6 +129,17 @@ def test_read_state_prefers_controller_object_payload():
     assert has_persisted_state(doc) is True
 
 
+def test_project_state_store_loads_existing_controller_state():
+    doc = FakeDocument()
+    controller = get_controller_object(doc, create=True)
+    controller.ProjectJson = json.dumps({"controller": {"id": "existing"}, "components": [], "meta": {}})
+
+    state = get_project_state_store(doc).load()
+
+    assert state is not None
+    assert state["controller"]["id"] == "existing"
+
+
 def test_read_state_migrates_legacy_state_container_into_controller_object():
     doc = FakeDocument()
     legacy = get_state_container(doc, create=True)
@@ -139,6 +153,21 @@ def test_read_state_migrates_legacy_state_container_into_controller_object():
     assert controller is not None
     assert json.loads(controller.ProjectJson)["controller"]["id"] == "legacy"
     assert legacy.StateJson
+
+
+def test_project_state_store_migrates_legacy_document_metadata():
+    doc = FakeDocument()
+    setattr(doc, LEGACY_STATE_JSON_KEY, json.dumps({"controller": {"id": "legacy-doc"}, "components": [], "meta": {}}))
+
+    state = get_project_state_store(doc).load()
+    controller = doc.getObject(CONTROLLER_OBJECT_NAME)
+
+    assert state is not None
+    assert state["controller"]["id"] == "legacy-doc"
+    assert controller is not None
+    assert json.loads(controller.ProjectJson)["controller"]["id"] == "legacy-doc"
+    assert not hasattr(doc, LEGACY_STATE_KEY)
+    assert not hasattr(doc, LEGACY_STATE_JSON_KEY)
 
 
 def test_generated_group_reuses_single_group_container():
@@ -167,7 +196,7 @@ def test_controller_object_uses_featurepython_proxy_and_claims_children():
     assert overlay in claimed
 
 
-def test_write_state_uses_controller_as_primary_store_and_cache_as_fallback():
+def test_write_state_uses_controller_as_primary_store_and_runtime_cache():
     doc = FakeDocument()
 
     write_state(doc, {"controller": {"id": "primary"}, "components": [], "meta": {}})
@@ -177,6 +206,6 @@ def test_write_state_uses_controller_as_primary_store_and_cache_as_fallback():
     assert controller is not None
     assert json.loads(controller.ProjectJson)["controller"]["id"] == "primary"
     assert getattr(doc, STATE_CACHE_KEY)["controller"]["id"] == "primary"
-    assert json.loads(getattr(doc, STATE_CACHE_JSON_KEY))["controller"]["id"] == "primary"
-    assert not hasattr(doc, "OCFState")
-    assert not hasattr(doc, "OCF_State_JSON")
+    assert not hasattr(doc, STATE_CACHE_JSON_KEY)
+    assert not hasattr(doc, LEGACY_STATE_KEY)
+    assert not hasattr(doc, LEGACY_STATE_JSON_KEY)
