@@ -3,6 +3,8 @@ from __future__ import annotations
 from typing import Any
 
 from ocf_freecad.gui.panels._common import (
+    configure_combo_box,
+    configure_text_panel,
     FallbackButton,
     FallbackCombo,
     FallbackLabel,
@@ -11,7 +13,9 @@ from ocf_freecad.gui.panels._common import (
     current_text,
     load_qt,
     set_label_text,
+    set_size_policy,
     set_text,
+    wrap_widget_in_scroll_area,
     widget_value,
 )
 from ocf_freecad.services.controller_service import ControllerService
@@ -60,7 +64,7 @@ class LayoutPanel:
         layout = context.get("layout") or {}
         if not layout:
             set_text(self.form["summary"], "No layout has been applied yet.")
-            set_label_text(self.form["status"], "Run Auto Layout after adding or moving components.")
+            set_label_text(self.form["status"], "Use Auto Place after creating a template or when components need a fresh starting layout.")
             return
         summary = layout.get("result_summary", {})
         config = layout.get("config", {})
@@ -87,7 +91,7 @@ class LayoutPanel:
             "padding_mm": widget_value(self.form["padding_mm"]),
         }
         result = self.controller_service.auto_layout(self.doc, strategy=strategy, config=config)
-        set_label_text(self.form["status"], f"Applied {strategy} layout.")
+        set_label_text(self.form["status"], f"Applied {strategy} placement to the current components.")
         set_text(
             self.form["summary"],
             "\n".join(
@@ -99,7 +103,7 @@ class LayoutPanel:
             ),
         )
         if self.on_status is not None:
-            self.on_status(f"Applied {strategy} layout.")
+            self.on_status(f"Applied {strategy} placement to the current components.")
         if self.on_applied is not None:
             self.on_applied(result)
         return result
@@ -156,43 +160,43 @@ class LayoutPanel:
         try:
             self.apply_auto_layout()
         except Exception as exc:
-            self._publish_status(str(exc))
+            self._publish_status(f"Could not apply layout: {exc}")
 
     def handle_overlay_clicked(self) -> None:
         try:
             self.toggle_overlay()
         except Exception as exc:
-            self._publish_status(str(exc))
+            self._publish_status(f"Could not update overlay visibility: {exc}")
 
     def handle_constraint_overlay_clicked(self) -> None:
         try:
             self.toggle_constraint_overlay()
         except Exception as exc:
-            self._publish_status(str(exc))
+            self._publish_status(f"Could not update constraint checks: {exc}")
 
     def handle_snap_clicked(self) -> None:
         try:
             self.toggle_snap()
         except Exception as exc:
-            self._publish_status(str(exc))
+            self._publish_status(f"Could not update snap mode: {exc}")
 
     def handle_measurements_clicked(self) -> None:
         try:
             self.toggle_measurements()
         except Exception as exc:
-            self._publish_status(str(exc))
+            self._publish_status(f"Could not update measurements: {exc}")
 
     def handle_conflict_lines_clicked(self) -> None:
         try:
             self.toggle_conflict_lines()
         except Exception as exc:
-            self._publish_status(str(exc))
+            self._publish_status(f"Could not update conflict lines: {exc}")
 
     def handle_constraint_labels_clicked(self) -> None:
         try:
             self.toggle_constraint_labels()
         except Exception as exc:
-            self._publish_status(str(exc))
+            self._publish_status(f"Could not update labels: {exc}")
 
     def accept(self) -> bool:
         self.apply_auto_layout()
@@ -233,10 +237,10 @@ def _build_form() -> dict[str, Any]:
             "grid_mm": FallbackValue(1.0),
             "spacing_mm": FallbackValue(24.0),
             "padding_mm": FallbackValue(8.0),
-            "apply_button": FallbackButton("Apply Auto Layout"),
-            "rerun_button": FallbackButton("Run Again"),
-            "overlay_button": FallbackButton("Toggle Overlay"),
-            "constraint_overlay_button": FallbackButton("Constraint Overlay"),
+            "apply_button": FallbackButton("Auto Place Components"),
+            "rerun_button": FallbackButton("Re-run Placement"),
+            "overlay_button": FallbackButton("Show / Hide Overlay"),
+            "constraint_overlay_button": FallbackButton("Show Constraint Checks"),
             "snap_button": FallbackButton("Snap"),
             "measurements_button": FallbackButton("Measurements"),
             "conflict_lines_button": FallbackButton("Conflict Lines"),
@@ -246,43 +250,50 @@ def _build_form() -> dict[str, Any]:
             "status": FallbackLabel(),
         }
 
-    widget = qtwidgets.QWidget()
-    layout = qtwidgets.QVBoxLayout(widget)
-    intro = qtwidgets.QLabel("Arrange components, control the grid, and inspect the overlay.")
+    content = qtwidgets.QWidget()
+    layout = qtwidgets.QVBoxLayout(content)
+    intro = qtwidgets.QLabel("Start with Auto Place, then use the Components tab for small adjustments. Overlay toggles below are helpers, not required steps.")
     intro.setWordWrap(True)
     form = qtwidgets.QFormLayout()
     preset = qtwidgets.QComboBox()
     preset.addItems(["grid", "row", "column"])
+    configure_combo_box(preset)
     grid_mm = qtwidgets.QDoubleSpinBox()
     spacing_mm = qtwidgets.QDoubleSpinBox()
     padding_mm = qtwidgets.QDoubleSpinBox()
     for spinbox in (grid_mm, spacing_mm, padding_mm):
         spinbox.setRange(0.0, 1000.0)
         spinbox.setDecimals(2)
+        set_size_policy(spinbox, horizontal="expanding", vertical="preferred")
     grid_mm.setValue(1.0)
     spacing_mm.setValue(24.0)
     padding_mm.setValue(8.0)
-    apply_button = qtwidgets.QPushButton("Apply Auto Layout")
-    rerun_button = qtwidgets.QPushButton("Run Again")
-    overlay_button = qtwidgets.QPushButton("Toggle Overlay")
-    constraint_overlay_button = qtwidgets.QPushButton("Constraint Overlay")
+    apply_button = qtwidgets.QPushButton("Auto Place Components")
+    rerun_button = qtwidgets.QPushButton("Re-run Placement")
+    overlay_button = qtwidgets.QPushButton("Show / Hide Overlay")
+    constraint_overlay_button = qtwidgets.QPushButton("Show Constraint Checks")
     snap_button = qtwidgets.QPushButton("Snap")
     measurements_button = qtwidgets.QPushButton("Measurements")
     conflict_lines_button = qtwidgets.QPushButton("Conflict Lines")
     constraint_labels_button = qtwidgets.QPushButton("Constraint Labels")
-    button_row = qtwidgets.QHBoxLayout()
-    button_row.addWidget(apply_button)
-    button_row.addWidget(rerun_button)
-    button_row.addWidget(overlay_button)
-    button_row.addWidget(constraint_overlay_button)
-    button_row.addWidget(snap_button)
-    button_row.addWidget(measurements_button)
-    button_row.addWidget(conflict_lines_button)
-    button_row.addWidget(constraint_labels_button)
+    button_row = qtwidgets.QGridLayout()
+    actions = [
+        apply_button,
+        rerun_button,
+        overlay_button,
+        constraint_overlay_button,
+        snap_button,
+        measurements_button,
+        conflict_lines_button,
+        constraint_labels_button,
+    ]
+    for index, button in enumerate(actions):
+        row, column = divmod(index, 2)
+        button_row.addWidget(button, row, column)
     summary = qtwidgets.QPlainTextEdit()
-    summary.setReadOnly(True)
+    configure_text_panel(summary, max_height=120)
     overlay_status = qtwidgets.QPlainTextEdit()
-    overlay_status.setReadOnly(True)
+    configure_text_panel(overlay_status, max_height=120)
     status = qtwidgets.QLabel()
     status.setWordWrap(True)
     form.addRow("Preset", preset)
@@ -295,6 +306,8 @@ def _build_form() -> dict[str, Any]:
     layout.addWidget(overlay_status)
     layout.addWidget(summary)
     layout.addWidget(status)
+    layout.addStretch(1)
+    widget = wrap_widget_in_scroll_area(content)
     return {
         "widget": widget,
         "preset": preset,

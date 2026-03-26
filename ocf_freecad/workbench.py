@@ -13,8 +13,9 @@ except ImportError:
     Gui = None
 
 from ocf_freecad.gui.interaction.move_tool import MoveTool
+from ocf_freecad.gui.docking import create_or_reuse_dock, focus_dock, remove_dock
 from ocf_freecad.gui.overlay.renderer import OverlayRenderer
-from ocf_freecad.gui.panels._common import FallbackLabel, load_qt, set_label_text
+from ocf_freecad.gui.panels._common import FallbackLabel, load_qt, log_exception, log_to_console, set_label_text, set_size_policy
 from ocf_freecad.gui.panels.components_panel import ComponentsPanel
 from ocf_freecad.gui.panels.constraints_panel import ConstraintsPanel
 from ocf_freecad.gui.panels.create_panel import CreatePanel
@@ -22,12 +23,34 @@ from ocf_freecad.gui.panels.info_panel import InfoPanel
 from ocf_freecad.gui.panels.layout_panel import LayoutPanel
 from ocf_freecad.gui.panels.plugin_manager_panel import PluginManagerPanel
 from ocf_freecad.gui.runtime import icon_path
+from ocf_freecad.freecad_api.metadata import get_document_data
+from ocf_freecad.freecad_api.state import has_persisted_state
 from ocf_freecad.services.controller_service import ControllerService
 from ocf_freecad.services.interaction_service import InteractionService
 from ocf_freecad.services.overlay_service import OverlayService
 
 _ACTIVE_WORKBENCH: ProductWorkbenchPanel | None = None
 _ACTIVE_DOCK: Any | None = None
+
+
+class _LoggedCommand:
+    def __init__(self, command_id: str, command: Any) -> None:
+        self.command_id = command_id
+        self.command = command
+
+    def Activated(self) -> Any:
+        log_to_console(f"Command '{self.command_id}' activated.")
+        result = self.command.Activated()
+        log_to_console(f"Command '{self.command_id}' completed.")
+        return result
+
+    def GetResources(self) -> Any:
+        return self.command.GetResources()
+
+    def IsActive(self) -> Any:
+        if hasattr(self.command, "IsActive"):
+            return self.command.IsActive()
+        return True
 
 
 class OpenControllerWorkbench((Gui.Workbench if Gui is not None else object)):
@@ -58,22 +81,22 @@ class OpenControllerWorkbench((Gui.Workbench if Gui is not None else object)):
         from ocf_freecad.commands.toggle_overlay import ToggleOverlayCommand
         from ocf_freecad.commands.validate_constraints import ValidateConstraintsCommand
 
-        Gui.addCommand("OCF_CreateController", CreateFromTemplateCommand())
-        Gui.addCommand("OCF_AddComponent", AddComponentCommand())
-        Gui.addCommand("OCF_ApplyLayout", ApplyLayoutCommand())
-        Gui.addCommand("OCF_SelectComponent", SelectComponentCommand())
-        Gui.addCommand("OCF_ValidateConstraints", ValidateConstraintsCommand())
-        Gui.addCommand("OCF_ToggleOverlay", ToggleOverlayCommand())
-        Gui.addCommand("OCF_ShowConstraintOverlay", ShowConstraintOverlayCommand())
-        Gui.addCommand("OCF_MoveComponentInteractive", MoveComponentInteractiveCommand())
-        Gui.addCommand("OCF_SnapToGrid", SnapToGridCommand())
-        Gui.addCommand("OCF_ToggleMeasurements", ToggleMeasurementsCommand())
-        Gui.addCommand("OCF_ToggleConflictLines", ToggleConflictLinesCommand())
-        Gui.addCommand("OCF_ToggleConstraintLabels", ToggleConstraintLabelsCommand())
-        Gui.addCommand("OCF_OpenPluginManager", OpenPluginManagerCommand())
-        Gui.addCommand("OCF_EnablePlugin", EnablePluginCommand())
-        Gui.addCommand("OCF_DisablePlugin", DisablePluginCommand())
-        Gui.addCommand("OCF_ReloadPlugins", ReloadPluginsCommand())
+        Gui.addCommand("OCF_CreateController", _LoggedCommand("OCF_CreateController", CreateFromTemplateCommand()))
+        Gui.addCommand("OCF_AddComponent", _LoggedCommand("OCF_AddComponent", AddComponentCommand()))
+        Gui.addCommand("OCF_ApplyLayout", _LoggedCommand("OCF_ApplyLayout", ApplyLayoutCommand()))
+        Gui.addCommand("OCF_SelectComponent", _LoggedCommand("OCF_SelectComponent", SelectComponentCommand()))
+        Gui.addCommand("OCF_ValidateConstraints", _LoggedCommand("OCF_ValidateConstraints", ValidateConstraintsCommand()))
+        Gui.addCommand("OCF_ToggleOverlay", _LoggedCommand("OCF_ToggleOverlay", ToggleOverlayCommand()))
+        Gui.addCommand("OCF_ShowConstraintOverlay", _LoggedCommand("OCF_ShowConstraintOverlay", ShowConstraintOverlayCommand()))
+        Gui.addCommand("OCF_MoveComponentInteractive", _LoggedCommand("OCF_MoveComponentInteractive", MoveComponentInteractiveCommand()))
+        Gui.addCommand("OCF_SnapToGrid", _LoggedCommand("OCF_SnapToGrid", SnapToGridCommand()))
+        Gui.addCommand("OCF_ToggleMeasurements", _LoggedCommand("OCF_ToggleMeasurements", ToggleMeasurementsCommand()))
+        Gui.addCommand("OCF_ToggleConflictLines", _LoggedCommand("OCF_ToggleConflictLines", ToggleConflictLinesCommand()))
+        Gui.addCommand("OCF_ToggleConstraintLabels", _LoggedCommand("OCF_ToggleConstraintLabels", ToggleConstraintLabelsCommand()))
+        Gui.addCommand("OCF_OpenPluginManager", _LoggedCommand("OCF_OpenPluginManager", OpenPluginManagerCommand()))
+        Gui.addCommand("OCF_EnablePlugin", _LoggedCommand("OCF_EnablePlugin", EnablePluginCommand()))
+        Gui.addCommand("OCF_DisablePlugin", _LoggedCommand("OCF_DisablePlugin", DisablePluginCommand()))
+        Gui.addCommand("OCF_ReloadPlugins", _LoggedCommand("OCF_ReloadPlugins", ReloadPluginsCommand()))
 
         project_commands = ["OCF_CreateController"]
         component_commands = [
@@ -121,8 +144,13 @@ class OpenControllerWorkbench((Gui.Workbench if Gui is not None else object)):
     def Activated(self) -> None:
         if App is None:
             return
-        doc = App.ActiveDocument or App.newDocument("Controller")
-        ensure_workbench_ui(doc, focus="create")
+        try:
+            doc = App.ActiveDocument or App.newDocument("Controller")
+            _bootstrap_document_if_needed(doc)
+            ensure_workbench_ui(doc, focus="create")
+            log_to_console("Workbench activated.")
+        except Exception as exc:
+            log_exception("Workbench activation failed", exc)
 
     def Deactivated(self) -> None:
         return
@@ -170,7 +198,12 @@ class ProductWorkbenchPanel:
             on_validated=self._handle_validated,
             on_status=self.set_status,
         )
-        self.info_panel = InfoPanel(doc, controller_service=self.controller_service)
+        self.info_panel = InfoPanel(
+            doc,
+            controller_service=self.controller_service,
+            on_updated=self._handle_controller_updated,
+            on_status=self.set_status,
+        )
         self.plugin_manager_panel = PluginManagerPanel(
             on_status=self.set_status,
             on_plugins_changed=self._handle_plugins_changed,
@@ -189,6 +222,17 @@ class ProductWorkbenchPanel:
         self.refresh_overlay()
 
     def focus_panel(self, panel_name: str) -> None:
+        tab_index = {
+            "create": 0,
+            "info": 0,
+            "layout": 1,
+            "constraints": 1,
+            "components": 2,
+            "plugins": 3,
+        }.get(panel_name)
+        tabs = self.form.get("tabs")
+        if tab_index is not None and tabs is not None and hasattr(tabs, "setCurrentIndex"):
+            tabs.setCurrentIndex(tab_index)
         widget = {
             "create": self.create_panel.widget,
             "layout": self.layout_panel.widget,
@@ -299,8 +343,8 @@ class ProductWorkbenchPanel:
         return True
 
     def _build_shell(self) -> dict[str, Any]:
-        qtcore, _qtgui, qtwidgets = load_qt()
-        if qtwidgets is None or qtcore is None:
+        _qtcore, _qtgui, qtwidgets = load_qt()
+        if qtwidgets is None:
             return {
                 "widget": object(),
                 "status": FallbackLabel("Open Controller workbench ready."),
@@ -308,6 +352,8 @@ class ProductWorkbenchPanel:
             }
 
         widget = qtwidgets.QWidget()
+        if hasattr(widget, "setMinimumSize"):
+            widget.setMinimumSize(0, 0)
         root = qtwidgets.QVBoxLayout(widget)
         title = qtwidgets.QLabel("Open Controller Studio")
         title.setStyleSheet("font-size: 16px; font-weight: 600;")
@@ -317,45 +363,50 @@ class ProductWorkbenchPanel:
         status.setWordWrap(True)
         overlay_status = qtwidgets.QLabel("Overlay ready.")
         overlay_status.setWordWrap(True)
-        splitter = qtwidgets.QSplitter(qtcore.Qt.Horizontal)
-        left_column = qtwidgets.QWidget()
-        left_layout = qtwidgets.QVBoxLayout(left_column)
-        center_column = qtwidgets.QWidget()
-        center_layout = qtwidgets.QVBoxLayout(center_column)
-        right_column = qtwidgets.QWidget()
-        right_layout = qtwidgets.QVBoxLayout(right_column)
-        left_layout.setContentsMargins(0, 0, 0, 0)
-        center_layout.setContentsMargins(0, 0, 0, 0)
-        right_layout.setContentsMargins(0, 0, 0, 0)
-        splitter.addWidget(left_column)
-        splitter.addWidget(center_column)
-        splitter.addWidget(right_column)
-        splitter.setStretchFactor(0, 1)
-        splitter.setStretchFactor(1, 1)
-        splitter.setStretchFactor(2, 2)
+        tabs = qtwidgets.QTabWidget()
+        if hasattr(tabs, "setUsesScrollButtons"):
+            tabs.setUsesScrollButtons(True)
+        set_size_policy(tabs, horizontal="preferred", vertical="expanding")
+        create_page = qtwidgets.QWidget()
+        create_layout = qtwidgets.QVBoxLayout(create_page)
+        layout_page = qtwidgets.QWidget()
+        layout_layout = qtwidgets.QVBoxLayout(layout_page)
+        components_page = qtwidgets.QWidget()
+        components_layout = qtwidgets.QVBoxLayout(components_page)
+        plugins_page = qtwidgets.QWidget()
+        plugins_layout = qtwidgets.QVBoxLayout(plugins_page)
+        for layout in (create_layout, layout_layout, components_layout, plugins_layout):
+            layout.setContentsMargins(0, 0, 0, 0)
+            layout.setSpacing(6)
+        tabs.addTab(create_page, "Create")
+        tabs.addTab(layout_page, "Layout")
+        tabs.addTab(components_page, "Components")
+        tabs.addTab(plugins_page, "Plugins")
         root.addWidget(title)
         root.addWidget(subtitle)
         root.addWidget(overlay_status)
-        root.addWidget(splitter, 1)
+        root.addWidget(tabs, 1)
         root.addWidget(status)
         return {
             "widget": widget,
             "status": status,
             "overlay_status": overlay_status,
-            "left_layout": left_layout,
-            "center_layout": center_layout,
-            "right_layout": right_layout,
+            "tabs": tabs,
+            "create_layout": create_layout,
+            "layout_layout": layout_layout,
+            "components_layout": components_layout,
+            "plugins_layout": plugins_layout,
         }
 
     def _mount_panels(self) -> None:
-        if "left_layout" not in self.form:
+        if "create_layout" not in self.form:
             return
-        self.form["left_layout"].addWidget(_group_box("Start / Create", self.create_panel.widget))
-        self.form["left_layout"].addWidget(_group_box("Template / Variant Info", self.info_panel.widget))
-        self.form["center_layout"].addWidget(_group_box("Layout", self.layout_panel.widget))
-        self.form["center_layout"].addWidget(_group_box("Constraints", self.constraints_panel.widget))
-        self.form["right_layout"].addWidget(_group_box("Components", self.components_panel.widget))
-        self.form["right_layout"].addWidget(_group_box("Plugins", self.plugin_manager_panel.widget))
+        self.form["create_layout"].addWidget(_group_box("Create Controller", self.create_panel.widget))
+        self.form["create_layout"].addWidget(_group_box("Controller Setup", self.info_panel.widget))
+        self.form["layout_layout"].addWidget(_group_box("Layout", self.layout_panel.widget))
+        self.form["layout_layout"].addWidget(_group_box("Constraints", self.constraints_panel.widget))
+        self.form["components_layout"].addWidget(_group_box("Components", self.components_panel.widget))
+        self.form["plugins_layout"].addWidget(_group_box("Plugins", self.plugin_manager_panel.widget))
 
     def _handle_created(self, _state: dict[str, Any]) -> None:
         self.components_panel.refresh()
@@ -363,7 +414,8 @@ class ProductWorkbenchPanel:
         self.constraints_panel.refresh()
         self.info_panel.refresh()
         self.refresh_overlay()
-        self.focus_panel("layout")
+        self.focus_panel("create")
+        self.set_status("Controller created. Review size and shell settings, then add or place components.")
 
     def _handle_layout_applied(self, _result: dict[str, Any]) -> None:
         self.components_panel.refresh()
@@ -378,6 +430,14 @@ class ProductWorkbenchPanel:
         self.info_panel.refresh()
         self.refresh_overlay()
         self.focus_panel("components")
+
+    def _handle_controller_updated(self, _state: dict[str, Any]) -> None:
+        self.layout_panel.refresh()
+        self.constraints_panel.refresh()
+        self.components_panel.refresh()
+        self.info_panel.refresh()
+        self.refresh_overlay()
+        self.focus_panel("create")
 
     def _handle_selection_changed(self, _component_id: str | None) -> None:
         self.info_panel.refresh()
@@ -395,7 +455,7 @@ class ProductWorkbenchPanel:
         self.info_panel.refresh()
 
     def _overlay_status_text(self, payload: dict[str, Any] | None = None) -> str:
-        current = payload or getattr(self.doc, "OCFOverlayState", {})
+        current = payload or get_document_data(self.doc, "OCFOverlayState", {})
         settings = self.interaction_service.get_settings(self.doc)
         summary = current.get("summary", {})
         return (
@@ -417,17 +477,24 @@ def ensure_workbench_ui(doc: Any | None = None, focus: str = "create") -> Produc
         doc = App.ActiveDocument or App.newDocument("Controller")
     if doc is None:
         raise RuntimeError("No active FreeCAD document")
-
-    if _ACTIVE_WORKBENCH is None or _ACTIVE_WORKBENCH.doc is not doc:
-        if _ACTIVE_DOCK is not None and hasattr(_ACTIVE_DOCK, "close"):
-            _ACTIVE_DOCK.close()
-        _ACTIVE_WORKBENCH = ProductWorkbenchPanel(doc)
-        _ACTIVE_DOCK = _show_in_dock(_ACTIVE_WORKBENCH)
-    else:
-        _ACTIVE_WORKBENCH.refresh_all()
-        _show_existing_dock(_ACTIVE_DOCK)
-    _ACTIVE_WORKBENCH.focus_panel(focus)
-    return _ACTIVE_WORKBENCH
+    _bootstrap_document_if_needed(doc)
+    try:
+        if _ACTIVE_WORKBENCH is None or _ACTIVE_WORKBENCH.doc is not doc:
+            _ACTIVE_WORKBENCH = ProductWorkbenchPanel(doc)
+            _ACTIVE_DOCK = _show_in_dock(_ACTIVE_WORKBENCH)
+        else:
+            _ACTIVE_WORKBENCH.refresh_all()
+            _show_existing_dock(_ACTIVE_DOCK)
+        _ACTIVE_WORKBENCH.focus_panel(focus)
+        log_to_console(
+            f"Workbench UI ready for document '{getattr(doc, 'Name', '<unnamed>')}' with focus '{focus}'."
+        )
+        return _ACTIVE_WORKBENCH
+    except Exception as exc:
+        _ACTIVE_WORKBENCH = None
+        log_exception("Failed to build Open Controller workbench UI", exc)
+        _ACTIVE_DOCK = _show_fallback_dock(exc)
+        raise RuntimeError(f"Open Controller workbench UI setup failed: {exc}") from exc
 
 
 def _group_box(title: str, child: Any) -> Any:
@@ -435,32 +502,78 @@ def _group_box(title: str, child: Any) -> Any:
     if qtwidgets is None:
         return child
     group = qtwidgets.QGroupBox(title)
+    if hasattr(group, "setMinimumSize"):
+        group.setMinimumSize(0, 0)
+    set_size_policy(group, horizontal="preferred", vertical="preferred")
     layout = qtwidgets.QVBoxLayout(group)
+    layout.setContentsMargins(4, 4, 4, 4)
     layout.addWidget(child)
     return group
 
 
 def _show_in_dock(panel: ProductWorkbenchPanel) -> Any | None:
-    qtcore, _qtgui, qtwidgets = load_qt()
-    if Gui is None or qtcore is None or qtwidgets is None or not hasattr(Gui, "getMainWindow"):
-        if Gui is not None and hasattr(Gui, "Control"):
-            Gui.Control.showDialog(panel)
-        return None
-    main_window = Gui.getMainWindow()
-    dock = qtwidgets.QDockWidget("Open Controller", main_window)
-    dock.setObjectName("OCFWorkbenchV2Dock")
-    dock.setAllowedAreas(qtcore.Qt.LeftDockWidgetArea | qtcore.Qt.RightDockWidgetArea)
-    dock.setWidget(panel.widget)
-    main_window.addDockWidget(qtcore.Qt.RightDockWidgetArea, dock)
-    dock.show()
-    dock.raise_()
+    dock = create_or_reuse_dock("Open Controller", panel.widget)
+    if dock is None:
+        log_to_console("Qt dock support unavailable; Open Controller dock not created.", level="warning")
     return dock
 
 
 def _show_existing_dock(dock: Any | None) -> None:
-    if dock is None:
+    focus_dock(dock)
+
+
+def _show_fallback_dock(exc: Exception) -> Any | None:
+    _qtcore, _qtgui, qtwidgets = load_qt()
+    if qtwidgets is None:
+        return None
+    widget = qtwidgets.QWidget()
+    layout = qtwidgets.QVBoxLayout(widget)
+    title = qtwidgets.QLabel("Open Controller")
+    title.setStyleSheet("font-weight: 600;")
+    message = qtwidgets.QLabel("The workbench UI could not be built. Check the FreeCAD report view for details.")
+    message.setWordWrap(True)
+    details = qtwidgets.QLabel(f"{exc.__class__.__name__}: {exc}")
+    details.setWordWrap(True)
+    layout.addWidget(title)
+    layout.addWidget(message)
+    layout.addWidget(details)
+    log_to_console("Showing fallback Open Controller dock after UI build failure.", level="warning")
+    return create_or_reuse_dock("Open Controller", widget)
+
+
+def _bootstrap_document_if_needed(doc: Any) -> None:
+    if not _document_needs_bootstrap(doc):
         return
-    if hasattr(dock, "show"):
-        dock.show()
-    if hasattr(dock, "raise_"):
-        dock.raise_()
+    service = ControllerService()
+    service.create_controller(
+        doc,
+        {
+            "id": str(getattr(doc, "Name", "controller")).lower(),
+        },
+    )
+    log_to_console(
+        f"Bootstrapped default controller geometry in document '{getattr(doc, 'Name', '<unnamed>')}'."
+    )
+
+
+def _document_needs_bootstrap(doc: Any) -> bool:
+    if has_persisted_state(doc):
+        return False
+    objects = list(getattr(doc, "Objects", []))
+    if not objects:
+        return True
+    return False
+
+
+def reset_workbench_dock() -> bool:
+    global _ACTIVE_DOCK
+    global _ACTIVE_WORKBENCH
+
+    _ACTIVE_WORKBENCH = None
+    removed = remove_dock()
+    _ACTIVE_DOCK = None
+    if removed:
+        log_to_console("Open Controller dock reset.")
+    else:
+        log_to_console("Open Controller dock reset requested but no dock was present.", level="warning")
+    return removed

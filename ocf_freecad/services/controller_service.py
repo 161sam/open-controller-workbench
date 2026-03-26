@@ -232,6 +232,38 @@ class ControllerService:
                 return deepcopy(state)
         raise KeyError(f"Unknown component id: {component_id}")
 
+    def update_controller(
+        self,
+        doc: Any,
+        updates: dict[str, Any],
+    ) -> dict[str, Any]:
+        if not isinstance(updates, dict):
+            raise ValueError("Controller updates must be a mapping")
+        state = self.get_state(doc)
+        controller = state["controller"]
+        for field in ("width", "depth", "height", "top_thickness", "wall_thickness", "bottom_thickness"):
+            if field in updates and updates[field] is not None:
+                controller[field] = self._positive_float(updates[field], field)
+        for field in ("lid_inset", "inner_clearance"):
+            if field in updates and updates[field] is not None:
+                controller[field] = self._non_negative_float(updates[field], field)
+        surface_shape = updates.get("surface_shape")
+        corner_radius = updates.get("corner_radius")
+        if surface_shape is not None or corner_radius is not None:
+            controller["surface"] = self._updated_surface(
+                controller=controller,
+                current_surface=controller.get("surface"),
+                shape=surface_shape,
+                corner_radius=corner_radius,
+            )
+        self.save_state(doc, state)
+        _log_to_console(
+            f"Updated controller '{controller['id']}' to "
+            f"{controller['width']} x {controller['depth']} x {controller['height']} mm."
+        )
+        self.sync_document(doc)
+        return deepcopy(state)
+
     def update_component(
         self,
         doc: Any,
@@ -398,6 +430,49 @@ class ControllerService:
 
     def _build_component(self, component_data: dict[str, Any]) -> Component:
         return Component(**component_data)
+
+    def _positive_float(self, value: Any, field_name: str) -> float:
+        number = float(value)
+        if number <= 0.0:
+            raise ValueError(f"Controller field '{field_name}' must be greater than zero")
+        return number
+
+    def _non_negative_float(self, value: Any, field_name: str) -> float:
+        number = float(value)
+        if number < 0.0:
+            raise ValueError(f"Controller field '{field_name}' must not be negative")
+        return number
+
+    def _updated_surface(
+        self,
+        controller: dict[str, Any],
+        current_surface: Any,
+        shape: Any,
+        corner_radius: Any,
+    ) -> dict[str, Any] | None:
+        shape_name = str(shape or (current_surface or {}).get("shape") or "rectangle")
+        width = float(controller["width"])
+        depth = float(controller["depth"])
+        if shape_name in {"default", "none"}:
+            return None
+        if shape_name == "rectangle":
+            return {
+                "shape": "rectangle",
+                "width": width,
+                "height": depth,
+            }
+        if shape_name == "rounded_rect":
+            radius_value = corner_radius
+            if radius_value is None and isinstance(current_surface, dict):
+                radius_value = current_surface.get("corner_radius", 0.0)
+            radius = self._non_negative_float(radius_value or 0.0, "corner_radius")
+            return {
+                "shape": "rounded_rect",
+                "width": width,
+                "height": depth,
+                "corner_radius": radius,
+            }
+        raise ValueError(f"Unsupported surface shape '{shape_name}'")
 
     def _next_component_id(self, components: list[dict[str, Any]], component_type: str) -> str:
         prefix = {

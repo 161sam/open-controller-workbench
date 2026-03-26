@@ -67,6 +67,26 @@ def test_layout_components_constraints_and_info_panels_share_document_state():
     assert "Components: 4" in info_text
 
 
+def test_info_panel_updates_controller_geometry():
+    doc = FakeDocument()
+    service = ControllerService()
+    service.create_controller(doc, {"id": "demo", "width": 160.0, "depth": 100.0, "height": 30.0})
+    info_panel = InfoPanel(doc, controller_service=service)
+
+    info_panel.form["width"].setValue(190.0)
+    info_panel.form["depth"].setValue(120.0)
+    info_panel.form["surface_shape"].setCurrentIndex(1)
+    info_panel.form["corner_radius"].setValue(8.0)
+    info_panel.apply_controller_updates()
+
+    state = service.get_state(doc)
+
+    assert state["controller"]["width"] == 190.0
+    assert state["controller"]["depth"] == 120.0
+    assert state["controller"]["surface"]["shape"] == "rounded_rect"
+    assert state["controller"]["surface"]["corner_radius"] == 8.0
+
+
 def test_product_workbench_panel_orchestrates_iteration_flow():
     doc = FakeDocument()
     service = ControllerService()
@@ -87,3 +107,22 @@ def test_product_workbench_panel_orchestrates_iteration_flow():
     assert context["component_count"] == 5
     assert "Errors:" in constraints_text
     assert "Components: 5" in info_text
+
+
+def test_components_panel_saves_position_without_move_step():
+    doc = FakeDocument()
+    service = ControllerService()
+    service.create_controller(doc, {"id": "demo", "width": 160.0, "depth": 100.0, "height": 30.0})
+    service.add_component(doc, "omron_b3f_1000", component_id="btn1", x=10.0, y=10.0)
+    panel = ComponentsPanel(doc, controller_service=service)
+
+    panel.form["x"].setValue(42.0)
+    panel.form["y"].setValue(26.0)
+    panel.form["rotation"].setValue(15.0)
+    panel.update_selected_component()
+
+    component = service.get_component(doc, "btn1")
+
+    assert component["x"] == 42.0
+    assert component["y"] == 26.0
+    assert component["rotation"] == 15.0

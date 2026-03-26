@@ -4,6 +4,8 @@ from collections import Counter
 from typing import Any
 
 from ocf_freecad.gui.panels._common import (
+    configure_combo_box,
+    configure_text_panel,
     FallbackButton,
     FallbackCombo,
     FallbackLabel,
@@ -13,8 +15,10 @@ from ocf_freecad.gui.panels._common import (
     set_combo_items,
     set_enabled,
     set_label_text,
+    set_size_policy,
     set_text,
     text_value,
+    wrap_widget_in_scroll_area,
 )
 from ocf_freecad.gui.widgets.favorites_list import FavoritesListWidget
 from ocf_freecad.gui.widgets.preset_list import PresetListWidget
@@ -169,12 +173,12 @@ class CreatePanel:
             state = self.controller_service.create_from_variant(self.doc, variant_id)
             recent_name = f"{self.userdata_service.resolve_template_name(template_id)} / {self.userdata_service.resolve_variant_name(variant_id)}"
             self.userdata_service.record_recent(template_id=template_id, variant_id=variant_id, name=recent_name)
-            self._publish_status(f"Created controller from variant '{variant_id}'.")
+            self._publish_status(f"Created controller from variant '{variant_id}'. Review the setup below, then place components.")
         else:
             state = self.controller_service.create_from_template(self.doc, template_id)
             recent_name = self.userdata_service.resolve_template_name(template_id)
             self.userdata_service.record_recent(template_id=template_id, variant_id=None, name=recent_name)
-            self._publish_status(f"Created controller from template '{template_id}'.")
+            self._publish_status(f"Created controller from template '{template_id}'. Review the setup below, then place components.")
         self.refresh()
         if self.on_created is not None:
             self.on_created(state)
@@ -274,7 +278,7 @@ class CreatePanel:
         try:
             self.create_controller()
         except Exception as exc:
-            self._publish_status(str(exc))
+            self._publish_status(f"Could not create controller: {exc}")
 
     def handle_toggle_template_favorite(self) -> None:
         try:
@@ -561,45 +565,39 @@ def _build_form() -> dict[str, Any]:
             "favorite_variant_status": FallbackLabel(),
             "favorite_variant_button": FallbackButton("Toggle Variant Favorite"),
             "preview": FallbackText(),
-            "create_button": FallbackButton("Create Controller"),
+            "create_button": FallbackButton("Create Controller From Selection"),
             "status": FallbackLabel(),
         }
 
-    widget = qtwidgets.QWidget()
-    root = qtwidgets.QVBoxLayout(widget)
-    header = qtwidgets.QLabel("Create a controller from a template and optional variant.")
+    content = qtwidgets.QWidget()
+    root = qtwidgets.QVBoxLayout(content)
+    header = qtwidgets.QLabel("1. Choose a template. 2. Optionally choose a variant. 3. Create the controller and continue with setup below.")
     header.setWordWrap(True)
-    shortcuts = qtwidgets.QHBoxLayout()
+    shortcuts = qtwidgets.QVBoxLayout()
     shortcuts.addWidget(favorites_widget.widget)
     shortcuts.addWidget(recents_widget.widget)
     marketplace_box = qtwidgets.QGroupBox("Template Browser")
     marketplace_layout = qtwidgets.QVBoxLayout(marketplace_box)
-    marketplace_registry_row = qtwidgets.QHBoxLayout()
+    marketplace_controls = qtwidgets.QFormLayout()
     marketplace_registry_url = qtwidgets.QLineEdit()
     marketplace_refresh_button = qtwidgets.QPushButton("Refresh")
-    marketplace_registry_row.addWidget(qtwidgets.QLabel("Registry"))
-    marketplace_registry_row.addWidget(marketplace_registry_url, 1)
-    marketplace_registry_row.addWidget(marketplace_refresh_button)
-    marketplace_controls = qtwidgets.QHBoxLayout()
     marketplace_search = qtwidgets.QLineEdit()
     marketplace_filter = qtwidgets.QComboBox()
     marketplace_filter.addItems(["all", "local", "remote"])
-    marketplace_controls.addWidget(qtwidgets.QLabel("Search"))
-    marketplace_controls.addWidget(marketplace_search, 1)
-    marketplace_controls.addWidget(qtwidgets.QLabel("Filter"))
-    marketplace_controls.addWidget(marketplace_filter)
     marketplace_list = qtwidgets.QComboBox()
     marketplace_summary = qtwidgets.QLabel("No marketplace template selected.")
     marketplace_summary.setWordWrap(True)
     marketplace_details = qtwidgets.QPlainTextEdit()
-    marketplace_details.setReadOnly(True)
-    marketplace_details.setMaximumHeight(140)
-    marketplace_actions = qtwidgets.QHBoxLayout()
+    configure_text_panel(marketplace_details, max_height=120)
+    marketplace_actions = qtwidgets.QGridLayout()
     marketplace_apply_button = qtwidgets.QPushButton("Use Template")
     marketplace_details_button = qtwidgets.QPushButton("Show Details")
-    marketplace_actions.addWidget(marketplace_apply_button)
-    marketplace_actions.addWidget(marketplace_details_button)
-    marketplace_layout.addLayout(marketplace_registry_row)
+    marketplace_actions.addWidget(marketplace_refresh_button, 0, 0)
+    marketplace_actions.addWidget(marketplace_apply_button, 0, 1)
+    marketplace_actions.addWidget(marketplace_details_button, 1, 0, 1, 2)
+    marketplace_controls.addRow("Registry", marketplace_registry_url)
+    marketplace_controls.addRow("Search", marketplace_search)
+    marketplace_controls.addRow("Filter", marketplace_filter)
     marketplace_layout.addLayout(marketplace_controls)
     marketplace_layout.addWidget(marketplace_list)
     marketplace_layout.addWidget(marketplace_summary)
@@ -619,10 +617,30 @@ def _build_form() -> dict[str, Any]:
     favorite_variant_status.setWordWrap(True)
     favorite_variant_button = qtwidgets.QPushButton("Toggle Favorite")
     preview = qtwidgets.QPlainTextEdit()
-    preview.setReadOnly(True)
-    create_button = qtwidgets.QPushButton("Create Controller")
+    configure_text_panel(preview, max_height=140)
+    create_button = qtwidgets.QPushButton("Create Controller From Selection")
     status = qtwidgets.QLabel()
     status.setWordWrap(True)
+    for combo in (
+        favorites_widget.parts["combo"],
+        recents_widget.parts["combo"],
+        presets_widget.parts["combo"],
+        marketplace_filter,
+        marketplace_list,
+        template,
+        variant,
+    ):
+        configure_combo_box(combo)
+    for child in (
+        favorites_widget.widget,
+        recents_widget.widget,
+        presets_widget.widget,
+        marketplace_box,
+        template,
+        variant,
+        create_button,
+    ):
+        set_size_policy(child, horizontal="expanding", vertical="preferred")
     form.addRow("Template", template)
     form.addRow("", template_summary)
     form.addRow("", favorite_template_status)
@@ -639,6 +657,8 @@ def _build_form() -> dict[str, Any]:
     root.addWidget(presets_widget.widget)
     root.addWidget(create_button)
     root.addWidget(status)
+    root.addStretch(1)
+    widget = wrap_widget_in_scroll_area(content)
     return {
         "widget": widget,
         "favorites_widget": favorites_widget,

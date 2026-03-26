@@ -62,6 +62,35 @@ def test_move_component_updates_state():
     assert state["components"][0]["rotation"] == 15.0
 
 
+def test_update_controller_updates_geometry_fields():
+    service = ControllerService()
+    doc = FakeDocument()
+
+    service.create_controller(doc, {"id": "demo", "width": 160.0, "depth": 100.0, "height": 30.0})
+    state = service.update_controller(
+        doc,
+        {
+            "width": 180.0,
+            "depth": 110.0,
+            "height": 34.0,
+            "wall_thickness": 4.0,
+            "bottom_thickness": 5.0,
+            "top_thickness": 3.5,
+            "lid_inset": 2.0,
+            "inner_clearance": 0.5,
+            "surface_shape": "rounded_rect",
+            "corner_radius": 10.0,
+        },
+    )
+
+    assert state["controller"]["width"] == 180.0
+    assert state["controller"]["depth"] == 110.0
+    assert state["controller"]["height"] == 34.0
+    assert state["controller"]["wall_thickness"] == 4.0
+    assert state["controller"]["surface"]["shape"] == "rounded_rect"
+    assert state["controller"]["surface"]["corner_radius"] == 10.0
+
+
 def test_create_from_template_populates_metadata_and_components():
     service = ControllerService()
     doc = FakeDocument()
