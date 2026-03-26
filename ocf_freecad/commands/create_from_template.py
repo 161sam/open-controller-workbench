@@ -9,7 +9,10 @@ class CreateFromTemplateCommand(BaseCommand):
     ICON_NAME = "create_controller"
 
     def GetResources(self):
-        return self.resources("Create Controller", "Open the template and variant create workflow")
+        return self.resources(
+            "Create Controller",
+            "Create a new controller from a template or variant.",
+        )
 
     def Activated(self):
         try:

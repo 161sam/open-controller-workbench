@@ -8,7 +8,10 @@ class ToggleOverlayCommand(BaseCommand):
     ICON_NAME = "toggle_overlay"
 
     def GetResources(self):
-        return self.resources("Toggle Overlay", "Show or hide the visual controller overlay")
+        return self.resources(
+            "Overlay",
+            "Show or hide the controller overlay in the active view.",
+        )
 
     def Activated(self):
         try:

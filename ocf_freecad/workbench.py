@@ -32,7 +32,7 @@ _ACTIVE_DOCK: Any | None = None
 
 class OpenControllerWorkbench((Gui.Workbench if Gui is not None else object)):
     MenuText = "Open Controller"
-    ToolTip = "Modular MIDI Controller Design"
+    ToolTip = "Design modular MIDI controllers with templates, layout tools, and validation."
     Icon = icon_path("workbench")
 
     def GetClassName(self) -> str:
@@ -75,33 +75,48 @@ class OpenControllerWorkbench((Gui.Workbench if Gui is not None else object)):
         Gui.addCommand("OCF_DisablePlugin", DisablePluginCommand())
         Gui.addCommand("OCF_ReloadPlugins", ReloadPluginsCommand())
 
-        create_commands = ["OCF_CreateController"]
-        edit_commands = [
+        project_commands = ["OCF_CreateController"]
+        component_commands = [
             "OCF_AddComponent",
             "OCF_SelectComponent",
+        ]
+        layout_commands = [
             "OCF_ApplyLayout",
+            "OCF_MoveComponentInteractive",
+            "OCF_SnapToGrid",
+        ]
+        validate_commands = [
             "OCF_ValidateConstraints",
             "OCF_ToggleOverlay",
             "OCF_ShowConstraintOverlay",
-            "OCF_MoveComponentInteractive",
-            "OCF_SnapToGrid",
             "OCF_ToggleMeasurements",
             "OCF_ToggleConflictLines",
             "OCF_ToggleConstraintLabels",
         ]
         plugin_commands = [
             "OCF_OpenPluginManager",
+        ]
+        plugin_advanced_commands = [
             "OCF_EnablePlugin",
             "OCF_DisablePlugin",
             "OCF_ReloadPlugins",
         ]
-        self.appendToolbar("OCF Create", create_commands)
-        self.appendToolbar("OCF Edit", edit_commands)
-        self.appendToolbar("OCF Plugins", plugin_commands)
-        self.appendMenu("OCF", create_commands + edit_commands + plugin_commands)
-        self.appendMenu("OCF/Create", create_commands)
-        self.appendMenu("OCF/Edit", edit_commands)
+        self.appendToolbar("OCF Project", project_commands)
+        self.appendToolbar("OCF Components", component_commands)
+        self.appendToolbar("OCF Layout", layout_commands)
+        self.appendToolbar("OCF Validate", validate_commands[:3])
+        self.appendToolbar("OCF Tools", plugin_commands)
+        self.appendMenu(
+            "OCF",
+            project_commands + component_commands + layout_commands + validate_commands[:1] + plugin_commands,
+        )
+        self.appendMenu("OCF/Create", project_commands)
+        self.appendMenu("OCF/Components", component_commands)
+        self.appendMenu("OCF/Layout", layout_commands)
+        self.appendMenu("OCF/View", validate_commands[1:])
+        self.appendMenu("OCF/Validate", validate_commands[:1] + validate_commands[2:])
         self.appendMenu("OCF/Plugins", plugin_commands)
+        self.appendMenu("OCF/Plugins/Advanced", plugin_advanced_commands)
 
     def Activated(self) -> None:
         if App is None:

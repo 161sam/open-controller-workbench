@@ -59,8 +59,8 @@ class LayoutPanel:
         self.form["grid_mm"].setValue(float(settings["grid_mm"]))
         layout = context.get("layout") or {}
         if not layout:
-            set_text(self.form["summary"], "No auto layout result yet.")
-            set_label_text(self.form["status"], "No layout has been applied yet.")
+            set_text(self.form["summary"], "No layout has been applied yet.")
+            set_label_text(self.form["status"], "Run Auto Layout after adding or moving components.")
             return
         summary = layout.get("result_summary", {})
         config = layout.get("config", {})
@@ -234,10 +234,10 @@ def _build_form() -> dict[str, Any]:
             "spacing_mm": FallbackValue(24.0),
             "padding_mm": FallbackValue(8.0),
             "apply_button": FallbackButton("Apply Auto Layout"),
-            "rerun_button": FallbackButton("Re-run Layout"),
+            "rerun_button": FallbackButton("Run Again"),
             "overlay_button": FallbackButton("Toggle Overlay"),
             "constraint_overlay_button": FallbackButton("Constraint Overlay"),
-            "snap_button": FallbackButton("Toggle Snap"),
+            "snap_button": FallbackButton("Snap"),
             "measurements_button": FallbackButton("Measurements"),
             "conflict_lines_button": FallbackButton("Conflict Lines"),
             "constraint_labels_button": FallbackButton("Constraint Labels"),
@@ -248,7 +248,7 @@ def _build_form() -> dict[str, Any]:
 
     widget = qtwidgets.QWidget()
     layout = qtwidgets.QVBoxLayout(widget)
-    intro = qtwidgets.QLabel("Run the current layout preset again after each controller change.")
+    intro = qtwidgets.QLabel("Arrange components, control the grid, and inspect the overlay.")
     intro.setWordWrap(True)
     form = qtwidgets.QFormLayout()
     preset = qtwidgets.QComboBox()
@@ -263,10 +263,10 @@ def _build_form() -> dict[str, Any]:
     spacing_mm.setValue(24.0)
     padding_mm.setValue(8.0)
     apply_button = qtwidgets.QPushButton("Apply Auto Layout")
-    rerun_button = qtwidgets.QPushButton("Re-run Layout")
+    rerun_button = qtwidgets.QPushButton("Run Again")
     overlay_button = qtwidgets.QPushButton("Toggle Overlay")
     constraint_overlay_button = qtwidgets.QPushButton("Constraint Overlay")
-    snap_button = qtwidgets.QPushButton("Toggle Snap")
+    snap_button = qtwidgets.QPushButton("Snap")
     measurements_button = qtwidgets.QPushButton("Measurements")
     conflict_lines_button = qtwidgets.QPushButton("Conflict Lines")
     constraint_labels_button = qtwidgets.QPushButton("Constraint Labels")

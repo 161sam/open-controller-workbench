@@ -9,8 +9,8 @@ class ToggleConflictLinesCommand(BaseCommand):
 
     def GetResources(self):
         return self.resources(
-            "Toggle Conflict Lines",
-            "Show or hide conflict connection lines in the constraint overlay",
+            "Conflict Lines",
+            "Show or hide conflict connection lines in the overlay.",
         )
 
     def Activated(self):

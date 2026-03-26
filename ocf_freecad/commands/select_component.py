@@ -9,7 +9,10 @@ class SelectComponentCommand(BaseCommand):
     ICON_NAME = "select_component"
 
     def GetResources(self):
-        return self.resources("Components", "Open the components panel for selection and editing")
+        return self.resources(
+            "Component Manager",
+            "Review, edit, and reposition components in the current controller.",
+        )
 
     def Activated(self):
         try:

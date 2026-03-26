@@ -39,13 +39,13 @@ class ConstraintsPanel:
         if isinstance(validation, dict):
             self._render_report(validation)
         else:
-            set_text(self.form["results"], "Run validation to inspect layout issues.")
-            set_label_text(self.form["status"], "No validation report yet.")
+            set_text(self.form["results"], "Run validation to check spacing, edge distance, and placement issues.")
+            set_label_text(self.form["status"], "No validation results yet.")
 
     def validate(self) -> dict[str, Any]:
         report = self.controller_service.validate_layout(self.doc)
         self._render_report(report)
-        self._publish_status("Validation finished.")
+        self._publish_status("Validation complete.")
         if self.on_validated is not None:
             self.on_validated(report)
         return report
@@ -112,7 +112,7 @@ def _build_form() -> dict[str, Any]:
 
     widget = qtwidgets.QWidget()
     layout = qtwidgets.QVBoxLayout(widget)
-    intro = qtwidgets.QLabel("Check errors and warnings before exporting or iterating further.")
+    intro = qtwidgets.QLabel("Review spacing, edge distance, and placement issues before the next iteration.")
     intro.setWordWrap(True)
     validate_button = qtwidgets.QPushButton("Validate Layout")
     results = qtwidgets.QPlainTextEdit()

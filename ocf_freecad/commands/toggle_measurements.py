@@ -8,7 +8,10 @@ class ToggleMeasurementsCommand(BaseCommand):
     ICON_NAME = "measurements"
 
     def GetResources(self):
-        return self.resources("Toggle Measurements", "Show or hide measurement markers in the constraint overlay")
+        return self.resources(
+            "Measurements",
+            "Show or hide measurement markers in the overlay.",
+        )
 
     def Activated(self):
         try:

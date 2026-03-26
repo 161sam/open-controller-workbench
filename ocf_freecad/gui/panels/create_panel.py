@@ -346,7 +346,7 @@ class CreatePanel:
     def _build_preview(self) -> str:
         template_id = self.selected_template_id()
         if not template_id:
-            return "Select a template to see the controller preview."
+            return "Start by choosing a template to preview the controller."
         variant_id = self.selected_variant_id()
         if variant_id:
             project = self.variant_service.generate_from_variant(variant_id)
@@ -395,34 +395,34 @@ class CreatePanel:
         template_id = self.selected_template_id()
         template = next((item["template"] for item in self._templates if item["template"]["id"] == template_id), None)
         if template is None:
-            set_label_text(self.form["template_summary"], "Choose a template to start.")
-            set_label_text(self.form["favorite_template_status"], "Template favorite: no selection")
+            set_label_text(self.form["template_summary"], "Choose a template to begin a new controller.")
+            set_label_text(self.form["favorite_template_status"], "Favorite: no template selected")
             return
         description = template.get("description") or "No template description available."
         is_favorite = self.userdata_service.is_favorite("template", template_id)
         set_label_text(self.form["template_summary"], f"{template['name']}: {description}")
         set_label_text(
             self.form["favorite_template_status"],
-            f"Template favorite: {'yes' if is_favorite else 'no'}",
+            f"Favorite: {'yes' if is_favorite else 'no'}",
         )
 
     def _set_variant_summary(self) -> None:
         variant_id = self.selected_variant_id()
         if not variant_id:
             set_label_text(self.form["variant_summary"], "Template defaults are active.")
-            set_label_text(self.form["favorite_variant_status"], "Variant favorite: n/a")
+            set_label_text(self.form["favorite_variant_status"], "Favorite: n/a")
             return
         variant = next((item["variant"] for item in self._variants if item["variant"]["id"] == variant_id), None)
         if variant is None:
-            set_label_text(self.form["variant_summary"], "Selected variant is not available.")
-            set_label_text(self.form["favorite_variant_status"], "Variant favorite: unavailable")
+            set_label_text(self.form["variant_summary"], "The selected variant is not available.")
+            set_label_text(self.form["favorite_variant_status"], "Favorite: unavailable")
             return
         description = variant.get("description") or "No variant description available."
         is_favorite = self.userdata_service.is_favorite("variant", variant_id)
         set_label_text(self.form["variant_summary"], f"{variant['name']}: {description}")
         set_label_text(
             self.form["favorite_variant_status"],
-            f"Variant favorite: {'yes' if is_favorite else 'no'}",
+            f"Favorite: {'yes' if is_favorite else 'no'}",
         )
 
     def _refresh_shortcuts(self) -> None:
@@ -471,7 +471,7 @@ class CreatePanel:
         entry = self.selected_marketplace_entry()
         if entry is None:
             set_label_text(self.form["marketplace_summary"], "No marketplace template selected.")
-            set_text(self.form["marketplace_details"], "Use search or filters to inspect local and remote templates.")
+            set_text(self.form["marketplace_details"], "Browse local and remote templates to compare options before you create.")
             set_enabled(self.form["marketplace_apply_button"], False)
             set_enabled(self.form["marketplace_details_button"], False)
             return
@@ -572,7 +572,7 @@ def _build_form() -> dict[str, Any]:
     shortcuts = qtwidgets.QHBoxLayout()
     shortcuts.addWidget(favorites_widget.widget)
     shortcuts.addWidget(recents_widget.widget)
-    marketplace_box = qtwidgets.QGroupBox("Template Marketplace")
+    marketplace_box = qtwidgets.QGroupBox("Template Browser")
     marketplace_layout = qtwidgets.QVBoxLayout(marketplace_box)
     marketplace_registry_row = qtwidgets.QHBoxLayout()
     marketplace_registry_url = qtwidgets.QLineEdit()
@@ -595,8 +595,8 @@ def _build_form() -> dict[str, Any]:
     marketplace_details.setReadOnly(True)
     marketplace_details.setMaximumHeight(140)
     marketplace_actions = qtwidgets.QHBoxLayout()
-    marketplace_apply_button = qtwidgets.QPushButton("Apply")
-    marketplace_details_button = qtwidgets.QPushButton("Details")
+    marketplace_apply_button = qtwidgets.QPushButton("Use Template")
+    marketplace_details_button = qtwidgets.QPushButton("Show Details")
     marketplace_actions.addWidget(marketplace_apply_button)
     marketplace_actions.addWidget(marketplace_details_button)
     marketplace_layout.addLayout(marketplace_registry_row)
@@ -611,13 +611,13 @@ def _build_form() -> dict[str, Any]:
     template_summary.setWordWrap(True)
     favorite_template_status = qtwidgets.QLabel()
     favorite_template_status.setWordWrap(True)
-    favorite_template_button = qtwidgets.QPushButton("Toggle Template Favorite")
+    favorite_template_button = qtwidgets.QPushButton("Toggle Favorite")
     variant = qtwidgets.QComboBox()
     variant_summary = qtwidgets.QLabel()
     variant_summary.setWordWrap(True)
     favorite_variant_status = qtwidgets.QLabel()
     favorite_variant_status.setWordWrap(True)
-    favorite_variant_button = qtwidgets.QPushButton("Toggle Variant Favorite")
+    favorite_variant_button = qtwidgets.QPushButton("Toggle Favorite")
     preview = qtwidgets.QPlainTextEdit()
     preview.setReadOnly(True)
     create_button = qtwidgets.QPushButton("Create Controller")

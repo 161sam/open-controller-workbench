@@ -8,7 +8,10 @@ class MoveComponentInteractiveCommand(BaseCommand):
     ICON_NAME = "move_component"
 
     def GetResources(self):
-        return self.resources("Move Component", "Arm move mode for the selected component")
+        return self.resources(
+            "Move Component",
+            "Arm move mode for the currently selected component.",
+        )
 
     def Activated(self):
         try:

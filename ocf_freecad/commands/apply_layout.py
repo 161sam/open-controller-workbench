@@ -8,7 +8,10 @@ class ApplyLayoutCommand(BaseCommand):
     ICON_NAME = "apply_layout"
 
     def GetResources(self):
-        return self.resources("Apply Auto Layout", "Open the layout panel and apply auto layout")
+        return self.resources(
+            "Auto Layout",
+            "Arrange the current components using the active layout preset.",
+        )
 
     def Activated(self):
         try:

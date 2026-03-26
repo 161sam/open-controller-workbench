@@ -9,7 +9,10 @@ class AddComponentCommand(BaseCommand):
     ICON_NAME = "add_component"
 
     def GetResources(self):
-        return self.resources("Add Component", "Open the components panel with library picker")
+        return self.resources(
+            "Add Component",
+            "Add a component from the library to the current controller.",
+        )
 
     def Activated(self):
         try:

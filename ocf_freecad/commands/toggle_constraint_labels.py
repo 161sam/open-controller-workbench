@@ -9,8 +9,8 @@ class ToggleConstraintLabelsCommand(BaseCommand):
 
     def GetResources(self):
         return self.resources(
-            "Toggle Constraint Labels",
-            "Show or hide textual labels for constraint feedback",
+            "Constraint Labels",
+            "Show or hide text labels for validation feedback.",
         )
 
     def Activated(self):

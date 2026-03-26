@@ -8,7 +8,10 @@ class SnapToGridCommand(BaseCommand):
     ICON_NAME = "snap_to_grid"
 
     def GetResources(self):
-        return self.resources("Snap To Grid", "Snap the selected component to the active grid")
+        return self.resources(
+            "Snap To Grid",
+            "Snap the selected component to the current grid.",
+        )
 
     def Activated(self):
         try:

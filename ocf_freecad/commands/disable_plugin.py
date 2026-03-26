@@ -8,7 +8,10 @@ class DisablePluginCommand(BaseCommand):
     ICON_NAME = "plugin_disable"
 
     def GetResources(self):
-        return self.resources("Disable Selected Plugin", "Disable the selected plugin in the plugin manager")
+        return self.resources(
+            "Disable Plugin",
+            "Disable the selected plugin in the Plugin Manager.",
+        )
 
     def Activated(self):
         try:

@@ -8,7 +8,10 @@ class EnablePluginCommand(BaseCommand):
     ICON_NAME = "plugin_enable"
 
     def GetResources(self):
-        return self.resources("Enable Selected Plugin", "Enable the selected plugin in the plugin manager")
+        return self.resources(
+            "Enable Plugin",
+            "Enable the selected plugin in the Plugin Manager.",
+        )
 
     def Activated(self):
         try:

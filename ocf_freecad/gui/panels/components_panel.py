@@ -72,10 +72,10 @@ class ComponentsPanel:
             self.load_selected_component()
             move_mode = self.interaction_service.get_settings(self.doc).get("move_component_id")
             suffix = f" Move armed: {move_mode}." if move_mode else ""
-            set_label_text(self.form["status"], f"{len(labels)} components loaded.{suffix}")
+            set_label_text(self.form["status"], f"{len(labels)} components ready.{suffix}")
         else:
-            set_text(self.form["details"], "No components in controller.")
-            set_label_text(self.form["status"], "Add a component from the library to continue.")
+            set_text(self.form["details"], "No components in this controller yet.")
+            set_label_text(self.form["status"], "Add a component from the library to start building the controller.")
 
     def refresh_add_library(self) -> None:
         categories = sorted({item["category"] for item in self.library_service.list_by_category()})
@@ -267,16 +267,16 @@ def _build_form() -> dict[str, Any]:
             "y": FallbackValue(0.0),
             "rotation": FallbackValue(0.0),
             "library_ref": FallbackText(),
-            "update_button": FallbackButton("Update Component"),
+            "update_button": FallbackButton("Apply Changes"),
             "arm_move_button": FallbackButton("Arm Move"),
-            "move_button": FallbackButton("Move Selected"),
+            "move_button": FallbackButton("Move To Position"),
             "snap_button": FallbackButton("Snap To Grid"),
             "add_category": FallbackCombo(["all"]),
             "add_component": FallbackCombo(),
             "add_x": FallbackValue(10.0),
             "add_y": FallbackValue(10.0),
             "add_rotation": FallbackValue(0.0),
-            "add_button": FallbackButton("Add Component"),
+            "add_button": FallbackButton("Add To Controller"),
             "details": FallbackText(),
             "status": FallbackLabel(),
         }
@@ -290,9 +290,9 @@ def _build_form() -> dict[str, Any]:
     y = qtwidgets.QDoubleSpinBox()
     rotation = qtwidgets.QDoubleSpinBox()
     library_ref = qtwidgets.QLineEdit()
-    update_button = qtwidgets.QPushButton("Update Component")
+    update_button = qtwidgets.QPushButton("Apply Changes")
     arm_move_button = qtwidgets.QPushButton("Arm Move")
-    move_button = qtwidgets.QPushButton("Move Selected")
+    move_button = qtwidgets.QPushButton("Move To Position")
     snap_button = qtwidgets.QPushButton("Snap To Grid")
     for spinbox in (x, y, rotation):
         spinbox.setRange(-1000.0, 1000.0)
@@ -308,14 +308,14 @@ def _build_form() -> dict[str, Any]:
     selector_layout.addRow("Rotation", rotation)
     selector_layout.addRow("Library Ref", library_ref)
     selector_layout.addRow("", selector_actions)
-    add_box = qtwidgets.QGroupBox("Add Component")
+    add_box = qtwidgets.QGroupBox("Add From Library")
     add_layout = qtwidgets.QFormLayout(add_box)
     add_category = qtwidgets.QComboBox()
     add_component = qtwidgets.QComboBox()
     add_x = qtwidgets.QDoubleSpinBox()
     add_y = qtwidgets.QDoubleSpinBox()
     add_rotation = qtwidgets.QDoubleSpinBox()
-    add_button = qtwidgets.QPushButton("Add Component")
+    add_button = qtwidgets.QPushButton("Add To Controller")
     for spinbox in (add_x, add_y, add_rotation):
         spinbox.setRange(-1000.0, 1000.0)
         spinbox.setDecimals(2)

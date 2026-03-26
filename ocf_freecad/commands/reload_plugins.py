@@ -8,7 +8,10 @@ class ReloadPluginsCommand(BaseCommand):
     ICON_NAME = "plugin_reload"
 
     def GetResources(self):
-        return self.resources("Refresh Plugins", "Re-scan plugin manifests and rebuild plugin status")
+        return self.resources(
+            "Refresh Plugins",
+            "Rescan plugin packs and refresh their status.",
+        )
 
     def Activated(self):
         try:

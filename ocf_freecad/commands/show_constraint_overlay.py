@@ -8,7 +8,10 @@ class ShowConstraintOverlayCommand(BaseCommand):
     ICON_NAME = "constraint_overlay"
 
     def GetResources(self):
-        return self.resources("Constraint Overlay", "Toggle constraint warnings and errors in the overlay")
+        return self.resources(
+            "Constraint Overlay",
+            "Show or hide validation warnings and errors in the overlay.",
+        )
 
     def Activated(self):
         try:

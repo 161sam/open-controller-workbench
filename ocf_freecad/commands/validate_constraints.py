@@ -9,7 +9,10 @@ class ValidateConstraintsCommand(BaseCommand):
     ICON_NAME = "validate_constraints"
 
     def GetResources(self):
-        return self.resources("Validate Constraints", "Open the constraint feedback panel")
+        return self.resources(
+            "Validate Layout",
+            "Validate spacing, edge distance, and placement constraints.",
+        )
 
     def Activated(self):
         try:
