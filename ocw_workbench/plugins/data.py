@@ -30,6 +30,14 @@ def normalize_component_payload(payload: dict[str, Any], source: Path, plugin_id
         "electrical": _normalize_electrical(electrical),
         "pcb": pcb,
         "ocf": _normalize_ocf(ocf, component_type, ui),
+        "ui": _normalize_component_ui(
+            ui,
+            category=str(payload.get("category") or component_type),
+            description=str(payload.get("description") or ui.get("label") or component_id),
+            component_id=qualify_id(plugin_id, component_id),
+            tags=[str(item) for item in tags or []],
+            source=source,
+        ),
     }
     return normalized
 
@@ -221,6 +229,29 @@ def _normalize_ocf(ocf: dict[str, Any], component_type: str, ui: dict[str, Any])
     if "category" in ui and "ui_category" not in normalized:
         normalized["ui_category"] = str(ui["category"])
     return normalized
+
+
+def _normalize_component_ui(
+    ui: dict[str, Any],
+    *,
+    category: str,
+    description: str,
+    component_id: str,
+    tags: list[str],
+    source: Path,
+) -> dict[str, Any]:
+    icon = ui.get("icon")
+    if icon is not None and not isinstance(icon, str):
+        raise ValueError(f"Component '{component_id}' field 'ui.icon' must be a string in {source}")
+    ui_tags = ui.get("tags")
+    if ui_tags is not None and not isinstance(ui_tags, list):
+        raise ValueError(f"Component '{component_id}' field 'ui.tags' must be a list in {source}")
+    return {
+        "label": str(ui.get("label") or description or component_id),
+        "icon": str(icon or "generic.svg"),
+        "category": str(ui.get("category") or category),
+        "tags": [str(item) for item in (ui_tags or tags)],
+    }
 
 
 def _normalize_mechanical(mechanical: dict[str, Any]) -> dict[str, Any]:

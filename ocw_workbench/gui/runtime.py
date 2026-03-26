@@ -21,6 +21,16 @@ def icon_path(name: str) -> str:
     return str(fallback)
 
 
+def component_icon_path(filename: str | None = None) -> str:
+    icons_root = repo_root() / "resources" / "icons" / "components"
+    fallback = icons_root / "generic.svg"
+    if isinstance(filename, str) and filename.strip():
+        candidate = icons_root / filename.strip()
+        if candidate.exists():
+            return str(candidate)
+    return str(fallback)
+
+
 def show_error(title: str, exc: Exception | str) -> None:
     message = str(exc)
     details = traceback.format_exc() if isinstance(exc, Exception) else ""

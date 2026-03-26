@@ -89,6 +89,16 @@ class ComponentLibraryManager:
                 raise ValueError(
                     f"Missing required field '{field}' in component '{component_id}' from {source}"
                 )
+        ui = component.get("ui", {})
+        if ui is not None and not isinstance(ui, dict):
+            raise ValueError(f"Component '{component_id}' field 'ui' must be a mapping in {source}")
+        if isinstance(ui, dict):
+            icon = ui.get("icon")
+            if icon is not None and not isinstance(icon, str):
+                raise ValueError(f"Component '{component_id}' field 'ui.icon' must be a string in {source}")
+            ui_tags = ui.get("tags")
+            if ui_tags is not None and not isinstance(ui_tags, list):
+                raise ValueError(f"Component '{component_id}' field 'ui.tags' must be a list in {source}")
 
     def _ensure_loaded(self) -> None:
         current_revision = 0 if self.base_path is not None else get_plugin_service_revision()
@@ -134,14 +144,14 @@ class ComponentLibraryManager:
                 if not component_id or not isinstance(component_id, str):
                     raise ValueError(f"Component without valid 'id' in {yaml_file}")
                 self._validate_component_shape(component, yaml_file)
-                loaded.append(deepcopy(component))
+                loaded.append(self._normalize_component_metadata(component))
             return loaded
 
         if plugin_id is None:
             raise ValueError(f"Component file {yaml_file} does not define legacy 'components' list")
         component = normalize_component_payload(payload, yaml_file, plugin_id)
         self._validate_component_shape(component, yaml_file)
-        return [component]
+        return [self._normalize_component_metadata(component)]
 
     def _register_alias(self, aliases: dict[str, str], alias: str, component_id: str) -> None:
         existing = aliases.get(alias)
@@ -150,3 +160,24 @@ class ComponentLibraryManager:
             return
         if existing != component_id:
             aliases.pop(alias, None)
+
+    def _normalize_component_metadata(self, component: dict[str, Any]) -> dict[str, Any]:
+        normalized = deepcopy(component)
+        tags = normalized.get("tags", [])
+        if not isinstance(tags, list):
+            tags = []
+        category = str(normalized.get("category") or "component")
+        description = str(normalized.get("description") or normalized.get("id") or "")
+        component_id = str(normalized.get("id") or "")
+        ui = normalized.get("ui", {})
+        if not isinstance(ui, dict):
+            ui = {}
+        ui_tags = ui.get("tags")
+        normalized["ui"] = {
+            "label": str(ui.get("label") or description or component_id),
+            "icon": str(ui.get("icon") or "generic.svg"),
+            "category": str(ui.get("category") or category),
+            "tags": [str(item) for item in (ui_tags if isinstance(ui_tags, list) else tags)],
+        }
+        normalized["tags"] = [str(item) for item in tags]
+        return normalized

@@ -11,6 +11,13 @@ components:
       - "i2c"
       - "128x64"
       - "adafruit"
+    ui:
+      label: "OLED Display"
+      icon: "display.svg"
+      category: "displays"
+      tags:
+        - "screen"
+        - "status"
     mechanical:
       breakout_size_mm:
         width: 29.2

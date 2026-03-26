@@ -9,6 +9,7 @@
 ## Phase 2 – Workbench
 - Project Wizard
 - Import/Export Commands
+- Drag&Drop placement next
 
 ## Phase 3 – Core
 - Schema Mapping

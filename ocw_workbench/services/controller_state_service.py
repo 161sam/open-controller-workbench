@@ -47,6 +47,8 @@ DEFAULT_META = {
         "constraint_labels_enabled": True,
         "show_warnings": True,
         "show_errors": True,
+        "active_component_template_id": None,
+        "favorite_component_template_ids": [],
     },
 }
 

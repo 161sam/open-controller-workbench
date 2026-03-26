@@ -10,6 +10,13 @@ components:
       - "vertical"
       - "11mm"
       - "alps"
+    ui:
+      label: "Encoder"
+      icon: "encoder.svg"
+      category: "controls"
+      tags:
+        - "knob"
+        - "rotate"
     mechanical:
       body_size_mm:
         width: 11.0
@@ -70,6 +77,13 @@ components:
       - "incremental"
       - "push"
       - "ec11"
+    ui:
+      label: "Encoder Push"
+      icon: "encoder.svg"
+      category: "controls"
+      tags:
+        - "knob"
+        - "press"
     mechanical:
       body_size_mm:
         width: 12.0

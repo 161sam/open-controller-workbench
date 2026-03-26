@@ -9,6 +9,13 @@ components:
       - "mpc"
       - "performance"
       - "square"
+    ui:
+      label: "Pad 30 mm"
+      icon: "pad.svg"
+      category: "performance"
+      tags:
+        - "trigger"
+        - "drum"
     mechanical:
       body_size_mm:
         width: 32.0

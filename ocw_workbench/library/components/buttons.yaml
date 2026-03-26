@@ -10,6 +10,13 @@ components:
       - "through-hole"
       - "6x6"
       - "omron"
+    ui:
+      label: "Button"
+      icon: "button.svg"
+      category: "controls"
+      tags:
+        - "press"
+        - "trigger"
     mechanical:
       body_size_mm:
         width: 6.0

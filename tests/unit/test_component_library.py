@@ -106,3 +106,19 @@ def test_data_plugin_component_alias_resolves_unique_short_id():
 
     assert component["id"] == "basic_components_pack.rotary_encoder_12mm"
     assert component["category"] == "encoder"
+
+
+def test_component_library_normalizes_ui_metadata_and_fallback_icon():
+    manager = ComponentLibraryManager()
+
+    button = manager.get_component("omron_b3f_1000")
+    plugin_encoder = manager.get_component("rotary_encoder_12mm")
+    rgb_button = manager.get_component("generic_rgb_arcade_button_24mm")
+
+    assert button["ui"]["icon"] == "button.svg"
+    assert button["ui"]["category"] == "controls"
+    assert "press" in button["ui"]["tags"]
+    assert plugin_encoder["ui"]["icon"] == "encoder.svg"
+    assert plugin_encoder["ui"]["category"] == "controls"
+    assert rgb_button["ui"]["icon"] == "generic.svg"
+    assert rgb_button["ui"]["category"] == "rgb_button"

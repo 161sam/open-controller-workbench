@@ -20,3 +20,4 @@ electrical:
 ui:
   label: "Encoder"
   category: "controls"
+  icon: "encoder.svg"

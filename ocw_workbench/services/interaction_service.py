@@ -17,6 +17,8 @@ DEFAULT_UI_SETTINGS = {
     "constraint_labels_enabled": True,
     "show_warnings": True,
     "show_errors": True,
+    "active_component_template_id": None,
+    "favorite_component_template_ids": [],
 }
 
 
@@ -60,6 +62,22 @@ class InteractionService:
 
     def set_grid(self, doc: Any, grid_mm: float) -> dict[str, Any]:
         return self.update_settings(doc, {"grid_mm": float(grid_mm)})
+
+    def set_active_component_template(self, doc: Any, template_id: str | None) -> dict[str, Any]:
+        if template_id is not None:
+            self.controller_service.library_service.get(template_id)
+        return self.update_settings(doc, {"active_component_template_id": template_id})
+
+    def toggle_favorite_component_template(self, doc: Any, template_id: str) -> dict[str, Any]:
+        self.controller_service.library_service.get(template_id)
+        settings = self.get_settings(doc)
+        favorites = [str(item) for item in settings.get("favorite_component_template_ids", []) if item]
+        if template_id in favorites:
+            favorites = [item for item in favorites if item != template_id]
+        else:
+            favorites.append(template_id)
+        favorites.sort()
+        return self.update_settings(doc, {"favorite_component_template_ids": favorites})
 
     def arm_move(self, doc: Any, component_id: str | None = None) -> dict[str, Any]:
         selection = component_id or self.controller_service.get_ui_context(doc).get("selection")

@@ -19,3 +19,4 @@ electrical:
 ui:
   label: "Button"
   category: "controls"
+  icon: "button.svg"

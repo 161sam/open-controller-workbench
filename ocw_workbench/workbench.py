@@ -17,6 +17,7 @@ from ocw_workbench.gui.docking import create_or_reuse_dock, focus_dock, remove_d
 from ocw_workbench.gui.feedback import apply_status_message, format_toggle_message, format_validation_message
 from ocw_workbench.gui.overlay.renderer import OverlayRenderer
 from ocw_workbench.gui.panels._common import FallbackLabel, load_qt, log_exception, log_to_console, set_label_text, set_size_policy
+from ocw_workbench.gui.panels.component_palette_panel import ComponentPalettePanel
 from ocw_workbench.gui.panels.components_panel import ComponentsPanel
 from ocw_workbench.gui.panels.constraints_panel import ConstraintsPanel
 from ocw_workbench.gui.panels.create_panel import CreatePanel
@@ -32,6 +33,8 @@ from ocw_workbench.services.overlay_service import OverlayService
 
 _ACTIVE_WORKBENCH: ProductWorkbenchPanel | None = None
 _ACTIVE_DOCK: Any | None = None
+_ACTIVE_COMPONENT_PALETTE: ComponentPalettePanel | None = None
+_ACTIVE_COMPONENT_PALETTE_DOCK: Any | None = None
 
 
 class _LoggedCommand:
@@ -72,6 +75,7 @@ class OpenControllerWorkbench((Gui.Workbench if Gui is not None else object)):
         from ocw_workbench.commands.enable_plugin import EnablePluginCommand
         from ocw_workbench.commands.move_component_interactive import MoveComponentInteractiveCommand
         from ocw_workbench.commands.open_plugin_manager import OpenPluginManagerCommand
+        from ocw_workbench.commands.open_component_palette import OpenComponentPaletteCommand
         from ocw_workbench.commands.reload_plugins import ReloadPluginsCommand
         from ocw_workbench.commands.select_component import SelectComponentCommand
         from ocw_workbench.commands.show_constraint_overlay import ShowConstraintOverlayCommand
@@ -95,6 +99,7 @@ class OpenControllerWorkbench((Gui.Workbench if Gui is not None else object)):
         Gui.addCommand("OCW_ToggleConflictLines", _LoggedCommand("OCW_ToggleConflictLines", ToggleConflictLinesCommand()))
         Gui.addCommand("OCW_ToggleConstraintLabels", _LoggedCommand("OCW_ToggleConstraintLabels", ToggleConstraintLabelsCommand()))
         Gui.addCommand("OCW_OpenPluginManager", _LoggedCommand("OCW_OpenPluginManager", OpenPluginManagerCommand()))
+        Gui.addCommand("OCW_OpenComponentPalette", _LoggedCommand("OCW_OpenComponentPalette", OpenComponentPaletteCommand()))
         Gui.addCommand("OCW_EnablePlugin", _LoggedCommand("OCW_EnablePlugin", EnablePluginCommand()))
         Gui.addCommand("OCW_DisablePlugin", _LoggedCommand("OCW_DisablePlugin", DisablePluginCommand()))
         Gui.addCommand("OCW_ReloadPlugins", _LoggedCommand("OCW_ReloadPlugins", ReloadPluginsCommand()))
@@ -103,6 +108,7 @@ class OpenControllerWorkbench((Gui.Workbench if Gui is not None else object)):
         component_commands = [
             "OCW_AddComponent",
             "OCW_SelectComponent",
+            "OCW_OpenComponentPalette",
         ]
         layout_commands = [
             "OCW_ApplyLayout",
@@ -633,3 +639,28 @@ def reset_workbench_dock() -> bool:
     else:
         log_to_console("Open Controller dock reset requested but no dock was present.", level="warning")
     return removed
+
+
+def ensure_component_palette_ui(doc: Any | None = None) -> ComponentPalettePanel:
+    global _ACTIVE_COMPONENT_PALETTE
+    global _ACTIVE_COMPONENT_PALETTE_DOCK
+
+    if doc is None and App is not None:
+        doc = App.ActiveDocument or App.newDocument("Controller")
+    if doc is None:
+        raise RuntimeError("No active FreeCAD document")
+    _bootstrap_document_if_needed(doc)
+    if _ACTIVE_COMPONENT_PALETTE is None or _ACTIVE_COMPONENT_PALETTE.doc is not doc:
+        _ACTIVE_COMPONENT_PALETTE = ComponentPalettePanel(doc)
+        _ACTIVE_COMPONENT_PALETTE_DOCK = create_or_reuse_dock(
+            "Component Palette",
+            _ACTIVE_COMPONENT_PALETTE.widget,
+            object_name="OCWComponentPaletteDock",
+        )
+    else:
+        _ACTIVE_COMPONENT_PALETTE.refresh()
+        focus_dock(_ACTIVE_COMPONENT_PALETTE_DOCK)
+    log_to_console(
+        f"Component palette ready for document '{getattr(doc, 'Name', '<unnamed>')}'."
+    )
+    return _ACTIVE_COMPONENT_PALETTE

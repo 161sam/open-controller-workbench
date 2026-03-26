@@ -9,6 +9,13 @@ components:
       - "linear"
       - "potentiometer"
       - "45mm"
+    ui:
+      label: "Fader 45 mm"
+      icon: "fader.svg"
+      category: "mixing"
+      tags:
+        - "slider"
+        - "level"
     mechanical:
       body_size_mm:
         width: 56.0
@@ -66,6 +73,13 @@ components:
       - "linear"
       - "potentiometer"
       - "60mm"
+    ui:
+      label: "Fader 60 mm"
+      icon: "fader.svg"
+      category: "mixing"
+      tags:
+        - "slider"
+        - "level"
     mechanical:
       body_size_mm:
         width: 70.0

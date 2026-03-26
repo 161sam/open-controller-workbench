@@ -20,6 +20,14 @@
 3. Cutouts prüfen
 4. Export
 
+## Component Palette
+
+- Öffne die Palette über `OCW_OpenComponentPalette`
+- Suche live über Name, ID, Part Number und Tags
+- Filtere nach UI-Kategorie oder nur nach Favoriten
+- Ein Klick wählt ein Component Template für den nächsten Add/Place-Schritt vor
+- Favoriten bleiben im UI-State des Dokuments gespeichert
+
 ## Begriffe
 
 - Controller
