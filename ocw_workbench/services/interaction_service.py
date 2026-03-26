@@ -6,6 +6,7 @@ from typing import Any
 from ocw_workbench.gui.interaction.view_place_preview import clear_preview_state, store_preview_state
 from ocw_workbench.layout.snap import snap_point
 from ocw_workbench.services.controller_service import ControllerService
+from ocw_workbench.services.preview_validation_service import PreviewValidationService
 
 DEFAULT_UI_SETTINGS = {
     "overlay_enabled": True,
@@ -23,8 +24,13 @@ DEFAULT_UI_SETTINGS = {
 
 
 class InteractionService:
-    def __init__(self, controller_service: ControllerService | None = None) -> None:
+    def __init__(
+        self,
+        controller_service: ControllerService | None = None,
+        preview_validation_service: PreviewValidationService | None = None,
+    ) -> None:
         self.controller_service = controller_service or ControllerService()
+        self.preview_validation_service = preview_validation_service or PreviewValidationService(self.controller_service)
 
     def get_settings(self, doc: Any) -> dict[str, Any]:
         state = self.controller_service.get_state(doc)
@@ -86,6 +92,13 @@ class InteractionService:
         y = float(target_y)
         if resolved_snap:
             x, y = snap_point(x, y, resolved_grid)
+        validation = self.preview_validation_service.validate_place(
+            doc,
+            template_id=template_id,
+            x=x,
+            y=y,
+            rotation=float(rotation),
+        )
         payload = store_preview_state(
             doc,
             template_id=template_id,
@@ -95,6 +108,7 @@ class InteractionService:
             mode="place",
             snap_enabled=resolved_snap,
             grid_mm=resolved_grid,
+            validation=validation,
         )
         self.controller_service.refresh_document_visuals(doc, recompute=False)
         return payload
@@ -117,15 +131,24 @@ class InteractionService:
         y = float(target_y)
         if resolved_snap:
             x, y = snap_point(x, y, resolved_grid)
+        resolved_rotation = float(component.get("rotation", 0.0) if rotation is None else rotation)
+        validation = self.preview_validation_service.validate_move(
+            doc,
+            component_id=component_id,
+            x=x,
+            y=y,
+            rotation=resolved_rotation,
+        )
         payload = store_preview_state(
             doc,
             component_id=component_id,
             x=x,
             y=y,
-            rotation=float(component.get("rotation", 0.0) if rotation is None else rotation),
+            rotation=resolved_rotation,
             mode="move",
             snap_enabled=resolved_snap,
             grid_mm=resolved_grid,
+            validation=validation,
         )
         self.controller_service.refresh_document_visuals(doc, recompute=False)
         return payload

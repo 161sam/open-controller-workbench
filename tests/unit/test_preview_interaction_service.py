@@ -40,6 +40,7 @@ def test_add_component_preview_uses_visual_only_sync_and_metadata():
     payload = interaction_service.add_component_preview(doc, "omron_b3f_1000", target_x=12.2, target_y=18.7)
 
     assert payload["mode"] == "place"
+    assert payload["validation"]["status"] == "Valid placement"
     assert load_preview_state(doc) == payload
     assert controller_service.get_state(doc) == before_state
     assert calls == [{"mode": SyncMode.VISUAL_ONLY, "recompute": False}]
@@ -67,6 +68,7 @@ def test_move_component_preview_uses_visual_only_sync_and_metadata():
 
     assert payload["mode"] == "move"
     assert payload["component_id"] == "btn1"
+    assert payload["validation"]["status"] == "Valid placement"
     assert load_preview_state(doc) == payload
     assert controller_service.get_state(doc) == before_state
     assert calls == [{"mode": SyncMode.VISUAL_ONLY, "recompute": False}]

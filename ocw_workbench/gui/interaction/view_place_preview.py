@@ -16,6 +16,7 @@ def serialize_preview_state(
     mode: str = "place",
     template_id: str | None = None,
     component_id: str | None = None,
+    validation: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     payload = {
         "version": PREVIEW_SCHEMA_VERSION,
@@ -25,11 +26,14 @@ def serialize_preview_state(
         "mode": str(mode or "place"),
         "snap_enabled": None,
         "grid_mm": None,
+        "validation": None,
     }
     if template_id is not None:
         payload["template_id"] = str(template_id)
     if component_id is not None:
         payload["component_id"] = str(component_id)
+    if isinstance(validation, dict):
+        payload["validation"] = dict(validation)
     return payload
 
 
@@ -49,6 +53,7 @@ def load_preview_state(doc: Any) -> dict[str, Any] | None:
             mode=str(payload.get("mode") or "place"),
             template_id=template_id if isinstance(template_id, str) and template_id else None,
             component_id=component_id if isinstance(component_id, str) and component_id else None,
+            validation=payload.get("validation") if isinstance(payload.get("validation"), dict) else None,
         )
         preview["version"] = int(payload.get("version", PREVIEW_SCHEMA_VERSION) or PREVIEW_SCHEMA_VERSION)
         preview["snap_enabled"] = (
@@ -71,6 +76,7 @@ def store_preview_state(
     component_id: str | None = None,
     snap_enabled: bool | None = None,
     grid_mm: float | None = None,
+    validation: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     payload = serialize_preview_state(
         x=x,
@@ -79,6 +85,7 @@ def store_preview_state(
         mode=mode,
         template_id=template_id,
         component_id=component_id,
+        validation=validation,
     )
     payload["snap_enabled"] = None if snap_enabled is None else bool(snap_enabled)
     payload["grid_mm"] = None if grid_mm is None else float(grid_mm)

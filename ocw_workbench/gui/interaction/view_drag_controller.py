@@ -43,6 +43,7 @@ class ViewDragController:
         self.armed = False
         self.session: DragMoveSession | None = None
         self._view_callbacks = view_callbacks or ViewEventCallbackRegistry()
+        self._last_preview_status: str | None = None
 
     def start(self, doc: Any) -> bool:
         view = self._active_view(doc)
@@ -53,6 +54,7 @@ class ViewDragController:
         self.doc = doc
         self.view = view
         self.armed = True
+        self._last_preview_status = None
         if not self._view_callbacks.attach(view, self.handle_view_event):
             self.cancel(reason="error", publish_status=False)
             self._publish_status("Interaction error")
@@ -82,6 +84,7 @@ class ViewDragController:
         self.view = None
         self.armed = False
         self.session = None
+        self._last_preview_status = None
         self._notify_finished()
         if publish_status:
             self._publish_status(self._status_for_reason(reason))
@@ -109,8 +112,9 @@ class ViewDragController:
                 self.update_preview_from_screen(screen_x, screen_y)
                 return
             if self.session is not None and self.session.dragging and self._is_left_click_up(event_type, payload):
-                self.update_preview_from_screen(screen_x, screen_y)
-                self.commit()
+                preview = self.update_preview_from_screen(screen_x, screen_y)
+                if preview is not None and self._preview_allows_commit(preview):
+                    self.commit()
         except Exception as exc:
             self._handle_interaction_error(exc)
 
@@ -177,6 +181,7 @@ class ViewDragController:
             snap_enabled=bool(settings.get("snap_enabled", True)),
         )
         self.overlay_renderer.refresh(self.doc)
+        self._publish_preview_status(payload)
         return payload
 
     def commit(self) -> dict[str, Any]:
@@ -185,6 +190,8 @@ class ViewDragController:
         preview = load_preview_state(self.doc)
         if preview is None:
             raise ValueError("No drag preview position available")
+        if not self._preview_allows_commit(preview):
+            raise ValueError("Preview position is invalid")
         component_id = self.session.component_id
         try:
             state = self.controller_service.move_component(
@@ -305,6 +312,21 @@ class ViewDragController:
                 self.on_finished(self)
             except Exception:
                 pass
+
+    def _publish_preview_status(self, preview: dict[str, Any]) -> None:
+        validation = preview.get("validation") if isinstance(preview.get("validation"), dict) else {}
+        status = validation.get("status") if isinstance(validation.get("status"), str) else "Valid placement"
+        if status == self._last_preview_status:
+            return
+        self._last_preview_status = status
+        self._publish_status(status)
+
+    def _preview_allows_commit(self, preview: dict[str, Any]) -> bool:
+        validation = preview.get("validation") if isinstance(preview.get("validation"), dict) else {}
+        allowed = bool(validation.get("commit_allowed", True))
+        if not allowed:
+            self._publish_preview_status(preview)
+        return allowed
 
     def _status_for_reason(self, reason: str) -> str:
         if reason == "error":

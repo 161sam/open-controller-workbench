@@ -182,6 +182,8 @@ class OverlayService:
         if preview is None:
             return []
         mode = str(preview.get("mode") or "place")
+        validation = preview.get("validation") if isinstance(preview.get("validation"), dict) else {}
+        severity = validation.get("severity") if isinstance(validation.get("severity"), str) else None
         preview_component, template_id, label = self._preview_component_payload(doc, preview, mode)
         resolved = self.controller_builder.resolve_components([preview_component])[0]
         keepouts = self.controller_builder.build_keepouts([preview_component])
@@ -196,9 +198,10 @@ class OverlayService:
                 y=float(preview_component["y"]),
                 rotation=float(preview_component["rotation"]),
                 shape=shape.to_dict(),
-                style=overlay_style("component_preview"),
-                label=label,
+                style=overlay_style(self._preview_style_kind("component_preview", severity)),
+                label=self._preview_label_text(label, validation),
                 source_component_id=str(preview_component.get("id") or template_id),
+                severity=severity,
             )
         )
         for feature in keepouts:
@@ -212,8 +215,9 @@ class OverlayService:
                     y=float(feature["y"]),
                     rotation=float(feature.get("rotation", 0.0) or 0.0),
                     shape=feature,
-                    style=overlay_style("keepout_preview"),
+                    style=overlay_style(self._preview_style_kind("keepout_preview", severity)),
                     source_component_id=str(preview_component.get("id") or template_id),
+                    severity=severity,
                 )
             )
         for feature in cutouts:
@@ -225,8 +229,9 @@ class OverlayService:
                     y=float(feature["y"]),
                     rotation=float(feature.get("rotation", 0.0) or 0.0),
                     shape=feature,
-                    style=overlay_style("cutout_preview"),
+                    style=overlay_style(self._preview_style_kind("cutout_preview", severity)),
                     source_component_id=str(preview_component.get("id") or template_id),
+                    severity=severity,
                 )
             )
         items.append(
@@ -234,9 +239,10 @@ class OverlayService:
                 item_id=f"preview_label:{template_id}",
                 x=float(preview_component["x"]),
                 y=float(preview_component["y"]),
-                text=label,
-                style=overlay_style("preview_label"),
+                text=self._preview_label_text(label, validation),
+                style=overlay_style(self._preview_style_kind("preview_label", severity)),
                 source_component_id=str(preview_component.get("id") or template_id),
+                severity=severity,
             )
         )
         return items
@@ -325,6 +331,19 @@ class OverlayService:
             if isinstance(affected, str) and not affected.startswith("mounting_hole"):
                 grouped[affected].append(finding)
         return grouped
+
+    def _preview_style_kind(self, base_kind: str, severity: str | None) -> str:
+        if severity == "error":
+            return f"{base_kind}_error"
+        if severity == "warning":
+            return f"{base_kind}_warning"
+        return base_kind
+
+    def _preview_label_text(self, label: str, validation: dict[str, Any]) -> str:
+        status = validation.get("status")
+        if isinstance(status, str) and status and status != "Valid placement":
+            return f"{label} | {status}"
+        return label
 
     def _shape_item(
         self,

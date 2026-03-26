@@ -154,7 +154,7 @@ def test_place_controller_commit_error_cleans_up():
 
     controller.controller_service.add_component = fail_add_component  # type: ignore[method-assign]
     controller.start(doc, "omron_b3f_1000")
-    controller.update_preview_from_screen(10.0, 10.0)
+    controller.update_preview_from_screen(20.0, 20.0)
 
     with pytest.raises(RuntimeError):
         controller.commit()

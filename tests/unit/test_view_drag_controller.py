@@ -94,6 +94,15 @@ def test_view_drag_controller_preview_is_visual_only_until_commit():
         "mode": "move",
         "snap_enabled": True,
         "grid_mm": 1.0,
+        "validation": {
+            "valid": True,
+            "severity": None,
+            "status": "Valid placement",
+            "status_code": "valid",
+            "commit_allowed": True,
+            "findings": [],
+            "summary": {"error_count": 0, "warning_count": 0, "total_count": 0},
+        },
     }
     assert during_state == before_state
     assert moved["x"] == 31.0
@@ -177,4 +186,13 @@ def test_view_drag_controller_clamps_and_snaps_to_bounds():
         "mode": "move",
         "snap_enabled": True,
         "grid_mm": 5.0,
+        "validation": {
+            "valid": False,
+            "severity": "error",
+            "status": "Out of bounds",
+            "status_code": "out_of_bounds",
+            "commit_allowed": False,
+            "findings": preview["validation"]["findings"],
+            "summary": preview["validation"]["summary"],
+        },
     }

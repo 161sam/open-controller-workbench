@@ -1,3 +1,5 @@
+import pytest
+
 from ocw_workbench.gui.interaction.view_place_controller import ViewPlaceController, map_view_point_to_controller_xy
 from ocw_workbench.gui.interaction.view_place_preview import (
     PREVIEW_METADATA_KEY,
@@ -72,6 +74,7 @@ def test_preview_metadata_roundtrip():
         "mode": "place",
         "snap_enabled": None,
         "grid_mm": None,
+        "validation": None,
     }
     assert getattr(doc, PREVIEW_METADATA_KEY, None) is None
 
@@ -104,6 +107,15 @@ def test_view_place_controller_preview_updates_metadata_only():
         "mode": "place",
         "snap_enabled": True,
         "grid_mm": 1.0,
+        "validation": {
+            "valid": True,
+            "severity": None,
+            "status": "Valid placement",
+            "status_code": "valid",
+            "commit_allowed": True,
+            "findings": [],
+            "summary": {"error_count": 0, "warning_count": 0, "total_count": 0},
+        },
     }
     assert load_preview_state(doc) == payload
     assert after_state == before_state
@@ -132,6 +144,31 @@ def test_view_place_controller_commit_creates_single_transaction_after_multiple_
     assert doc.transactions == [("open", "OCW Place Component"), ("commit", None)]
 
 
+def test_view_place_controller_blocks_commit_for_invalid_preview():
+    doc = FakeDocument()
+    controller_service = ControllerService()
+    interaction_service = InteractionService(controller_service)
+    controller_service.create_controller(doc, {"id": "demo", "width": 40.0, "depth": 40.0, "height": 30.0})
+
+    controller = ViewPlaceController(
+        controller_service=controller_service,
+        interaction_service=interaction_service,
+    )
+    controller.doc = doc
+    controller.view = FakeView()
+    controller.active_template_id = "omron_b3f_1000"
+    controller.preview_active = True
+
+    preview = controller.update_preview_from_screen(2.0, 2.0)
+
+    assert preview is not None
+    assert preview["validation"]["commit_allowed"] is False
+    assert controller._preview_allows_commit(preview) is False
+    with pytest.raises(ValueError, match="invalid"):
+        controller.commit()
+    assert controller_service.get_state(doc)["components"] == []
+
+
 def test_overlay_service_includes_drag_preview_ghost():
     doc = FakeDocument()
     controller_service = ControllerService()
@@ -147,3 +184,22 @@ def test_overlay_service_includes_drag_preview_ghost():
     assert "preview_keepout:generic_45mm_linear_fader" in item_ids
     assert "preview_cutout:generic_45mm_linear_fader" in item_ids
     assert "preview_label:generic_45mm_linear_fader" in item_ids
+
+
+def test_overlay_service_styles_invalid_preview_as_error():
+    doc = FakeDocument()
+    controller_service = ControllerService()
+    interaction_service = InteractionService(controller_service)
+    controller_service.create_controller(doc, {"id": "demo", "width": 40.0, "depth": 40.0, "height": 30.0, "top_thickness": 3.0})
+    interaction_service.add_component_preview(doc, "omron_b3f_1000", target_x=2.0, target_y=2.0)
+
+    from ocw_workbench.services.overlay_service import OverlayService
+
+    overlay = OverlayService(controller_service=controller_service).build_overlay(doc)
+    preview_item = next(item for item in overlay["items"] if item["id"] == "preview_component:omron_b3f_1000")
+    preview_label = next(item for item in overlay["items"] if item["id"] == "preview_label:omron_b3f_1000")
+
+    assert preview_item["severity"] == "error"
+    assert preview_item["style"]["kind"] == "component_preview_error"
+    assert preview_label["style"]["kind"] == "preview_label_error"
+    assert "Out of bounds" in preview_label["label"]

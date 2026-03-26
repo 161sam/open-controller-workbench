@@ -52,6 +52,7 @@ class ViewPlaceController:
         self.active_template_id: str | None = None
         self.preview_active = False
         self._view_callbacks = view_callbacks or ViewEventCallbackRegistry()
+        self._last_preview_status: str | None = None
 
     def start(self, doc: Any, template_id: str) -> bool:
         self.controller_service.library_service.get(template_id)
@@ -64,6 +65,7 @@ class ViewPlaceController:
         self.view = view
         self.active_template_id = template_id
         self.preview_active = True
+        self._last_preview_status = None
         if not self._view_callbacks.attach(view, self.handle_view_event):
             self.cancel(reason="error", publish_status=False)
             self._publish_status("Interaction error")
@@ -87,6 +89,7 @@ class ViewPlaceController:
         self.view = None
         self.active_template_id = None
         self.preview_active = False
+        self._last_preview_status = None
         self._notify_finished()
         if publish_status:
             self._publish_status(self._status_for_reason(reason))
@@ -97,6 +100,8 @@ class ViewPlaceController:
         preview = load_preview_state(self.doc)
         if preview is None:
             raise ValueError("No preview position available")
+        if not self._preview_allows_commit(preview):
+            raise ValueError("Preview position is invalid")
         try:
             state = self.controller_service.add_component(
                 self.doc,
@@ -139,6 +144,7 @@ class ViewPlaceController:
             snap_enabled=bool(settings.get("snap_enabled", True)),
         )
         self.overlay_renderer.refresh(self.doc)
+        self._publish_preview_status(payload)
         return payload
 
     def handle_view_event(self, info: Any) -> None:
@@ -158,7 +164,7 @@ class ViewPlaceController:
                 return
             if position is not None and self._is_left_click_down(event_type, payload):
                 preview = self.update_preview_from_screen(float(position[0]), float(position[1]))
-                if preview is not None:
+                if preview is not None and self._preview_allows_commit(preview):
                     self.commit()
         except Exception as exc:
             self._handle_interaction_error(exc)
@@ -259,6 +265,21 @@ class ViewPlaceController:
                 self.on_finished(self)
             except Exception:
                 pass
+
+    def _publish_preview_status(self, preview: dict[str, Any]) -> None:
+        validation = preview.get("validation") if isinstance(preview.get("validation"), dict) else {}
+        status = validation.get("status") if isinstance(validation.get("status"), str) else "Valid placement"
+        if status == self._last_preview_status:
+            return
+        self._last_preview_status = status
+        self._publish_status(status)
+
+    def _preview_allows_commit(self, preview: dict[str, Any]) -> bool:
+        validation = preview.get("validation") if isinstance(preview.get("validation"), dict) else {}
+        allowed = bool(validation.get("commit_allowed", True))
+        if not allowed:
+            self._publish_preview_status(preview)
+        return allowed
 
     def _status_for_reason(self, reason: str) -> str:
         if reason == "error":

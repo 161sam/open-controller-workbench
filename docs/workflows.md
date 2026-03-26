@@ -64,7 +64,9 @@
 ## Preview, Commit, And Undo
 
 - Preview updates stay in metadata and overlay state only and never open a FreeCAD transaction.
+- Preview validation also stays metadata-only and evaluates a hypothetical component set in memory, without a full document sync.
 - Place and drag commits use one document transaction around state mutation and full sync.
 - The transaction boundary is: open transaction, mutate committed project state, run full sync, close transaction.
 - If the commit path raises an exception, the transaction is aborted and the previous project state is restored before control returns to the UI.
+- Preview errors block place and drag commit; warning-level preview feedback remains visible but does not create undo entries on its own.
 - Template Import Stage A is an external template-generation workflow: it produces a YAML file and reloads the template registry, but it does not mutate the active project document and therefore does not create a FreeCAD undo step.
