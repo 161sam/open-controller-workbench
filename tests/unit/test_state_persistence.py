@@ -6,6 +6,7 @@ from ocf_freecad.freecad_api.model import (
     CONTROLLER_OBJECT_NAME,
     GENERATED_GROUP_NAME,
     OVERLAY_OBJECT_NAME,
+    PROJECT_JSON_PROPERTY,
     clear_generated_group,
     get_controller_object,
     get_generated_group,
@@ -202,6 +203,76 @@ def test_controller_object_uses_featurepython_proxy_and_claims_children():
     assert controller.ViewObject.Proxy is not None
     assert generated in claimed
     assert overlay in claimed
+
+
+def test_controller_proxy_execute_syncs_properties_from_project_json():
+    doc = FakeDocument()
+    controller = get_controller_object(doc, create=True)
+    controller.ProjectJson = json.dumps(
+        {
+            "controller": {
+                "id": "demo",
+                "width": 190.0,
+                "depth": 120.0,
+                "height": 34.0,
+                "top_thickness": 3.5,
+                "surface": {"shape": "rounded_rect", "corner_radius": 6.0},
+            },
+            "components": [],
+            "meta": {"template_id": "encoder_module", "variant_id": "compact", "selection": "enc1"},
+        }
+    )
+
+    controller.Proxy.execute(controller)
+
+    assert controller.ControllerId == "demo"
+    assert controller.TemplateId == "encoder_module"
+    assert controller.VariantId == "compact"
+    assert controller.SelectionId == "enc1"
+    assert controller.Width == 190.0
+    assert controller.SurfaceShape == "rounded_rect"
+    assert controller.CornerRadius == 6.0
+
+
+def test_controller_proxy_updates_project_json_from_mirrored_properties():
+    doc = FakeDocument()
+    controller = get_controller_object(doc, create=True)
+    write_state(doc, {"controller": {"id": "demo", "width": 160.0, "depth": 100.0}, "components": [], "meta": {}})
+
+    controller.Width = 210.0
+    controller.SurfaceShape = "rounded_rect"
+    controller.CornerRadius = 9.0
+    controller.Proxy.onChanged(controller, "Width")
+    controller.Proxy.onChanged(controller, "SurfaceShape")
+    controller.Proxy.onChanged(controller, "CornerRadius")
+
+    payload = json.loads(getattr(controller, PROJECT_JSON_PROPERTY))
+
+    assert payload["controller"]["width"] == 210.0
+    assert payload["controller"]["surface"]["shape"] == "rounded_rect"
+    assert payload["controller"]["surface"]["corner_radius"] == 9.0
+
+
+def test_controller_proxy_restore_rebinds_and_resyncs_properties():
+    doc = FakeDocument()
+    controller = get_controller_object(doc, create=True)
+    controller.ProjectJson = json.dumps(
+        {
+            "controller": {"id": "restored", "width": 175.0, "depth": 105.0},
+            "components": [],
+            "meta": {"template_id": "transport_module"},
+        }
+    )
+    controller.ControllerId = ""
+    controller.Width = 0.0
+    controller.TemplateId = ""
+
+    controller.Proxy.onDocumentRestored(controller)
+
+    assert controller.Proxy.Object is controller
+    assert controller.ControllerId == "restored"
+    assert controller.Width == 175.0
+    assert controller.TemplateId == "transport_module"
 
 
 def test_write_state_uses_controller_as_primary_store_and_runtime_cache():

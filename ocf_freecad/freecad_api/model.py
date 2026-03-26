@@ -33,6 +33,23 @@ _FLOAT_PROPERTIES = {
     "CornerRadius": "Surface corner radius (mm)",
 }
 
+_PROPERTY_TO_STATE_PATH = {
+    "ControllerId": ("controller", "id"),
+    "TemplateId": ("meta", "template_id"),
+    "VariantId": ("meta", "variant_id"),
+    "SelectionId": ("meta", "selection"),
+    "Width": ("controller", "width"),
+    "Depth": ("controller", "depth"),
+    "Height": ("controller", "height"),
+    "TopThickness": ("controller", "top_thickness"),
+    "WallThickness": ("controller", "wall_thickness"),
+    "BottomThickness": ("controller", "bottom_thickness"),
+    "LidInset": ("controller", "lid_inset"),
+    "InnerClearance": ("controller", "inner_clearance"),
+    "SurfaceShape": ("controller", "surface", "shape"),
+    "CornerRadius": ("controller", "surface", "corner_radius"),
+}
+
 
 def get_controller_object(doc: Any, create: bool = True) -> Any | None:
     if not hasattr(doc, "addObject"):
@@ -87,10 +104,7 @@ def read_project_state(doc: Any) -> dict[str, Any] | None:
     payload = getattr(controller, PROJECT_JSON_PROPERTY, "")
     if not isinstance(payload, str) or not payload.strip():
         return None
-    data = json.loads(payload)
-    if not isinstance(data, dict):
-        raise ValueError("Open Controller project JSON must decode to an object")
-    return data
+    return _load_project_json(payload)
 
 
 def has_project_state(doc: Any) -> bool:
@@ -157,15 +171,60 @@ def clear_generated_group(doc: Any) -> None:
 class ControllerProxy:
     def __init__(self, obj: Any) -> None:
         self.Object = obj
+        self._syncing = False
         obj.Proxy = self
 
-    def execute(self, _obj: Any) -> None:
-        return
+    def execute(self, obj: Any) -> None:
+        self.Object = obj
+        _ensure_controller_properties(obj)
+        _style_controller_object(obj)
+        self.sync_properties_from_project_json(obj)
 
     def onDocumentRestored(self, obj: Any) -> None:
         self.Object = obj
         _ensure_controller_properties(obj)
         _attach_controller_view_provider(obj)
+        _style_controller_object(obj)
+        self.sync_properties_from_project_json(obj)
+
+    def onChanged(self, obj: Any, prop: str) -> None:
+        if prop == PROJECT_JSON_PROPERTY:
+            self.sync_properties_from_project_json(obj)
+            return
+        if prop in _PROPERTY_TO_STATE_PATH:
+            self.sync_project_json_from_properties(obj, changed_property=prop)
+
+    def sync_properties_from_project_json(self, obj: Any) -> None:
+        if self._syncing:
+            return
+        payload = getattr(obj, PROJECT_JSON_PROPERTY, "")
+        if not isinstance(payload, str) or not payload.strip():
+            return
+        try:
+            state = _load_project_json(payload)
+        except ValueError:
+            return
+        self._syncing = True
+        try:
+            _sync_controller_properties(obj, state)
+        finally:
+            self._syncing = False
+
+    def sync_project_json_from_properties(self, obj: Any, changed_property: str | None = None) -> None:
+        if self._syncing:
+            return
+        payload = getattr(obj, PROJECT_JSON_PROPERTY, "")
+        try:
+            state = _load_project_json(payload) if isinstance(payload, str) and payload.strip() else _empty_project_state()
+        except ValueError:
+            state = _empty_project_state()
+        state = _state_with_controller_properties(obj, state, changed_property=changed_property)
+        self._syncing = True
+        try:
+            setattr(obj, PROJECT_JSON_PROPERTY, json.dumps(state, sort_keys=True))
+            _sync_controller_properties(obj, state)
+        finally:
+            self._syncing = False
 
     def __getstate__(self) -> dict[str, Any]:
         return {}
@@ -237,6 +296,59 @@ def _sync_controller_properties(controller: Any, state: dict[str, Any]) -> None:
     setattr(controller, "InnerClearance", float(controller_state.get("inner_clearance", 0.0) or 0.0))
     setattr(controller, "SurfaceShape", str(surface.get("shape") or "rectangle"))
     setattr(controller, "CornerRadius", float(surface.get("corner_radius", 0.0) or 0.0))
+
+
+def _state_with_controller_properties(
+    controller: Any,
+    state: dict[str, Any],
+    changed_property: str | None = None,
+) -> dict[str, Any]:
+    updated = deepcopy(state)
+    updated.setdefault("controller", {})
+    updated.setdefault("components", [])
+    updated.setdefault("meta", {})
+    for property_name, path in _PROPERTY_TO_STATE_PATH.items():
+        value = getattr(controller, property_name, None)
+        _assign_state_path(updated, path, _normalized_property_value(property_name, value))
+    surface = updated.get("controller", {}).get("surface")
+    if isinstance(surface, dict) and str(surface.get("shape") or "rectangle") in {"", "default", "none"}:
+        updated["controller"]["surface"] = None
+    return updated
+
+
+def _normalized_property_value(property_name: str, value: Any) -> Any:
+    if property_name in _STRING_PROPERTIES:
+        text = str(value or "")
+        if property_name in {"TemplateId", "VariantId", "SelectionId"} and not text.strip():
+            return None
+        return text
+    return float(value or 0.0)
+
+
+def _assign_state_path(state: dict[str, Any], path: tuple[str, ...], value: Any) -> None:
+    target = state
+    for segment in path[:-1]:
+        child = target.get(segment)
+        if not isinstance(child, dict):
+            child = {}
+            target[segment] = child
+        target = child
+    target[path[-1]] = value
+
+
+def _empty_project_state() -> dict[str, Any]:
+    return {
+        "controller": {},
+        "components": [],
+        "meta": {},
+    }
+
+
+def _load_project_json(payload: str) -> dict[str, Any]:
+    data = json.loads(payload)
+    if not isinstance(data, dict):
+        raise ValueError("Open Controller project JSON must decode to an object")
+    return data
 
 
 def _ensure_controller_properties(controller: Any) -> None:

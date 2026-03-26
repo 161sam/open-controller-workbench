@@ -12,6 +12,8 @@ Open Controller keeps one project-specific source of truth per FreeCAD document.
 `ProjectJson` stores the full controller project snapshot.
 Mirrored scalar FreeCAD properties on `OCF_Controller` exist for inspection and tooling,
 but `ProjectJson` remains the canonical project payload.
+The `ControllerProxy` keeps mirrored properties and `ProjectJson` aligned during
+`execute()`, restore, and property-change handling.
 
 ## State API
 
