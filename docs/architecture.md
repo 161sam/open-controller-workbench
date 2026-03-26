@@ -84,3 +84,7 @@ Schema → Domain → Resolver → Geometry → FreeCAD → Export
 - Schema-driven Design
 - Library-driven Komponenten
 - reproduzierbare Layouts
+
+See also:
+
+- `docs/ARCHITECTURE_FREECAD_WORKBENCH.md`
