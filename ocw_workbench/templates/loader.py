@@ -53,6 +53,7 @@ class TemplateLoader:
         defaults = payload.get("defaults", {})
         firmware = payload.get("firmware", {})
         ocf = payload.get("ocf", {})
+        metadata = payload.get("metadata", {})
         if not isinstance(zones, list):
             raise ValueError(f"Field 'zones' must be a list in {source}")
         if not isinstance(layout, dict):
@@ -65,6 +66,8 @@ class TemplateLoader:
             raise ValueError(f"Field 'firmware' must be a mapping in {source}")
         if not isinstance(ocf, dict):
             raise ValueError(f"Field 'ocf' must be a mapping in {source}")
+        if not isinstance(metadata, dict):
+            raise ValueError(f"Field 'metadata' must be a mapping in {source}")
 
         for component in components:
             if not isinstance(component, dict):
@@ -92,6 +95,7 @@ class TemplateLoader:
             defaults=defaults,
             firmware=firmware,
             ocf=ocf,
+            metadata=metadata,
             category=template_meta.get("category"),
             tags=template_meta.get("tags"),
             version=template_meta.get("version"),

@@ -39,6 +39,7 @@ def test_build_imported_template_payload_is_valid_for_loader():
     assert loaded.id == "imported_panel"
     assert loaded.controller["width"] == 180.0
     assert loaded.controller["mounting_holes"][0]["id"] == "mh1"
+    assert loaded.metadata["source"]["type"] == "fcstd"
     assert payload["metadata"]["source"]["type"] == "fcstd"
 
 
@@ -64,7 +65,11 @@ def test_template_registry_loads_user_templates_folder(monkeypatch, tmp_path: Pa
     monkeypatch.setenv("OCW_USERDATA_DIR", str(user_base))
 
     registry = TemplateRegistry()
-    ids = {item["template"]["id"] for item in registry.list_templates()}
+    templates = registry.list_templates()
+    ids = {item["template"]["id"] for item in templates}
+    imported = next(item for item in templates if item["template"]["id"] == "user_imported")
 
     assert "encoder_module" in ids
     assert "user_imported" in ids
+    assert imported["metadata"]["source"]["type"] == "fcstd"
+    assert imported["source_path"].endswith("user_imported.yaml")

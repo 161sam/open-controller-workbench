@@ -67,7 +67,26 @@
 - Wähle eine `.FCStd` Datei und lade die importierbaren Objekte oder Flächen
 - Wähle die Referenzfläche für die Top Surface und optional einen Origin-Vertex
 - Passe Offsets, Rotation und optional die Höhe an
-- Der Import erzeugt ein YAML-Template im User-Templates-Ordner und macht es anschließend in der Template-Auswahl sichtbar
+- Der Import erzeugt zunächst ein rohes YAML-Template im User-Templates-Ordner und macht es anschließend in der Template-Auswahl sichtbar
+- Nach dem Import öffnet sich der Template Inspector für die Nachbearbeitung
+
+## Template Inspector
+
+- Der Inspector trennt bewusst zwischen `Imported raw template` und `Edited / validated template`
+- Prüfe und bearbeite dort mindestens:
+  - `Template ID`
+  - `Name`
+  - `Description`
+  - `Width`, `Depth`, `Height`
+  - `Rotation`
+  - `Offset X`, `Offset Y`
+  - rudimentäre `Zones`
+  - `Mounting Holes`
+- `Source Metadata` zeigt die importierte FCStd-Herkunft an und dient als Referenz
+- `Validate` prüft offensichtliche Feldfehler und zeigt Fehler oder Warnungen ohne Speichern an
+- `Save As User Template` schreibt ein validiertes User-Template in den User-Templates-Ordner
+- Existiert bereits ein User-Template mit derselben ID, ist ein Overwrite nur mit aktivierter Overwrite-Option erlaubt
+- Nach dem Speichern wird die Template Registry neu geladen, damit das bearbeitete Template direkt im Create-Flow verfügbar ist
 
 ## Begriffe
 

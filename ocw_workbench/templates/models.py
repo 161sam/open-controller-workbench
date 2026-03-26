@@ -17,6 +17,7 @@ class TemplateModel:
     defaults: dict[str, Any]
     firmware: dict[str, Any]
     ocf: dict[str, Any]
+    metadata: dict[str, Any] | None = None
     category: str | None = None
     tags: list[str] | None = None
     version: str | None = None
@@ -43,4 +44,5 @@ class TemplateModel:
             "defaults": self.defaults,
             "firmware": self.firmware,
             "ocf": self.ocf,
+            "metadata": self.metadata or {},
         }

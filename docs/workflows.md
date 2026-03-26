@@ -49,6 +49,11 @@
 - FCStd Datei wählen
 - Top Surface Referenz wählen
 - YAML Template importieren
+- rohes Template im Template Inspector prüfen
+- ID, Name, Maße, Rotation und Origin-Offsets korrigieren
+- Zonen und Mounting-Holes bei Bedarf ergänzen oder bereinigen
+- Template validieren
+- als User-Template speichern
 - Template im Create Panel auswählen
 - Controller weiter verfeinern und speichern
 
