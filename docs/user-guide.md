@@ -67,8 +67,14 @@
 - Wähle eine `.FCStd` Datei und lade die importierbaren Objekte oder Flächen
 - Wähle die Referenzfläche für die Top Surface und optional einen Origin-Vertex
 - Passe Offsets, Rotation und optional die Höhe an
-- Der Import erzeugt zunächst ein rohes YAML-Template im User-Templates-Ordner und macht es anschließend in der Template-Auswahl sichtbar
+- Wähle anschließend bewusst zwischen zwei Modi:
+  - `Stage A`: YAML-only Import in die User-Template-Library
+  - `Stage B`: YAML-Template mit `custom_fcstd` Referenz auf die Quellgeometrie
+- `Stage A` bleibt der robuste Standardpfad: Maße, Height, Origin-Metadaten und erkannte Mounting-Holes werden in das YAML geschrieben
+- `Stage B` speichert zusätzlich die FCStd-Datei, das Referenzobjekt oder die Referenzfläche sowie Origin- und Rotationsdaten als Base-Geometry-Referenz
+- Beide Modi speichern ein Template im User-Templates-Ordner und machen es anschließend in der Template-Auswahl sichtbar
 - Nach dem Import öffnet sich der Template Inspector für die Nachbearbeitung
+- Bestehende Standard-Templates bleiben unverändert nutzbar; `custom_fcstd` ist nur eine zusätzliche optionale Template-Variante
 
 ## Template Inspector
 
@@ -87,6 +93,15 @@
 - `Save As User Template` schreibt ein validiertes User-Template in den User-Templates-Ordner
 - Existiert bereits ein User-Template mit derselben ID, ist ein Overwrite nur mit aktivierter Overwrite-Option erlaubt
 - Nach dem Speichern wird die Template Registry neu geladen, damit das bearbeitete Template direkt im Create-Flow verfügbar ist
+
+## FCStd Stage A Vs Stage B
+
+- `Stage A` erzeugt ein normales YAML-Template mit abgeleiteten Maßen und Quell-Metadaten, aber ohne direkte FCStd-Abhängigkeit im Builder
+- `Stage B` erzeugt ebenfalls ein YAML-Template, referenziert jedoch zusätzlich die Quell-`FCStd` als `custom_fcstd` Base-Geometry
+- `Stage B` ist mächtiger, aber bewusst enger gekapselt:
+  - Die logische Controller-Surface, Bounds-Checks und die bestehenden Overlay-/Layout-Workflows bleiben template-basiert
+  - Die FCStd-Geometrie wird nur beim Build der Base-Top-Plate geladen und dort als Ausgangsform verwendet
+- Wenn die referenzierte Datei, das Objekt oder die Referenzfläche fehlen, schlägt der Build mit einer klaren Fehlermeldung fehl, statt einen halbinitialisierten Zustand zu hinterlassen
 
 ## Begriffe
 

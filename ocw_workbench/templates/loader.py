@@ -68,6 +68,11 @@ class TemplateLoader:
             raise ValueError(f"Field 'ocf' must be a mapping in {source}")
         if not isinstance(metadata, dict):
             raise ValueError(f"Field 'metadata' must be a mapping in {source}")
+        geometry = controller.get("geometry", {})
+        if geometry is not None and not isinstance(geometry, dict):
+            raise ValueError(f"Field 'controller.geometry' must be a mapping in {source}")
+        if isinstance(geometry, dict):
+            self._validate_geometry(geometry, source)
 
         for component in components:
             if not isinstance(component, dict):
@@ -100,3 +105,19 @@ class TemplateLoader:
             tags=template_meta.get("tags"),
             version=template_meta.get("version"),
         )
+
+    def _validate_geometry(self, geometry: dict[str, Any], source: Path) -> None:
+        base = geometry.get("base")
+        if base is None:
+            return
+        if not isinstance(base, dict):
+            raise ValueError(f"Field 'controller.geometry.base' must be a mapping in {source}")
+        base_type = base.get("type")
+        if base_type != "custom_fcstd":
+            raise ValueError(f"Unsupported controller.geometry.base type '{base_type}' in {source}")
+        for field in ("filename", "target_ref"):
+            value = base.get(field)
+            if not isinstance(value, str) or not value.strip():
+                raise ValueError(f"custom_fcstd base geometry is missing a valid '{field}' in {source}")
+        if "origin" in base and not isinstance(base.get("origin"), dict):
+            raise ValueError(f"custom_fcstd base geometry origin must be a mapping in {source}")

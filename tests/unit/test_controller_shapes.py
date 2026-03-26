@@ -1,5 +1,7 @@
 from types import SimpleNamespace
 
+import pytest
+
 from ocw_workbench.domain.component import Component
 from ocw_workbench.domain.controller import Controller
 from ocw_workbench.generator.controller_builder import ControllerBuilder
@@ -157,6 +159,43 @@ def test_top_plate_build_plan_exposes_lid_tongue_stage():
     assert plan.tongue_height == 2
 
 
+def test_custom_fcstd_base_geometry_is_used_for_top_plate():
+    service_calls = []
+
+    class FakeFCStdService:
+        def build_shape_from_config(self, config, *, extrude_height, z_offset):
+            service_calls.append((config, extrude_height, z_offset))
+            return FakeShape("custom_fcstd_top_plate", config=config, extrude_height=extrude_height, z_offset=z_offset)
+
+    doc = FakeDoc()
+    builder = ControllerBuilder(doc=doc, fcstd_base_geometry_service=FakeFCStdService())
+    controller = Controller(
+        "custom",
+        120,
+        80,
+        30,
+        3,
+        surface={"shape": "rectangle", "width": 120.0, "height": 80.0},
+    )
+    controller.geometry = {
+        "base": {
+            "type": "custom_fcstd",
+            "filename": "/tmp/source.FCStd",
+            "target_ref": "Top::Face1",
+            "origin": {"type": "manual", "offset_x": 0.0, "offset_y": 0.0},
+        }
+    }
+
+    top = builder.build_top_plate(controller)
+
+    assert top.Shape.kind == "custom_fcstd_top_plate"
+    assert service_calls == [(
+        controller.geometry["base"],
+        3.0,
+        27.0,
+    )]
+
+
 def test_rounded_rect_surface_is_used_for_shell(monkeypatch):
     monkeypatch.setitem(__import__("sys").modules, "FreeCAD", SimpleNamespace(Vector=FakeVector))
     monkeypatch.setattr("ocw_workbench.generator.controller_builder.shapes.make_surface_prism_shape", _fake_make_surface_prism_shape)
@@ -181,6 +220,32 @@ def test_rounded_rect_surface_is_used_for_shell(monkeypatch):
     assert outer.data["corner_radius"] == 8
     assert inner.kind == "rounded_rect"
     assert inner.data["corner_radius"] == 4
+
+
+def test_custom_fcstd_base_geometry_failure_bubbles_clean_error():
+    class FailingFCStdService:
+        def build_shape_from_config(self, config, *, extrude_height, z_offset):
+            raise FileNotFoundError(config["filename"])
+
+    builder = ControllerBuilder(doc=None, fcstd_base_geometry_service=FailingFCStdService())
+    controller = Controller(
+        "custom",
+        120,
+        80,
+        30,
+        3,
+        surface={"shape": "rectangle", "width": 120.0, "height": 80.0},
+    )
+    controller.geometry = {
+        "base": {
+            "type": "custom_fcstd",
+            "filename": "/tmp/missing.FCStd",
+            "target_ref": "Top::Face1",
+        }
+    }
+
+    with pytest.raises(FileNotFoundError, match="missing.FCStd"):
+        builder.build_top_plate(controller)
 
 
 def test_cutouts_remain_relative_to_controller_coordinates():

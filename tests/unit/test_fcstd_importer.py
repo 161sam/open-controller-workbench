@@ -43,6 +43,28 @@ def test_build_imported_template_payload_is_valid_for_loader():
     assert payload["metadata"]["source"]["type"] == "fcstd"
 
 
+def test_build_imported_template_payload_can_reference_custom_fcstd_base_geometry():
+    payload = build_imported_template_payload(
+        template_id="imported_panel",
+        name="Imported Panel",
+        width=180.0,
+        depth=120.0,
+        height=35.0,
+        source_filename="/tmp/example.FCStd",
+        object_name="TopSurface",
+        target_ref="TopSurface::Face1",
+        rotation_deg=90.0,
+        origin={"type": "manual", "offset_x": 2.0, "offset_y": 4.0},
+        use_source_as_base_geometry=True,
+    )
+
+    loaded = TemplateLoader().load_payload(payload, source="imported_panel.yaml")
+
+    assert loaded.controller["geometry"]["base"]["type"] == "custom_fcstd"
+    assert loaded.controller["geometry"]["base"]["filename"] == "/tmp/example.FCStd"
+    assert loaded.controller["geometry"]["base"]["target_ref"] == "TopSurface::Face1"
+
+
 def test_template_registry_loads_user_templates_folder(monkeypatch, tmp_path: Path):
     user_base = tmp_path / "userdata"
     templates_dir = user_base / "templates"

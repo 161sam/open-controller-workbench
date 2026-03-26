@@ -108,6 +108,88 @@ def test_missing_library_ref_in_template_raises_error(tmp_path: Path):
         TemplateLoader().load(template_path)
 
 
+def test_template_loader_accepts_custom_fcstd_base_geometry(tmp_path: Path):
+    template_path = tmp_path / "custom_fcstd.yaml"
+    dump_yaml(
+        template_path,
+        {
+            "template": {"id": "custom_fcstd_demo", "name": "Custom FCStd Demo", "description": "Demo"},
+            "controller": {
+                "width": 120.0,
+                "depth": 80.0,
+                "height": 30.0,
+                "surface": {"type": "rectangle", "shape": "rectangle", "width": 120.0, "height": 80.0},
+                "geometry": {
+                    "base": {
+                        "type": "custom_fcstd",
+                        "filename": "/tmp/source.FCStd",
+                        "target_ref": "Top::Face1",
+                        "origin": {"type": "manual", "offset_x": 0.0, "offset_y": 0.0},
+                    }
+                },
+            },
+            "components": [],
+            "metadata": {"source": {"type": "fcstd"}},
+        },
+    )
+
+    loaded = TemplateLoader().load(template_path)
+
+    assert loaded.controller["geometry"]["base"]["type"] == "custom_fcstd"
+
+
+def test_template_loader_rejects_invalid_custom_fcstd_base_geometry(tmp_path: Path):
+    template_path = tmp_path / "broken_custom_fcstd.yaml"
+    dump_yaml(
+        template_path,
+        {
+            "template": {"id": "broken_custom_fcstd", "name": "Broken", "description": "Broken"},
+            "controller": {
+                "width": 120.0,
+                "depth": 80.0,
+                "height": 30.0,
+                "surface": {"type": "rectangle", "shape": "rectangle", "width": 120.0, "height": 80.0},
+                "geometry": {"base": {"type": "custom_fcstd", "filename": "/tmp/source.FCStd"}},
+            },
+            "components": [],
+        },
+    )
+
+    with pytest.raises(ValueError, match="target_ref"):
+        TemplateLoader().load(template_path)
+
+
+def test_template_generator_preserves_custom_fcstd_geometry():
+    template = {
+        "template": {"id": "custom_fcstd_demo", "name": "Custom FCStd Demo", "description": "Demo"},
+        "controller": {
+            "width": 120.0,
+            "depth": 80.0,
+            "height": 30.0,
+            "surface": {"type": "rectangle", "shape": "rectangle", "width": 120.0, "height": 80.0},
+            "geometry": {
+                "base": {
+                    "type": "custom_fcstd",
+                    "filename": "/tmp/source.FCStd",
+                    "target_ref": "Top::Face1",
+                    "rotation_deg": 90.0,
+                }
+            },
+        },
+        "components": [],
+        "zones": [],
+        "layout": {},
+        "constraints": {},
+        "defaults": {},
+    }
+
+    project = TemplateGenerator().build_project_from_resolved_template(template)
+
+    assert project["controller"]["geometry"]["base"]["type"] == "custom_fcstd"
+    assert project["controller"]["geometry"]["base"]["filename"] == "/tmp/source.FCStd"
+    assert project["controller"]["surface"]["shape"] == "rectangle"
+
+
 def test_data_plugin_template_generates_controller_from_alias():
     generator = TemplateGenerator()
 

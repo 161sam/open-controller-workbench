@@ -69,7 +69,10 @@ class ImportTemplateFromFCStdPanel:
             set_text(self.form["template_id"], stem.lower().replace("-", "_").replace(" ", "_"))
         if not text_value(self.form["name"]).strip():
             set_text(self.form["name"], stem.replace("_", " ").replace("-", " ").title())
-        self._publish_status(f"Loaded {len(self._targets)} import targets from '{Path(fcstd_path).name}'.")
+        self._publish_status(
+            f"Loaded {len(self._targets)} import targets from '{Path(fcstd_path).name}'. "
+            "Leave Stage B disabled for YAML-only import, or enable it to reference the source FCStd as base geometry."
+        )
 
     def import_template(self) -> Path:
         target_label = current_text(self.form["target"])
@@ -86,11 +89,13 @@ class ImportTemplateFromFCStdPanel:
             offset_y=widget_value(self.form["offset_y"]),
             height_override=widget_value(self.form["height"]) if self.form["height_enabled"].isChecked() else None,
             origin_ref=origin_ref,
+            use_source_as_base_geometry=self._use_source_as_base_geometry(),
         )
         self.template_service.registry.load_all()
         if self.on_imported is not None:
             self.on_imported(output_path)
-        self._publish_status(f"Imported template saved to '{output_path.name}'.")
+        mode_label = "Stage B" if self._use_source_as_base_geometry() else "Stage A"
+        self._publish_status(f"Imported template saved to '{output_path.name}' using {mode_label}.")
         return output_path
 
     def handle_browse_clicked(self) -> None:
@@ -135,12 +140,20 @@ class ImportTemplateFromFCStdPanel:
         set_tooltip(self.form["height"], "Optional controller height override. If disabled, uses document bounding height.")
         set_tooltip(self.form["template_id"], "Template id for the generated YAML file.")
         set_tooltip(self.form["name"], "Template name shown in the Create panel.")
+        set_tooltip(
+            self.form["use_source_as_base_geometry"],
+            "Enable Stage B to reference the source FCStd as custom base geometry for the top plate workflow.",
+        )
 
     def _publish_status(self, message: str) -> None:
         level = "error" if message.lower().startswith("could not") else "info"
         apply_status_message(self.form["status"], message, level=level)
         if self.on_status is not None:
             self.on_status(message)
+
+    def _use_source_as_base_geometry(self) -> bool:
+        field = self.form["use_source_as_base_geometry"]
+        return bool(field.isChecked()) if hasattr(field, "isChecked") else False
 
 
 def _build_form() -> dict[str, Any]:
@@ -160,6 +173,7 @@ def _build_form() -> dict[str, Any]:
             "height_enabled": type("FallbackCheck", (), {"isChecked": lambda self: False})(),
             "template_id": FallbackText(),
             "name": FallbackText(),
+            "use_source_as_base_geometry": type("FallbackCheck", (), {"isChecked": lambda self: False})(),
             "import_button": FallbackButton("Import Template"),
             "status": FallbackLabel(),
         }
@@ -190,8 +204,9 @@ def _build_form() -> dict[str, Any]:
     height_enabled = qtwidgets.QCheckBox("Override height")
     template_id = qtwidgets.QLineEdit()
     name = qtwidgets.QLineEdit()
+    use_source_as_base_geometry = qtwidgets.QCheckBox("Use source FCStd as base geometry (Stage B)")
     import_button = qtwidgets.QPushButton("Import Template")
-    status = qtwidgets.QLabel("Choose an FCStd file to inspect.")
+    status = qtwidgets.QLabel("Choose an FCStd file to inspect. Stage A saves YAML only. Stage B also references the source FCStd as base geometry.")
     status.setWordWrap(True)
 
     form.addRow("FCStd File", file_row)
@@ -204,6 +219,7 @@ def _build_form() -> dict[str, Any]:
     form.addRow("", height_enabled)
     form.addRow("Template ID", template_id)
     form.addRow("Name", name)
+    form.addRow("", use_source_as_base_geometry)
     layout.addLayout(form)
     layout.addWidget(import_button)
     layout.addWidget(status)
@@ -221,6 +237,7 @@ def _build_form() -> dict[str, Any]:
         "height_enabled": height_enabled,
         "template_id": template_id,
         "name": name,
+        "use_source_as_base_geometry": use_source_as_base_geometry,
         "import_button": import_button,
         "status": status,
     }

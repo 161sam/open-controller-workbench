@@ -66,6 +66,8 @@ class TemplateGenerator:
             "reserved_zones": deepcopy(controller_data.get("reserved_zones", [])),
             "layout_zones": deepcopy(template.get("zones", [])),
         }
+        if isinstance(controller_data.get("geometry"), dict):
+            controller["geometry"] = deepcopy(controller_data["geometry"])
         controller["surface"] = {
             "shape": surface_shape,
             "width": width,
@@ -75,6 +77,8 @@ class TemplateGenerator:
             controller["surface"]["corner_radius"] = float(surface["corner_radius"])
         if "points" in surface:
             controller["surface"]["points"] = deepcopy(surface["points"])
+        if "type" in surface:
+            controller["surface"]["type"] = deepcopy(surface["type"])
         return controller
 
     def _build_components(self, template: dict[str, Any]) -> list[dict[str, Any]]:

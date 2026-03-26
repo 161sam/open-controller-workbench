@@ -8,6 +8,7 @@ from typing import Any
 from ocw_workbench.freecad_api import shapes
 from ocw_workbench.generator.component_resolver import ComponentResolver
 from ocw_workbench.geometry.primitives import Cutout, ResolvedMechanical, ShapePrimitive, SurfacePrimitive
+from ocw_workbench.services.fcstd_base_geometry_service import FCStdBaseGeometryService
 
 LOGGER = logging.getLogger(__name__)
 
@@ -51,9 +52,15 @@ class CutoutBooleanPlan:
 class ControllerBuilder:
     MIN_FEATURE_SIZE = 0.5
 
-    def __init__(self, doc=None, component_resolver: ComponentResolver | None = None):
+    def __init__(
+        self,
+        doc=None,
+        component_resolver: ComponentResolver | None = None,
+        fcstd_base_geometry_service: FCStdBaseGeometryService | None = None,
+    ):
         self.doc = doc
         self.component_resolver = component_resolver or ComponentResolver()
+        self.fcstd_base_geometry_service = fcstd_base_geometry_service or FCStdBaseGeometryService()
 
     def build_body(self, controller):
         plan = self.plan_body_build(controller)
@@ -62,7 +69,7 @@ class ControllerBuilder:
 
     def build_top_plate(self, controller):
         plan = self.plan_top_plate_build(controller)
-        top_shape = self._build_top_plate_shape(plan)
+        top_shape = self._build_top_plate_shape(plan, controller=controller)
         return shapes.create_feature(self.doc, "TopPlate", top_shape)
 
     def plan_body_build(self, controller: Any) -> BodyBuildPlan:
@@ -251,7 +258,14 @@ class ControllerBuilder:
         )
         return outer_shape.cut(cavity_shape)
 
-    def _build_top_plate_shape(self, plan: TopPlateBuildPlan):
+    def _build_top_plate_shape(self, plan: TopPlateBuildPlan, controller: Any):
+        custom_base = self._custom_fcstd_base_config(controller)
+        if custom_base is not None:
+            return self.fcstd_base_geometry_service.build_shape_from_config(
+                custom_base,
+                extrude_height=float(plan.top_thickness),
+                z_offset=float(plan.z_offset),
+            )
         top_shape = shapes.translate_shape(
             shapes.make_surface_prism_shape(plan.surface, plan.top_thickness),
             z=plan.z_offset,
@@ -419,6 +433,18 @@ class ControllerBuilder:
         if surface.shape == "rectangle":
             return SurfacePrimitive(shape="rectangle", width=width, height=height)
         return None
+
+    def _custom_fcstd_base_config(self, controller: Any) -> dict[str, Any] | None:
+        controller_data = self._controller_to_dict(controller)
+        geometry = controller_data.get("geometry")
+        if not isinstance(geometry, dict):
+            return None
+        base = geometry.get("base")
+        if not isinstance(base, dict):
+            return None
+        if str(base.get("type") or "") != "custom_fcstd":
+            return None
+        return deepcopy(base)
 
 
 def build_controller(domain_controller):

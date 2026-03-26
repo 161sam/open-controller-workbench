@@ -38,6 +38,13 @@ The top plate pipeline is split into:
 - optional lid tongue surface
 - tongue offset and tongue height
 
+This stage now also supports an optional custom base source:
+
+- `controller.geometry.base.type = custom_fcstd`
+- the builder resolves the FCStd reference only when the top plate base shape is built
+- existing controller surface data remains the logical source for bounds, layout, preview, and validation workflows
+- existing templates without `controller.geometry.base` still use the standard prism-based top plate path
+
 ### 4. Cutout Primitive Collection
 
 - `build_cutout_primitives()`
@@ -68,3 +75,13 @@ These methods remain the compatibility layer used by document sync.
 
 Prefer planning and primitive preparation first, then boolean execution, and finally document feature assignment.
 This keeps later migration paths toward more parametric FreeCAD-native features open without changing current behavior.
+
+## Custom FCStd Base Geometry
+
+`custom_fcstd` is a narrow extension point, not a full geometry-architecture replacement.
+
+- The template stores the source `FCStd` filename, target object or face reference, origin metadata, and optional rotation metadata.
+- A dedicated loader service opens the referenced FCStd document temporarily, resolves the requested object or face, builds a shape, applies origin offset and rotation, and closes the temporary document again.
+- The current integration point is the top-plate base geometry path. This keeps Stage B compatible with the existing staged builder and avoids invasive changes to body generation, sync, or overlay state.
+- Cutout application still happens on the resulting built shape through the existing boolean workflow.
+- Failure cases such as missing files, missing target objects, or invalid references are surfaced as explicit errors. The temporary FCStd document is always closed on the way out.

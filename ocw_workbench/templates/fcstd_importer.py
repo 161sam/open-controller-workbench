@@ -51,8 +51,22 @@ def build_imported_template_payload(
     rotation_deg: float = 0.0,
     origin: dict[str, Any] | None = None,
     mounting_holes: list[dict[str, Any]] | None = None,
+    use_source_as_base_geometry: bool = False,
 ) -> dict[str, Any]:
     description = f"Imported from {Path(source_filename).name}"
+    geometry = {}
+    if use_source_as_base_geometry:
+        geometry = {
+            "base": {
+                "type": "custom_fcstd",
+                "filename": str(source_filename),
+                "object_name": str(object_name),
+                "target_ref": str(target_ref),
+                "rotation_deg": float(rotation_deg),
+                "origin": origin or {"type": "manual", "offset_x": 0.0, "offset_y": 0.0},
+                "projection": "top_plate",
+            }
+        }
     return {
         "template": {
             "id": str(template_id),
@@ -77,6 +91,7 @@ def build_imported_template_payload(
             "mounting_holes": list(mounting_holes or []),
             "reserved_zones": [],
             "layout_zones": [],
+            "geometry": geometry,
         },
         "zones": [],
         "components": [],
@@ -135,6 +150,7 @@ class FCStdTemplateImporter:
         offset_y: float = 0.0,
         height_override: float | None = None,
         origin_ref: str | None = None,
+        use_source_as_base_geometry: bool = False,
     ) -> Path:
         with self._opened_document(fcstd_path) as doc:
             target = self._resolve_target(doc, target_ref)
@@ -156,6 +172,7 @@ class FCStdTemplateImporter:
                 rotation_deg=rotation_deg,
                 origin=origin,
                 mounting_holes=mounting_holes,
+                use_source_as_base_geometry=use_source_as_base_geometry,
             )
             output_path = self.templates_dir / f"{_slugify(template_id)}.yaml"
             dump_yaml(output_path, payload)

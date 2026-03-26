@@ -48,7 +48,9 @@
 
 - FCStd Datei wählen
 - Top Surface Referenz wählen
-- YAML Template importieren
+- Zwischen `Stage A` und `Stage B` wählen
+- `Stage A`: YAML Template importieren
+- `Stage B`: YAML Template mit `custom_fcstd` Base-Geometry-Referenz importieren
 - rohes Template im Template Inspector prüfen
 - ID, Name, Maße, Rotation und Origin-Offsets korrigieren
 - Zonen und Mounting-Holes bei Bedarf ergänzen oder bereinigen
@@ -56,6 +58,14 @@
 - als User-Template speichern
 - Template im Create Panel auswählen
 - Controller weiter verfeinern und speichern
+
+## Stage A And Stage B Compatibility
+
+- Stage A and Stage B use the same registry, template loader, and template inspector flow.
+- Stage A remains the robust default import path because it only depends on saved YAML data.
+- Stage B adds `controller.geometry.base.type = custom_fcstd` and keeps existing surface, layout, overlay, and sync behavior intact.
+- Existing templates without `controller.geometry.base` continue through the standard builder path.
+- If a `custom_fcstd` reference cannot be loaded, the builder fails fast and no partially built geometry is kept.
 
 ## Interactive Tool Lifecycle
 

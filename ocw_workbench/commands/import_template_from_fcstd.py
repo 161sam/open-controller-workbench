@@ -11,7 +11,7 @@ class ImportTemplateFromFCStdCommand(BaseCommand):
     def GetResources(self):
         return self.resources(
             "Import Template From FCStd",
-            "Inspect an FCStd document and generate a YAML template from its top reference.",
+            "Inspect an FCStd document and import either a YAML template or a custom FCStd-backed base geometry template.",
         )
 
     def Activated(self):
