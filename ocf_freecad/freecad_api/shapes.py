@@ -8,6 +8,22 @@ def make_rect_prism_shape(width, depth, height):
     return make_box_shape(width, depth, height)
 
 
+def make_surface_prism_shape(surface, height):
+    shape_type = surface.shape
+    if shape_type == "rectangle":
+        return make_box_shape(surface.width, surface.height, height)
+    if shape_type == "rounded_rect":
+        return make_rounded_rect_prism_shape(
+            width=surface.width,
+            depth=surface.height,
+            height=height,
+            corner_radius=surface.corner_radius or 0.0,
+        )
+    if shape_type == "polygon":
+        return make_polygon_prism_shape(surface.points or (), height)
+    raise ValueError(f"Unsupported controller surface shape: {shape_type}")
+
+
 def make_rounded_rect_prism_shape(width, depth, height, corner_radius):
     base = make_box_shape(width, depth, height)
     radius = min(float(corner_radius), width / 2.0, depth / 2.0)
@@ -51,6 +67,16 @@ def translate_shape(shape, x=0, y=0, z=0):
     return translated
 
 
+def fuse_shapes(parts):
+    filtered = [part for part in parts if part is not None]
+    if not filtered:
+        return None
+    result = filtered[0]
+    for part in filtered[1:]:
+        result = result.fuse(part)
+    return result
+
+
 def create_box(doc, name, width, depth, height, x=0, y=0, z=0):
     import FreeCAD as App
 
@@ -66,32 +92,11 @@ def create_rect_prism(doc, name, width, depth, height, x, y, z=0):
 
 
 def create_surface_prism(doc, name, surface, height, x=0, y=0, z=0):
-    shape_type = surface.shape
-    if shape_type == "rectangle":
-        return create_box(doc, name, surface.width, surface.height, height, x=x, y=y, z=z)
-    if shape_type == "rounded_rect":
-        return create_rounded_rect_prism(
-            doc,
-            name,
-            width=surface.width,
-            depth=surface.height,
-            height=height,
-            corner_radius=surface.corner_radius or 0.0,
-            x=x,
-            y=y,
-            z=z,
-        )
-    if shape_type == "polygon":
-        return create_polygon_prism(
-            doc,
-            name,
-            points=surface.points or (),
-            height=height,
-            x=x,
-            y=y,
-            z=z,
-        )
-    raise ValueError(f"Unsupported controller surface shape: {shape_type}")
+    return create_feature(
+        doc,
+        name,
+        translate_shape(make_surface_prism_shape(surface, height), x=x, y=y, z=z),
+    )
 
 
 def create_rounded_rect_prism(doc, name, width, depth, height, corner_radius, x=0, y=0, z=0):
