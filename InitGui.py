@@ -6,14 +6,14 @@ repo_root = None
 module_file = globals().get("__file__")
 if isinstance(module_file, str) and module_file:
     candidate = os.path.dirname(os.path.realpath(module_file))
-    if os.path.exists(os.path.join(candidate, "ocf_freecad", "workbench.py")):
+    if os.path.exists(os.path.join(candidate, "ocw_workbench", "workbench.py")):
         repo_root = candidate
 if repo_root is None:
     module_spec = globals().get("__spec__")
     origin = getattr(module_spec, "origin", None)
     if isinstance(origin, str) and origin:
         candidate = os.path.dirname(os.path.realpath(origin))
-        if os.path.exists(os.path.join(candidate, "ocf_freecad", "workbench.py")):
+        if os.path.exists(os.path.join(candidate, "ocw_workbench", "workbench.py")):
             repo_root = candidate
 if repo_root is None:
     candidates = []
@@ -22,35 +22,35 @@ if repo_root is None:
     snap_real_home = os.environ.get("SNAP_REAL_HOME")
     home = os.path.expanduser("~")
     if snap_user_common:
-        candidates.append(os.path.join(snap_user_common, "Mod", "OpenControllerFreeCAD"))
+        candidates.append(os.path.join(snap_user_common, "Mod", "OpenControllerWorkbench"))
     if snap_user_data:
-        candidates.append(os.path.join(snap_user_data, "Mod", "OpenControllerFreeCAD"))
+        candidates.append(os.path.join(snap_user_data, "Mod", "OpenControllerWorkbench"))
     if snap_real_home:
-        candidates.append(os.path.join(snap_real_home, ".FreeCAD", "Mod", "OpenControllerFreeCAD"))
-        candidates.append(os.path.join(snap_real_home, ".local", "share", "FreeCAD", "Mod", "OpenControllerFreeCAD"))
-    candidates.append(os.path.join(home, ".FreeCAD", "Mod", "OpenControllerFreeCAD"))
-    candidates.append(os.path.join(home, ".local", "share", "FreeCAD", "Mod", "OpenControllerFreeCAD"))
+        candidates.append(os.path.join(snap_real_home, ".FreeCAD", "Mod", "OpenControllerWorkbench"))
+        candidates.append(os.path.join(snap_real_home, ".local", "share", "FreeCAD", "Mod", "OpenControllerWorkbench"))
+    candidates.append(os.path.join(home, ".FreeCAD", "Mod", "OpenControllerWorkbench"))
+    candidates.append(os.path.join(home, ".local", "share", "FreeCAD", "Mod", "OpenControllerWorkbench"))
     for candidate in candidates:
-        if os.path.exists(os.path.join(candidate, "ocf_freecad", "workbench.py")):
+        if os.path.exists(os.path.join(candidate, "ocw_workbench", "workbench.py")):
             repo_root = candidate
             break
 if repo_root is None:
-    raise RuntimeError("Could not resolve OpenControllerFreeCAD repository root from InitGui.py")
+    raise RuntimeError("Could not resolve OpenControllerWorkbench repository root from InitGui.py")
 
 if repo_root not in sys.path:
     sys.path.insert(0, repo_root)
 
-print("OCF InitGui loaded:", repo_root)
+print("OCW InitGui loaded:", repo_root)
 
 try:
     import FreeCADGui
-    from ocf_freecad.gui.panels._common import qt_self_check
-    from ocf_freecad.workbench import OpenControllerWorkbench
+    from ocw_workbench.gui.panels._common import qt_self_check
+    from ocw_workbench.workbench import OpenControllerWorkbench
 
     qt_self_check()
     FreeCADGui.addWorkbench(OpenControllerWorkbench())
-    print("OCF workbench registered")
+    print("OCW workbench registered")
 except Exception as exc:
-    print("OCF InitGui error:", exc)
+    print("OCW InitGui error:", exc)
     traceback.print_exc()
     raise

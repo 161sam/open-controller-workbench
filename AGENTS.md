@@ -1,6 +1,6 @@
 
 
-# AGENTS.md – Open Controller FreeCAD
+# AGENTS.md – Open Controller Workbench
 
 ## Role
 

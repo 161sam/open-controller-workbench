@@ -1,11 +1,11 @@
 from pathlib import Path
 
-from ocf_freecad.gui.panels.create_panel import CreatePanel
-from ocf_freecad.services.controller_service import ControllerService
-from ocf_freecad.services.template_service import TemplateService
-from ocf_freecad.services.userdata_service import MAX_RECENTS, UserDataService
-from ocf_freecad.services.variant_service import VariantService
-from ocf_freecad.userdata.persistence import UserDataPersistence
+from ocw_workbench.gui.panels.create_panel import CreatePanel
+from ocw_workbench.services.controller_service import ControllerService
+from ocw_workbench.services.template_service import TemplateService
+from ocw_workbench.services.userdata_service import MAX_RECENTS, UserDataService
+from ocw_workbench.services.variant_service import VariantService
+from ocw_workbench.userdata.persistence import UserDataPersistence
 
 
 class FakeDocument:

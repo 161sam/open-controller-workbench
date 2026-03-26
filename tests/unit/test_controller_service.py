@@ -1,5 +1,5 @@
-from ocf_freecad.services.controller_service import ControllerService
-from ocf_freecad.services.document_sync_service import SyncMode
+from ocw_workbench.services.controller_service import ControllerService
+from ocw_workbench.services.document_sync_service import SyncMode
 
 
 class FakeDocument:
@@ -66,7 +66,7 @@ def test_create_controller_and_add_components_without_freecad_objects():
 
     assert state["controller"]["id"] == "demo"
     assert len(state["components"]) == 2
-    assert doc.OCFLastSync["component_count"] == 2
+    assert doc.OCWLastSync["component_count"] == 2
 
 
 def test_auto_layout_and_validate_work_on_document_state():
@@ -117,8 +117,8 @@ def test_select_component_uses_visual_refresh_without_recompute():
 
     assert state["meta"]["selection"] == "enc1"
     assert doc.recompute_count == recomputes_before
-    assert doc.OCFLastSync["sync_mode"] == "visual_only"
-    assert doc.OCFLastSync["requested_sync_mode"] == "visual_only"
+    assert doc.OCWLastSync["sync_mode"] == "visual_only"
+    assert doc.OCWLastSync["requested_sync_mode"] == "visual_only"
 
 
 def test_update_controller_updates_geometry_fields():
@@ -296,31 +296,31 @@ def test_sync_document_uses_central_controller_object_and_generated_group(monkey
         def build_keepouts(self, _components):
             return []
 
-    monkeypatch.setattr("ocf_freecad.services.controller_service.ControllerBuilder", FakeBuilder)
-    monkeypatch.setattr("ocf_freecad.services.controller_service.freecad_gui.reveal_generated_objects", lambda _doc: 0)
-    monkeypatch.setattr("ocf_freecad.services.controller_service.freecad_gui.activate_document", lambda _doc: True)
-    monkeypatch.setattr("ocf_freecad.services.controller_service.freecad_gui.focus_view", lambda _doc, fit=True: True)
+    monkeypatch.setattr("ocw_workbench.services.controller_service.ControllerBuilder", FakeBuilder)
+    monkeypatch.setattr("ocw_workbench.services.controller_service.freecad_gui.reveal_generated_objects", lambda _doc: 0)
+    monkeypatch.setattr("ocw_workbench.services.controller_service.freecad_gui.activate_document", lambda _doc: True)
+    monkeypatch.setattr("ocw_workbench.services.controller_service.freecad_gui.focus_view", lambda _doc, fit=True: True)
 
     service = ControllerService()
     doc = FakeFeatureDocument()
 
     service.create_controller(doc, {"id": "demo"})
 
-    controller = doc.getObject("OCF_Controller")
-    generated = doc.getObject("OCF_Generated")
+    controller = doc.getObject("OCW_Controller")
+    generated = doc.getObject("OCW_Generated")
 
     assert controller is not None
     assert generated is not None
     assert controller.ProjectJson
-    assert [obj.Label for obj in generated.Group] == ["OCF_ControllerBody", "OCF_TopPlate"]
-    assert doc.OCFLastSync["controller_object"] == "OCF_Controller"
-    assert doc.OCFLastSync["generated_group"] == "OCF_Generated"
-    assert doc.OCFLastSync["requested_sync_mode"] == "full"
-    assert doc.OCFLastSync["builder_body_generation_ms"] >= 0.0
-    assert doc.OCFLastSync["builder_top_plate_generation_ms"] >= 0.0
-    assert doc.OCFLastSync["cutout_generation_ms"] >= 0.0
-    assert doc.OCFLastSync["boolean_phase_ms"] >= 0.0
-    assert doc.OCFLastSync["document_recompute_ms"] >= 0.0
+    assert [obj.Label for obj in generated.Group] == ["OCW_ControllerBody", "OCW_TopPlate"]
+    assert doc.OCWLastSync["controller_object"] == "OCW_Controller"
+    assert doc.OCWLastSync["generated_group"] == "OCW_Generated"
+    assert doc.OCWLastSync["requested_sync_mode"] == "full"
+    assert doc.OCWLastSync["builder_body_generation_ms"] >= 0.0
+    assert doc.OCWLastSync["builder_top_plate_generation_ms"] >= 0.0
+    assert doc.OCWLastSync["cutout_generation_ms"] >= 0.0
+    assert doc.OCWLastSync["boolean_phase_ms"] >= 0.0
+    assert doc.OCWLastSync["document_recompute_ms"] >= 0.0
 
 
 def test_sync_document_records_detailed_profile_metrics_when_enabled(monkeypatch):
@@ -343,18 +343,18 @@ def test_sync_document_records_detailed_profile_metrics_when_enabled(monkeypatch
         def build_keepouts(self, _components):
             return []
 
-    monkeypatch.setattr("ocf_freecad.services.controller_service.ControllerBuilder", FakeBuilder)
-    monkeypatch.setattr("ocf_freecad.services.controller_service.freecad_gui.reveal_generated_objects", lambda _doc: 0)
-    monkeypatch.setattr("ocf_freecad.services.controller_service.freecad_gui.activate_document", lambda _doc: True)
-    monkeypatch.setattr("ocf_freecad.services.controller_service.freecad_gui.focus_view", lambda _doc, fit=True: True)
+    monkeypatch.setattr("ocw_workbench.services.controller_service.ControllerBuilder", FakeBuilder)
+    monkeypatch.setattr("ocw_workbench.services.controller_service.freecad_gui.reveal_generated_objects", lambda _doc: 0)
+    monkeypatch.setattr("ocw_workbench.services.controller_service.freecad_gui.activate_document", lambda _doc: True)
+    monkeypatch.setattr("ocw_workbench.services.controller_service.freecad_gui.focus_view", lambda _doc, fit=True: True)
 
     service = ControllerService()
     doc = FakeFeatureDocument()
-    doc.OCFDebugProfiling = {"enabled": True, "log": False}
+    doc.OCWDebugProfiling = {"enabled": True, "log": False}
 
     service.create_controller(doc, {"id": "demo"})
 
-    profile = doc.OCFPerformance["sections"]["sync"]
+    profile = doc.OCWPerformance["sections"]["sync"]
 
     assert profile["full_sync"]["duration_ms"] >= 0.0
     assert profile["builder_body_generation_ms"]["duration_ms"] >= 0.0
@@ -380,24 +380,24 @@ def test_sync_document_clears_only_group_managed_objects(monkeypatch):
         def build_keepouts(self, _components):
             return []
 
-    monkeypatch.setattr("ocf_freecad.services.document_sync_service.ControllerBuilder", FakeBuilder)
-    monkeypatch.setattr("ocf_freecad.services.controller_service.ControllerBuilder", FakeBuilder)
-    monkeypatch.setattr("ocf_freecad.services.document_sync_service.freecad_gui.reveal_generated_objects", lambda _doc: 0)
-    monkeypatch.setattr("ocf_freecad.services.document_sync_service.freecad_gui.activate_document", lambda _doc: True)
-    monkeypatch.setattr("ocf_freecad.services.document_sync_service.freecad_gui.focus_view", lambda _doc, fit=True: True)
+    monkeypatch.setattr("ocw_workbench.services.document_sync_service.ControllerBuilder", FakeBuilder)
+    monkeypatch.setattr("ocw_workbench.services.controller_service.ControllerBuilder", FakeBuilder)
+    monkeypatch.setattr("ocw_workbench.services.document_sync_service.freecad_gui.reveal_generated_objects", lambda _doc: 0)
+    monkeypatch.setattr("ocw_workbench.services.document_sync_service.freecad_gui.activate_document", lambda _doc: True)
+    monkeypatch.setattr("ocw_workbench.services.document_sync_service.freecad_gui.focus_view", lambda _doc, fit=True: True)
 
     service = ControllerService()
     doc = FakeFeatureDocument()
     user_obj = doc.addObject("Part::Feature", "UserSolid")
 
     service.create_controller(doc, {"id": "demo"})
-    first_generated_names = sorted(obj.Name for obj in doc.getObject("OCF_Generated").Group)
+    first_generated_names = sorted(obj.Name for obj in doc.getObject("OCW_Generated").Group)
 
     assert user_obj in doc.Objects
 
     service.sync_document(doc)
 
-    second_generated_names = sorted(obj.Name for obj in doc.getObject("OCF_Generated").Group)
+    second_generated_names = sorted(obj.Name for obj in doc.getObject("OCW_Generated").Group)
     assert first_generated_names == second_generated_names
     assert doc.getObject("UserSolid") is user_obj
 
@@ -420,11 +420,11 @@ def test_partial_ready_sync_mode_currently_falls_back_to_full(monkeypatch):
         def build_keepouts(self, _components):
             return []
 
-    monkeypatch.setattr("ocf_freecad.services.document_sync_service.ControllerBuilder", FakeBuilder)
-    monkeypatch.setattr("ocf_freecad.services.controller_service.ControllerBuilder", FakeBuilder)
-    monkeypatch.setattr("ocf_freecad.services.document_sync_service.freecad_gui.reveal_generated_objects", lambda _doc: 0)
-    monkeypatch.setattr("ocf_freecad.services.document_sync_service.freecad_gui.activate_document", lambda _doc: True)
-    monkeypatch.setattr("ocf_freecad.services.document_sync_service.freecad_gui.focus_view", lambda _doc, fit=True: True)
+    monkeypatch.setattr("ocw_workbench.services.document_sync_service.ControllerBuilder", FakeBuilder)
+    monkeypatch.setattr("ocw_workbench.services.controller_service.ControllerBuilder", FakeBuilder)
+    monkeypatch.setattr("ocw_workbench.services.document_sync_service.freecad_gui.reveal_generated_objects", lambda _doc: 0)
+    monkeypatch.setattr("ocw_workbench.services.document_sync_service.freecad_gui.activate_document", lambda _doc: True)
+    monkeypatch.setattr("ocw_workbench.services.document_sync_service.freecad_gui.focus_view", lambda _doc, fit=True: True)
 
     service = ControllerService()
     doc = FakeFeatureDocument()
@@ -432,8 +432,8 @@ def test_partial_ready_sync_mode_currently_falls_back_to_full(monkeypatch):
 
     service.update_document(doc, mode=SyncMode.PARTIAL_READY, state=state)
 
-    assert doc.OCFLastSync["requested_sync_mode"] == "partial_ready"
-    assert doc.OCFLastSync["sync_mode"] == "full"
+    assert doc.OCWLastSync["requested_sync_mode"] == "partial_ready"
+    assert doc.OCWLastSync["sync_mode"] == "full"
 
 
 def test_sync_document_does_not_materialize_keepout_markers_by_default(monkeypatch):
@@ -454,18 +454,18 @@ def test_sync_document_does_not_materialize_keepout_markers_by_default(monkeypat
         def build_keepouts(self, _components):
             raise AssertionError("keepouts must stay in overlay-only mode unless debug markers are enabled")
 
-    monkeypatch.setattr("ocf_freecad.services.document_sync_service.ControllerBuilder", FakeBuilder)
-    monkeypatch.setattr("ocf_freecad.services.controller_service.ControllerBuilder", FakeBuilder)
-    monkeypatch.setattr("ocf_freecad.services.document_sync_service.freecad_gui.reveal_generated_objects", lambda _doc: 0)
-    monkeypatch.setattr("ocf_freecad.services.document_sync_service.freecad_gui.activate_document", lambda _doc: True)
-    monkeypatch.setattr("ocf_freecad.services.document_sync_service.freecad_gui.focus_view", lambda _doc, fit=True: True)
+    monkeypatch.setattr("ocw_workbench.services.document_sync_service.ControllerBuilder", FakeBuilder)
+    monkeypatch.setattr("ocw_workbench.services.controller_service.ControllerBuilder", FakeBuilder)
+    monkeypatch.setattr("ocw_workbench.services.document_sync_service.freecad_gui.reveal_generated_objects", lambda _doc: 0)
+    monkeypatch.setattr("ocw_workbench.services.document_sync_service.freecad_gui.activate_document", lambda _doc: True)
+    monkeypatch.setattr("ocw_workbench.services.document_sync_service.freecad_gui.focus_view", lambda _doc, fit=True: True)
 
     service = ControllerService()
     doc = FakeFeatureDocument()
 
     service.create_controller(doc, {"id": "demo", "height": 30.0})
 
-    assert sorted(obj.Label for obj in doc.getObject("OCF_Generated").Group) == ["OCF_ControllerBody", "OCF_TopPlate"]
+    assert sorted(obj.Label for obj in doc.getObject("OCW_Generated").Group) == ["OCW_ControllerBody", "OCW_TopPlate"]
 
 
 def test_sync_document_can_materialize_keepout_markers_in_debug_mode(monkeypatch):
@@ -489,21 +489,21 @@ def test_sync_document_can_materialize_keepout_markers_in_debug_mode(monkeypatch
     def fake_create_cylinder(doc, name, **_kwargs):
         return doc.addObject("Part::Feature", name)
 
-    monkeypatch.setattr("ocf_freecad.services.document_sync_service.ControllerBuilder", FakeBuilder)
-    monkeypatch.setattr("ocf_freecad.services.controller_service.ControllerBuilder", FakeBuilder)
-    monkeypatch.setattr("ocf_freecad.services.document_sync_service.freecad_gui.reveal_generated_objects", lambda _doc: 0)
-    monkeypatch.setattr("ocf_freecad.services.document_sync_service.freecad_gui.activate_document", lambda _doc: True)
-    monkeypatch.setattr("ocf_freecad.services.document_sync_service.freecad_gui.focus_view", lambda _doc, fit=True: True)
-    monkeypatch.setattr("ocf_freecad.freecad_api.shapes.create_cylinder", fake_create_cylinder)
+    monkeypatch.setattr("ocw_workbench.services.document_sync_service.ControllerBuilder", FakeBuilder)
+    monkeypatch.setattr("ocw_workbench.services.controller_service.ControllerBuilder", FakeBuilder)
+    monkeypatch.setattr("ocw_workbench.services.document_sync_service.freecad_gui.reveal_generated_objects", lambda _doc: 0)
+    monkeypatch.setattr("ocw_workbench.services.document_sync_service.freecad_gui.activate_document", lambda _doc: True)
+    monkeypatch.setattr("ocw_workbench.services.document_sync_service.freecad_gui.focus_view", lambda _doc, fit=True: True)
+    monkeypatch.setattr("ocw_workbench.freecad_api.shapes.create_cylinder", fake_create_cylinder)
 
     service = ControllerService()
     doc = FakeFeatureDocument()
-    doc.OCFDebugUI = {"materialize_component_markers": True}
+    doc.OCWDebugUI = {"materialize_component_markers": True}
 
     service.create_controller(doc, {"id": "demo", "height": 30.0})
 
-    labels = sorted(obj.Label for obj in doc.getObject("OCF_Generated").Group)
-    assert labels == ["OCF_ControllerBody", "OCF_TopPlate", "OCF_btn1_keepout_top"]
+    labels = sorted(obj.Label for obj in doc.getObject("OCW_Generated").Group)
+    assert labels == ["OCW_ControllerBody", "OCW_TopPlate", "OCW_btn1_keepout_top"]
 
 
 def test_repeated_sync_document_keeps_document_object_count_bounded(monkeypatch):
@@ -528,10 +528,10 @@ def test_repeated_sync_document_keeps_document_object_count_bounded(monkeypatch)
         def build_keepouts(self, _components):
             return []
 
-    monkeypatch.setattr("ocf_freecad.services.controller_service.ControllerBuilder", FakeBuilder)
-    monkeypatch.setattr("ocf_freecad.services.controller_service.freecad_gui.reveal_generated_objects", lambda _doc: 0)
-    monkeypatch.setattr("ocf_freecad.services.controller_service.freecad_gui.activate_document", lambda _doc: True)
-    monkeypatch.setattr("ocf_freecad.services.controller_service.freecad_gui.focus_view", lambda _doc, fit=True: True)
+    monkeypatch.setattr("ocw_workbench.services.controller_service.ControllerBuilder", FakeBuilder)
+    monkeypatch.setattr("ocw_workbench.services.controller_service.freecad_gui.reveal_generated_objects", lambda _doc: 0)
+    monkeypatch.setattr("ocw_workbench.services.controller_service.freecad_gui.activate_document", lambda _doc: True)
+    monkeypatch.setattr("ocw_workbench.services.controller_service.freecad_gui.focus_view", lambda _doc, fit=True: True)
 
     service = ControllerService()
     doc = FakeFeatureDocument()
@@ -573,24 +573,24 @@ def test_pad_grid_sync_keeps_only_final_generated_objects(monkeypatch):
         def build_keepouts(self, _components):
             return []
 
-    monkeypatch.setattr("ocf_freecad.services.controller_service.ControllerBuilder", FakeBuilder)
-    monkeypatch.setattr("ocf_freecad.services.controller_service.freecad_gui.reveal_generated_objects", lambda _doc: 0)
-    monkeypatch.setattr("ocf_freecad.services.controller_service.freecad_gui.activate_document", lambda _doc: True)
-    monkeypatch.setattr("ocf_freecad.services.controller_service.freecad_gui.focus_view", lambda _doc, fit=True: True)
+    monkeypatch.setattr("ocw_workbench.services.controller_service.ControllerBuilder", FakeBuilder)
+    monkeypatch.setattr("ocw_workbench.services.controller_service.freecad_gui.reveal_generated_objects", lambda _doc: 0)
+    monkeypatch.setattr("ocw_workbench.services.controller_service.freecad_gui.activate_document", lambda _doc: True)
+    monkeypatch.setattr("ocw_workbench.services.controller_service.freecad_gui.focus_view", lambda _doc, fit=True: True)
 
     service = ControllerService()
     doc = FakeFeatureDocument()
     service.create_from_template(doc, "pad_grid_4x4")
 
-    labels = sorted(obj.Label for obj in doc.Objects if obj.Name not in {"OCF_Controller", "OCF_Generated"})
+    labels = sorted(obj.Label for obj in doc.Objects if obj.Name not in {"OCW_Controller", "OCW_Generated"})
 
-    assert labels == ["OCF_ControllerBody", "OCF_TopPlateCut"]
+    assert labels == ["OCW_ControllerBody", "OCW_TopPlateCut"]
     assert not any(obj.Name.startswith("cutout_") for obj in doc.Objects)
     assert not any(obj.Name.startswith("TopPlate_") for obj in doc.Objects)
 
 
 def test_sync_document_preserves_single_overlay_object(monkeypatch):
-    from ocf_freecad.gui.overlay.renderer import OverlayRenderer
+    from ocw_workbench.gui.overlay.renderer import OverlayRenderer
 
     class FakeBuilder:
         def __init__(self, doc):
@@ -613,10 +613,10 @@ def test_sync_document_preserves_single_overlay_object(monkeypatch):
         def build_keepouts(self, _components):
             return []
 
-    monkeypatch.setattr("ocf_freecad.services.controller_service.ControllerBuilder", FakeBuilder)
-    monkeypatch.setattr("ocf_freecad.services.controller_service.freecad_gui.reveal_generated_objects", lambda _doc: 0)
-    monkeypatch.setattr("ocf_freecad.services.controller_service.freecad_gui.activate_document", lambda _doc: True)
-    monkeypatch.setattr("ocf_freecad.services.controller_service.freecad_gui.focus_view", lambda _doc, fit=True: True)
+    monkeypatch.setattr("ocw_workbench.services.controller_service.ControllerBuilder", FakeBuilder)
+    monkeypatch.setattr("ocw_workbench.services.controller_service.freecad_gui.reveal_generated_objects", lambda _doc: 0)
+    monkeypatch.setattr("ocw_workbench.services.controller_service.freecad_gui.activate_document", lambda _doc: True)
+    monkeypatch.setattr("ocw_workbench.services.controller_service.freecad_gui.focus_view", lambda _doc, fit=True: True)
 
     service = ControllerService()
     doc = FakeFeatureDocument()
@@ -635,13 +635,13 @@ def test_sync_document_preserves_single_overlay_object(monkeypatch):
         },
     )
 
-    overlay = doc.getObject("OCF_Overlay")
+    overlay = doc.getObject("OCW_Overlay")
 
     assert overlay is not None
 
     for _ in range(3):
         service.sync_document(doc)
-        assert doc.getObject("OCF_Overlay") is overlay
+        assert doc.getObject("OCW_Overlay") is overlay
         renderer.render(
             doc,
             {
@@ -653,6 +653,6 @@ def test_sync_document_preserves_single_overlay_object(monkeypatch):
                 ],
             },
         )
-        assert doc.getObject("OCF_Overlay") is overlay
-        assert len([obj for obj in doc.Objects if obj.Name == "OCF_Overlay"]) == 1
-        assert not any(obj.Name.startswith("OCF_OVERLAY_") for obj in doc.Objects)
+        assert doc.getObject("OCW_Overlay") is overlay
+        assert len([obj for obj in doc.Objects if obj.Name == "OCW_Overlay"]) == 1
+        assert not any(obj.Name.startswith("OCW_OVERLAY_") for obj in doc.Objects)

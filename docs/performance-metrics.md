@@ -20,7 +20,7 @@ These metrics are written in normal operation and do not require a debug flag.
 
 Document metadata key:
 
-- `OCFStateMetrics`
+- `OCWStateMetrics`
 
 Fields:
 
@@ -36,7 +36,7 @@ Fields:
 
 Document metadata key:
 
-- `OCFLastSync`
+- `OCWLastSync`
 
 Relevant fields:
 
@@ -56,7 +56,7 @@ Relevant fields:
 
 Document metadata key:
 
-- `OCFOverlayRender`
+- `OCWOverlayRender`
 
 Relevant fields:
 
@@ -74,23 +74,23 @@ Detailed grouped profiling is disabled by default.
 Enable it by setting:
 
 ```python
-doc.OCFDebugProfiling = {"enabled": True, "log": False}
+doc.OCWDebugProfiling = {"enabled": True, "log": False}
 ```
 
 or:
 
 ```python
-doc.OCFDebugProfiling = True
+doc.OCWDebugProfiling = True
 ```
 
 Behavior:
 
-- `enabled=True`: collect grouped metrics into `OCFPerformance`
+- `enabled=True`: collect grouped metrics into `OCWPerformance`
 - `log=True`: also print compact profiling lines to the FreeCAD console
 
 Document metadata key:
 
-- `OCFPerformance`
+- `OCWPerformance`
 
 Structure:
 
@@ -172,10 +172,10 @@ If this is high while `overlay.build` is low, the rendering/update path is the i
    - validate
    - toggle overlay
 3. Inspect:
-   - `OCFStateMetrics`
-   - `OCFLastSync`
-   - `OCFOverlayRender`
-   - `OCFPerformance` if detailed profiling is enabled
+   - `OCWStateMetrics`
+   - `OCWLastSync`
+   - `OCWOverlayRender`
+   - `OCWPerformance` if detailed profiling is enabled
 4. Decide whether the bottleneck is:
    - state serialization
    - geometry planning

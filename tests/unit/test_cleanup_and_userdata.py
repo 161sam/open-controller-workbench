@@ -4,8 +4,8 @@ import json
 import sys
 from types import SimpleNamespace
 
-from ocf_freecad.generator.controller_builder import ControllerBuilder
-from ocf_freecad.userdata.persistence import _default_base_dir
+from ocw_workbench.generator.controller_builder import ControllerBuilder
+from ocw_workbench.userdata.persistence import _default_base_dir
 
 
 class FakeShapePrimitive:
@@ -72,11 +72,11 @@ def test_apply_cutouts_uses_in_memory_shapes(monkeypatch):
             ],
         )
     monkeypatch.setattr(
-        "ocf_freecad.generator.controller_builder.shapes.make_cylinder_shape",
+        "ocw_workbench.generator.controller_builder.shapes.make_cylinder_shape",
         lambda radius, height: SimpleNamespace(radius=radius, height=height, copy=lambda: SimpleNamespace(translate=lambda *_args: None)),
     )
     monkeypatch.setattr(
-        "ocf_freecad.generator.controller_builder.shapes.translate_shape",
+        "ocw_workbench.generator.controller_builder.shapes.translate_shape",
         lambda shape, x=0, y=0, z=0: SimpleNamespace(shape=shape, x=x, y=y, z=z),
     )
 
@@ -180,7 +180,7 @@ def test_apply_cutouts_warns_when_rect_cutouts_overlap(monkeypatch):
         lambda **_kwargs: FakeShape("tool"),
     )
     warnings = []
-    monkeypatch.setattr("ocf_freecad.generator.controller_builder.LOGGER.warning", lambda message, *args: warnings.append(message % args if args else message))
+    monkeypatch.setattr("ocw_workbench.generator.controller_builder.LOGGER.warning", lambda message, *args: warnings.append(message % args if args else message))
 
     base = FakeBaseObject()
     builder.apply_cutouts(base, components=["ignored"])
@@ -247,7 +247,7 @@ def test_cutout_boolean_plan_collects_tools_and_diagnostics(monkeypatch):
 
 
 def test_overlay_renderer_materializes_single_overlay_object(monkeypatch):
-    from ocf_freecad.gui.overlay.renderer import OverlayRenderer
+    from ocw_workbench.gui.overlay.renderer import OverlayRenderer
 
     created = []
 
@@ -299,7 +299,7 @@ def test_overlay_renderer_materializes_single_overlay_object(monkeypatch):
 
     assert len(created) == 1
     assert len(doc.Objects) == 1
-    assert created[0].Name == "OCF_Overlay"
+    assert created[0].Name == "OCW_Overlay"
     assert json.loads(created[0].OverlayPayload)["summary"]["render_item_count"] == 2
     assert payload["summary"]["render_path"] == "featurepython-headless"
     assert payload["summary"]["render_item_count"] == 2
@@ -308,7 +308,7 @@ def test_overlay_renderer_materializes_single_overlay_object(monkeypatch):
 
 
 def test_overlay_renderer_drops_degenerate_and_text_items(monkeypatch):
-    from ocf_freecad.gui.overlay.renderer import OverlayRenderer
+    from ocw_workbench.gui.overlay.renderer import OverlayRenderer
 
     class FakeOverlayObject:
         def __init__(self, name: str) -> None:
@@ -327,7 +327,7 @@ def test_overlay_renderer_drops_degenerate_and_text_items(monkeypatch):
 
     class FakeDoc:
         def __init__(self) -> None:
-            self.Objects = [SimpleNamespace(Name="OCF_OVERLAY_old", Label="OCF_OVERLAY_old")]
+            self.Objects = [SimpleNamespace(Name="OCW_OVERLAY_old", Label="OCW_OVERLAY_old")]
 
         def addObject(self, _type_name: str, name: str):
             obj = FakeOverlayObject(name)
@@ -358,7 +358,7 @@ def test_overlay_renderer_drops_degenerate_and_text_items(monkeypatch):
     )
 
     assert len(doc.Objects) == 1
-    assert doc.Objects[0].Name == "OCF_Overlay"
+    assert doc.Objects[0].Name == "OCW_Overlay"
     assert payload["summary"]["render_item_count"] == 2
     assert payload["summary"]["dropped_item_count"] == 3
     assert payload["summary"]["render_path"] == "featurepython-headless"
@@ -370,7 +370,7 @@ def test_overlay_renderer_drops_degenerate_and_text_items(monkeypatch):
 
 
 def test_overlay_renderer_accepts_slot_and_drops_degenerate_slot():
-    from ocf_freecad.gui.overlay.renderer import OverlayRenderer
+    from ocw_workbench.gui.overlay.renderer import OverlayRenderer
 
     class FakeOverlayObject:
         def __init__(self, name: str) -> None:
@@ -429,13 +429,13 @@ def test_overlay_renderer_accepts_slot_and_drops_degenerate_slot():
 
 
 def test_overlay_renderer_rotates_rect_items(monkeypatch):
-    from ocf_freecad.gui.overlay.object import _rotate_point
+    from ocw_workbench.gui.overlay.object import _rotate_point
 
     assert _rotate_point(4.0, 2.0, 2.0, 2.0, 90.0, 1.0) == (2.0, 4.0, 1.0)
 
 
 def test_overlay_renderer_reuses_single_overlay_object_for_large_payload():
-    from ocf_freecad.gui.overlay.renderer import OverlayRenderer
+    from ocw_workbench.gui.overlay.renderer import OverlayRenderer
 
     class FakeOverlayObject:
         def __init__(self, name: str) -> None:
@@ -484,13 +484,13 @@ def test_overlay_renderer_reuses_single_overlay_object_for_large_payload():
     second = renderer.render(doc, {"enabled": True, "controller_height": 10.0, "items": items})
 
     assert len(doc.Objects) == 1
-    assert doc.Objects[0].Name == "OCF_Overlay"
+    assert doc.Objects[0].Name == "OCW_Overlay"
     assert first["summary"]["render_item_count"] == 320
     assert second["summary"]["render_item_count"] == 320
 
 
 def test_userdata_base_dir_uses_home_fallback(monkeypatch, tmp_path):
-    monkeypatch.delenv("OCF_USERDATA_DIR", raising=False)
+    monkeypatch.delenv("OCW_USERDATA_DIR", raising=False)
     monkeypatch.delenv("XDG_STATE_HOME", raising=False)
     monkeypatch.delenv("XDG_DATA_HOME", raising=False)
     monkeypatch.setattr("pathlib.Path.home", lambda: tmp_path)
@@ -498,4 +498,4 @@ def test_userdata_base_dir_uses_home_fallback(monkeypatch, tmp_path):
 
     base_dir = _default_base_dir()
 
-    assert base_dir == str(tmp_path / ".local" / "state" / "open-controller-freecad")
+    assert base_dir == str(tmp_path / ".local" / "state" / "open-controller-workbench")

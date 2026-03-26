@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from ocf_freecad.pipeline.runner import run_full_pipeline
+from ocw_workbench.pipeline.runner import run_full_pipeline
 
 
 def test_full_controller_pipeline_runs_end_to_end(tmp_path: Path):

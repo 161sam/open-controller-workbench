@@ -2,16 +2,16 @@ from pathlib import Path
 
 import pytest
 
-from ocf_freecad.templates.generator import TemplateGenerator
-from ocf_freecad.templates.loader import TemplateLoader
-from ocf_freecad.templates.registry import TemplateRegistry
-from ocf_freecad.templates.resolver import TemplateResolver
-from ocf_freecad.utils.yaml_io import dump_yaml
+from ocw_workbench.templates.generator import TemplateGenerator
+from ocw_workbench.templates.loader import TemplateLoader
+from ocw_workbench.templates.registry import TemplateRegistry
+from ocw_workbench.templates.resolver import TemplateResolver
+from ocw_workbench.utils.yaml_io import dump_yaml
 
 
 def test_template_loader_loads_encoder_module():
     loader = TemplateLoader()
-    template = loader.load("ocf_freecad/templates/library/encoder_module.yaml")
+    template = loader.load("ocw_workbench/templates/library/encoder_module.yaml")
 
     assert template.id == "encoder_module"
     assert template.controller["surface"]["type"] == "rounded_rect"

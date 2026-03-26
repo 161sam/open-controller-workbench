@@ -1,5 +1,5 @@
-from ocf_freecad.library.manager import ComponentLibraryManager
-from ocf_freecad.utils.yaml_io import load_yaml
+from ocw_workbench.library.manager import ComponentLibraryManager
+from ocw_workbench.utils.yaml_io import load_yaml
 
 
 def test_load_all_components():

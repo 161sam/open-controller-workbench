@@ -4,10 +4,10 @@ from pathlib import Path
 
 import pytest
 
-from ocf_freecad.services.plugin_manager_service import PluginManagerService
-from ocf_freecad.services.plugin_service import reset_plugin_service
-from ocf_freecad.userdata.plugin_state_store import PluginStatePersistence
-from ocf_freecad.utils.yaml_io import dump_yaml
+from ocw_workbench.services.plugin_manager_service import PluginManagerService
+from ocw_workbench.services.plugin_service import reset_plugin_service
+from ocw_workbench.userdata.plugin_state_store import PluginStatePersistence
+from ocw_workbench.utils.yaml_io import dump_yaml
 
 
 def _service(tmp_path: Path, internal_root: Path | None = None) -> PluginManagerService:

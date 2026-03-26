@@ -4,8 +4,8 @@
 ## Setup
 
 ```bash
-git clone https://github.com/161sam/open-controller-freecad.git
-cd open-controller-freecad
+git clone https://github.com/161sam/open-controller-workbench.git
+cd open-controller-workbench
 pip install -e .
 ```
 
@@ -13,16 +13,16 @@ Für FreeCAD-Entwicklung zusätzlich:
 
 ```bash
 mkdir -p ~/.local/share/FreeCAD/Mod
-ln -s "$(pwd)" ~/.local/share/FreeCAD/Mod/OpenControllerFreeCAD
+ln -s "$(pwd)" ~/.local/share/FreeCAD/Mod/OpenControllerWorkbench
 ```
 
 ## FreeCAD-Modulstruktur
 
 ```text
-open-controller-freecad/
+open-controller-workbench/
 ├── Init.py
 ├── InitGui.py
-├── ocf_freecad/
+├── ocw_workbench/
 │   ├── commands/
 │   ├── domain/
 │   ├── freecad_api/
@@ -36,7 +36,7 @@ open-controller-freecad/
 │   ├── services/
 │   ├── templates/
 │   └── variants/
-├── ocf_kicad/
+├── ocw_kicad/
 ├── resources/
 └── docs/
 ```
@@ -45,7 +45,7 @@ Wichtig:
 - FreeCAD lädt den Modulroot
 - `InitGui.py` registriert die Workbench
 - Ressourcen im Top-Level-Ordner `resources/` müssen relativ zum Modulroot auffindbar bleiben
-- Laufzeit-YAML-Daten liegen im Package unter `ocf_freecad/`
+- Laufzeit-YAML-Daten liegen im Package unter `ocw_workbench/`
 
 ## Prinzipien
 
@@ -57,9 +57,9 @@ Wichtig:
 ## Einstiegspunkte
 
 - `InitGui.py`
-- `ocf_freecad/workbench.py`
-- `ocf_freecad/services/controller_service.py`
-- `ocf_freecad/generator/controller_builder.py`
+- `ocw_workbench/workbench.py`
+- `ocw_workbench/services/controller_service.py`
+- `ocw_workbench/generator/controller_builder.py`
 
 ## Packaging
 
@@ -67,10 +67,10 @@ Für Packaging müssen mitkommen:
 - `Init.py`
 - `InitGui.py`
 - `resources/icons/*`
-- YAML-Dateien in `ocf_freecad/library/`
-- YAML-Dateien in `ocf_freecad/templates/`
-- YAML-Dateien in `ocf_freecad/variants/`
-- interne Plugin-Manifest- und Daten-Dateien in `ocf_freecad/plugins/internal/`
+- YAML-Dateien in `ocw_workbench/library/`
+- YAML-Dateien in `ocw_workbench/templates/`
+- YAML-Dateien in `ocw_workbench/variants/`
+- interne Plugin-Manifest- und Daten-Dateien in `ocw_workbench/plugins/internal/`
 
 ## Roadmap Dev
 

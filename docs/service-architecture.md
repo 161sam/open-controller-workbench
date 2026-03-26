@@ -69,7 +69,7 @@ This facade exists to keep the current UI stable while internals are split into 
 - Document model root: `freecad_api/model.py`
 - State mutation: `services/controller_state_service.py`
 - Document rebuild: `services/document_sync_service.py`
-- Global user data: `ocf_freecad.userdata`
+- Global user data: `ocw_workbench.userdata`
 
 ## Migration Notes
 

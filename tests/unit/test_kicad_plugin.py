@@ -4,12 +4,12 @@ from pathlib import Path
 
 import pytest
 
-import ocf_kicad_plugin
-from ocf_kicad.board import create_board_outline
-from ocf_kicad.keepout_renderer import render_keepouts
-from ocf_kicad.loader import load_layout
-from ocf_kicad.placer import place_mounting_holes
-from ocf_kicad.plugin import import_layout
+import ocw_kicad_plugin
+from ocw_kicad.board import create_board_outline
+from ocw_kicad.keepout_renderer import render_keepouts
+from ocw_kicad.loader import load_layout
+from ocw_kicad.placer import place_mounting_holes
+from ocw_kicad.plugin import import_layout
 
 
 class FakeFootprint:
@@ -326,4 +326,4 @@ def test_import_layout_warns_and_skips_unknown_keepout_shape(tmp_path: Path, cap
 
 
 def test_console_import_alias_exposes_import_layout():
-    assert ocf_kicad_plugin.import_layout is import_layout
+    assert ocw_kicad_plugin.import_layout is import_layout

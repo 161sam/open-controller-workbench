@@ -4,17 +4,17 @@ from pathlib import Path
 
 import pytest
 
-from ocf_freecad.services.plugin_manager_service import PluginManagerService
-from ocf_freecad.services.plugin_pack_service import PluginPackService
-from ocf_freecad.services.plugin_service import reset_plugin_service
-from ocf_freecad.userdata.plugin_state_store import PluginStatePersistence
+from ocw_workbench.services.plugin_manager_service import PluginManagerService
+from ocw_workbench.services.plugin_pack_service import PluginPackService
+from ocw_workbench.services.plugin_service import reset_plugin_service
+from ocw_workbench.userdata.plugin_state_store import PluginStatePersistence
 
 
 def _services(tmp_path: Path) -> tuple[PluginManagerService, PluginPackService]:
     persistence = PluginStatePersistence(base_dir=str(tmp_path / "userdata"))
     manager = PluginManagerService(
         persistence=persistence,
-        internal_root=Path("ocf_freecad/plugins/internal"),
+        internal_root=Path("ocw_workbench/plugins/internal"),
         external_root=tmp_path / "external",
     )
     pack = PluginPackService(plugin_manager_service=manager, external_root=tmp_path / "external")
@@ -29,7 +29,7 @@ def _reset_plugin_service_after_test():
 
 def test_export_data_plugin_pack_creates_zip(tmp_path: Path) -> None:
     reset_plugin_service(
-        internal_root=Path("ocf_freecad/plugins/internal"),
+        internal_root=Path("ocw_workbench/plugins/internal"),
         external_root=tmp_path / "external",
         state_base_dir=tmp_path / "userdata",
     )
@@ -44,7 +44,7 @@ def test_export_data_plugin_pack_creates_zip(tmp_path: Path) -> None:
 
 def test_export_rejects_code_plugin_pack(tmp_path: Path) -> None:
     reset_plugin_service(
-        internal_root=Path("ocf_freecad/plugins/internal"),
+        internal_root=Path("ocw_workbench/plugins/internal"),
         external_root=tmp_path / "external",
         state_base_dir=tmp_path / "userdata",
     )
@@ -93,7 +93,7 @@ def test_import_plugin_pack_installs_into_external_root(tmp_path: Path) -> None:
         )
 
     reset_plugin_service(
-        internal_root=Path("ocf_freecad/plugins/internal"),
+        internal_root=Path("ocw_workbench/plugins/internal"),
         external_root=tmp_path / "external",
         state_base_dir=tmp_path / "userdata",
     )
@@ -116,7 +116,7 @@ def test_import_rejects_archive_with_python_file(tmp_path: Path) -> None:
         handle.writestr("evil.py", "print('boom')")
 
     reset_plugin_service(
-        internal_root=Path("ocf_freecad/plugins/internal"),
+        internal_root=Path("ocw_workbench/plugins/internal"),
         external_root=tmp_path / "external",
         state_base_dir=tmp_path / "userdata",
     )

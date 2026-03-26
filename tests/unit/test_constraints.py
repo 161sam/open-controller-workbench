@@ -1,6 +1,6 @@
-from ocf_freecad.domain.component import Component
-from ocf_freecad.domain.controller import Controller
-from ocf_freecad.services.constraint_service import ConstraintService
+from ocw_workbench.domain.component import Component
+from ocw_workbench.domain.controller import Controller
+from ocw_workbench.services.constraint_service import ConstraintService
 
 
 def test_two_encoders_too_close_produces_spacing_error():

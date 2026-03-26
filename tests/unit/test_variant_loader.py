@@ -2,13 +2,13 @@ from pathlib import Path
 
 import pytest
 
-from ocf_freecad.utils.yaml_io import dump_yaml, load_yaml
-from ocf_freecad.variants.loader import VariantLoader
-from ocf_freecad.variants.registry import VariantRegistry
+from ocw_workbench.utils.yaml_io import dump_yaml, load_yaml
+from ocw_workbench.variants.loader import VariantLoader
+from ocw_workbench.variants.registry import VariantRegistry
 
 
 def test_variant_loader_loads_fader_strip_variant():
-    variant = VariantLoader().load("ocf_freecad/variants/library/fader_strip_60mm.yaml")
+    variant = VariantLoader().load("ocw_workbench/variants/library/fader_strip_60mm.yaml")
 
     assert variant.id == "fader_strip_60mm"
     assert variant.template_id == "fader_strip"
@@ -77,7 +77,7 @@ def test_variant_loader_rejects_unknown_component_operation(tmp_path: Path):
 
 
 def test_data_plugin_variant_alias_resolves_and_adds_component():
-    from ocf_freecad.variants.generator import VariantGenerator
+    from ocw_workbench.variants.generator import VariantGenerator
 
     project = VariantGenerator().generate_from_variant("simple_variant")
 

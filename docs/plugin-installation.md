@@ -7,11 +7,11 @@ Dieses Repository ist selbst der FreeCAD-Modulordner.
 FreeCAD erwartet im Modulroot:
 
 ```text
-OpenControllerFreeCAD/
+OpenControllerWorkbench/
 ├── Init.py
 ├── InitGui.py
-├── ocf_freecad/
-├── ocf_kicad/
+├── ocw_workbench/
+├── ocw_kicad/
 └── resources/
 ```
 
@@ -26,21 +26,21 @@ Deshalb muss der Symlink immer auf den Repository-Root zeigen.
 ## Dev-Setup unter Linux
 
 ```bash
-git clone https://github.com/161sam/open-controller-freecad.git
-cd open-controller-freecad
+git clone https://github.com/161sam/open-controller-workbench.git
+cd open-controller-workbench
 pip install -e .
 mkdir -p ~/.local/share/FreeCAD/Mod
-ln -s "$(pwd)" ~/.local/share/FreeCAD/Mod/OpenControllerFreeCAD
+ln -s "$(pwd)" ~/.local/share/FreeCAD/Mod/OpenControllerWorkbench
 ```
 
 ## Dev-Setup für Snap-FreeCAD
 
 ```bash
-git clone https://github.com/161sam/open-controller-freecad.git
-cd open-controller-freecad
+git clone https://github.com/161sam/open-controller-workbench.git
+cd open-controller-workbench
 pip install -e .
 mkdir -p ~/snap/freecad/common/Mod
-ln -s "$(pwd)" ~/snap/freecad/common/Mod/OpenControllerFreeCAD
+ln -s "$(pwd)" ~/snap/freecad/common/Mod/OpenControllerWorkbench
 ```
 
 ## Start
@@ -72,11 +72,11 @@ Wenn die Installation korrekt ist:
 ### Icons fehlen
 
 - prüfen, ob `resources/icons/` im Modulroot vorhanden ist
-- prüfen, ob nicht versehentlich nur `ocf_freecad/` verlinkt wurde
+- prüfen, ob nicht versehentlich nur `ocw_workbench/` verlinkt wurde
 
 ### YAML-/Template-Daten fehlen
 
-- prüfen, ob `ocf_freecad/templates/`, `ocf_freecad/variants/`, `ocf_freecad/library/` und `ocf_freecad/plugins/internal/` vorhanden sind
+- prüfen, ob `ocw_workbench/templates/`, `ocw_workbench/variants/`, `ocw_workbench/library/` und `ocw_workbench/plugins/internal/` vorhanden sind
 - prüfen, ob FreeCAD das richtige Modulverzeichnis lädt
 
 ### Importfehler

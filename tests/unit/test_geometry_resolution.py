@@ -2,13 +2,13 @@ from pathlib import Path
 
 import pytest
 
-from ocf_freecad.domain.component import Component
-from ocf_freecad.generator.component_resolver import ComponentResolver
-from ocf_freecad.generator.controller_builder import ControllerBuilder
-from ocf_freecad.generator.mechanical_resolver import MechanicalResolver
-from ocf_freecad.library.manager import ComponentLibraryManager
-from ocf_freecad.services.library_service import LibraryService
-from ocf_freecad.utils.yaml_io import dump_yaml, load_yaml
+from ocw_workbench.domain.component import Component
+from ocw_workbench.generator.component_resolver import ComponentResolver
+from ocw_workbench.generator.controller_builder import ControllerBuilder
+from ocw_workbench.generator.mechanical_resolver import MechanicalResolver
+from ocw_workbench.library.manager import ComponentLibraryManager
+from ocw_workbench.services.library_service import LibraryService
+from ocw_workbench.utils.yaml_io import dump_yaml, load_yaml
 
 
 def test_encoder_resolution_from_library_fixture():

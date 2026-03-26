@@ -1,4 +1,4 @@
-from ocf_freecad.services.template_service import TemplateService
+from ocw_workbench.services.template_service import TemplateService
 
 
 def test_all_templates_load():

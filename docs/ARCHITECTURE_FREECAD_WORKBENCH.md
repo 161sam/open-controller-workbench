@@ -1,8 +1,8 @@
-# Open Controller FreeCAD Workbench Architecture
+# Open Controller Workbench Workbench Architecture
 
 ## Purpose
 
-This document defines the target architecture for the Open Controller FreeCAD workbench.
+This document defines the target architecture for the Open Controller Workbench workbench.
 It is intended as the reference for ongoing refactors and should stay aligned with the
 real repository state.
 
@@ -34,11 +34,11 @@ This document does not prescribe:
 
 The repository has already completed several important refactors:
 
-- `OCF_Controller` exists as the document model root
-- `ProjectJson` on `OCF_Controller` is the primary persisted project payload
+- `OCW_Controller` exists as the document model root
+- `ProjectJson` on `OCW_Controller` is the primary persisted project payload
 - `ControllerProxy` mirrors selected scalar properties to FreeCAD properties
-- generated geometry is managed via `OCF_Generated`
-- overlay is rendered through a dedicated `OCF_Overlay` object and view provider
+- generated geometry is managed via `OCW_Generated`
+- overlay is rendered through a dedicated `OCW_Overlay` object and view provider
 - `ControllerService` is now a compatibility facade
 - state mutation and document sync are split into `ControllerStateService` and `DocumentSyncService`
 - explicit sync modes exist: `full`, `visual_only`, `partial_ready`, `state_only`
@@ -70,7 +70,7 @@ stack.
 
 ### 4. Controller Feature Is the Root, but Not Yet the Full Parametric Master
 
-`OCF_Controller` already behaves as the persisted project root, but `execute()` is not
+`OCW_Controller` already behaves as the persisted project root, but `execute()` is not
 yet the main parametric geometry driver. This should change gradually, without forcing a
 large geometry rewrite now.
 
@@ -105,7 +105,7 @@ flowchart TD
     STATE[ControllerStateService]
     SYNC[DocumentSyncService]
     OVERLAY[OverlayService + OverlayRenderer]
-    MODEL[freecad_api/model.py<br/>OCF_Controller / OCF_Generated / OCF_Overlay]
+    MODEL[freecad_api/model.py<br/>OCW_Controller / OCW_Generated / OCW_Overlay]
     PERSIST[freecad_api/state.py<br/>ProjectStateStore]
     DOMAIN[domain/*]
     GENERATOR[generator/*]
@@ -242,12 +242,12 @@ Responsibilities:
 
 The single source of truth for a controller project is:
 
-- document object: `OCF_Controller`
+- document object: `OCW_Controller`
 - property: `ProjectJson`
 
 `ProjectJson` stores the normalized project snapshot.
 
-Mirrored scalar properties on `OCF_Controller` exist for:
+Mirrored scalar properties on `OCW_Controller` exist for:
 
 - inspection
 - property editor visibility
@@ -258,7 +258,7 @@ They are not the primary persistence format.
 
 ### FeaturePython Role
 
-`OCF_Controller` should remain an `App::FeaturePython` object with a `ControllerProxy`.
+`OCW_Controller` should remain an `App::FeaturePython` object with a `ControllerProxy`.
 
 Target responsibilities of `ControllerProxy`:
 
@@ -286,11 +286,11 @@ restore hooks.
 ```mermaid
 flowchart TD
     DOC[FreeCAD Document]
-    CTRL[OCF_Controller<br/>FeaturePython root]
-    GEN[OCF_Generated<br/>derived geometry group]
-    BODY[OCF_ControllerBody]
-    TOP[OCF_TopPlate or OCF_TopPlateCut]
-    OVR[OCF_Overlay<br/>visual helper object]
+    CTRL[OCW_Controller<br/>FeaturePython root]
+    GEN[OCW_Generated<br/>derived geometry group]
+    BODY[OCW_ControllerBody]
+    TOP[OCW_TopPlate or OCW_TopPlateCut]
+    OVR[OCW_Overlay<br/>visual helper object]
 
     DOC --> CTRL
     CTRL --> GEN
@@ -301,19 +301,19 @@ flowchart TD
 
 ### Ownership Rules
 
-`OCF_Controller`
+`OCW_Controller`
 
 - persisted project root
 - owns project identity and mirrored controller properties
-- claims `OCF_Generated` in the tree
+- claims `OCW_Generated` in the tree
 
-`OCF_Generated`
+`OCW_Generated`
 
 - contains only generated model geometry
 - is fully replaceable from project state
 - is the only normal cleanup target for generated objects
 
-`OCF_Overlay`
+`OCW_Overlay`
 
 - separate visual helper object
 - not manufacturing geometry
@@ -322,7 +322,7 @@ flowchart TD
 
 ### What Must Not Happen Again
 
-- global cleanup over arbitrary `doc.Objects` with `OCF_*` name heuristics
+- global cleanup over arbitrary `doc.Objects` with `OCW_*` name heuristics
 - overlay items as hundreds of `Part::Feature` document objects
 - keepout helper markers materialized by default as document objects
 - state spread across multiple actively written document metadata formats
@@ -376,7 +376,7 @@ This keeps migration risk lower than a full rewrite.
 
 ### Target Overlay Path
 
-- one `OCF_Overlay` `FeaturePython` object
+- one `OCW_Overlay` `FeaturePython` object
 - one dedicated overlay view provider
 - Coin scene graph rendering for:
   - outlines
@@ -448,7 +448,7 @@ sequenceDiagram
     Facade->>State: mutate project state
     alt geometry-affecting change
         Facade->>Sync: update_document(full)
-        Sync->>Doc: rebuild OCF_Generated
+        Sync->>Doc: rebuild OCW_Generated
         Sync->>Doc: recompute once
         Sync->>Overlay: refresh overlay payload/view
     else visual-only change
@@ -523,10 +523,10 @@ core business logic.
 
 ### Phase 1: Completed / Mostly Completed
 
-- establish `OCF_Controller` as project root
+- establish `OCW_Controller` as project root
 - establish `ProjectJson` as single persisted project payload
 - split state mutation from document sync
-- move generated object ownership to `OCF_Generated`
+- move generated object ownership to `OCW_Generated`
 - move overlay to one dedicated object
 - introduce explicit sync modes
 - modularize geometry planning
@@ -612,10 +612,10 @@ The following are explicitly not required for the target architecture in the nea
 
 The intended end state is:
 
-- `OCF_Controller` as the authoritative persisted project root
+- `OCW_Controller` as the authoritative persisted project root
 - `ProjectJson` as the single project payload
-- `OCF_Generated` as the only standard container for derived model geometry
-- `OCF_Overlay` as a separate visual helper object
+- `OCW_Generated` as the only standard container for derived model geometry
+- `OCW_Overlay` as a separate visual helper object
 - `ControllerStateService` for mutation
 - `DocumentSyncService` for rebuild
 - explicit sync modes with recompute ownership in one layer

@@ -1,9 +1,9 @@
 from pathlib import Path
 
-from ocf_freecad.domain.component import Component
-from ocf_freecad.domain.controller import Controller
-from ocf_freecad.services.schematic_service import SchematicService
-from ocf_freecad.utils.yaml_io import load_yaml
+from ocw_workbench.domain.component import Component
+from ocw_workbench.domain.controller import Controller
+from ocw_workbench.services.schematic_service import SchematicService
+from ocw_workbench.utils.yaml_io import load_yaml
 
 
 def test_exports_schematic_yaml(tmp_path: Path):

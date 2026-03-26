@@ -1,0 +1,22 @@
+plugin:
+  id: "basic_components_pack"
+  name: "Basic Components Pack"
+  version: "0.1.0"
+  api_version: "1.0"
+  type: "component_pack"
+  author: "OCW Community"
+  description: "Safe YAML-only controls and display components"
+
+entrypoints:
+  components: "components/"
+  templates: null
+  variants: null
+  exporters: null
+  layouts: null
+  constraints: null
+  module: null
+
+capabilities:
+  - components
+
+dependencies: []

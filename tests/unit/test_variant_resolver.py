@@ -1,7 +1,7 @@
 import pytest
 
-from ocf_freecad.variants.generator import VariantGenerator
-from ocf_freecad.variants.resolver import VariantResolver
+from ocw_workbench.variants.generator import VariantGenerator
+from ocw_workbench.variants.resolver import VariantResolver
 
 
 def test_variant_generator_replaces_fader_component():

@@ -1,8 +1,8 @@
 import FreeCAD as App
 
-from ocf_freecad.domain.component import Component
-from ocf_freecad.domain.controller import Controller
-from ocf_freecad.generator.controller_builder import ControllerBuilder
+from ocw_workbench.domain.component import Component
+from ocw_workbench.domain.controller import Controller
+from ocw_workbench.generator.controller_builder import ControllerBuilder
 
 
 doc = App.newDocument("TestController")

@@ -1,0 +1,23 @@
+plugin:
+  id: "basic_templates_pack"
+  name: "Basic Templates Pack"
+  version: "0.1.0"
+  api_version: "1.0"
+  type: "template_pack"
+  author: "OCW Community"
+  description: "Safe YAML-only starter controller templates"
+
+entrypoints:
+  components: null
+  templates: "templates/"
+  variants: null
+  exporters: null
+  layouts: null
+  constraints: null
+  module: null
+
+capabilities:
+  - templates
+
+dependencies:
+  - basic_components_pack

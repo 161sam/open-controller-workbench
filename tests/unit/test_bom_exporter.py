@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from ocf_freecad.exporters.bom_exporter import export_bom_csv, export_bom_yaml
+from ocw_workbench.exporters.bom_exporter import export_bom_csv, export_bom_yaml
 
 
 def test_bom_exporters_write_yaml_and_csv(tmp_path: Path):

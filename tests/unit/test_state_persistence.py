@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 
-from ocf_freecad.freecad_api.model import (
+from ocw_workbench.freecad_api.model import (
     CONTROLLER_OBJECT_NAME,
     GENERATED_GROUP_NAME,
     OVERLAY_OBJECT_NAME,
@@ -13,7 +13,7 @@ from ocf_freecad.freecad_api.model import (
     group_generated_object,
     iter_generated_objects,
 )
-from ocf_freecad.freecad_api.state import (
+from ocw_workbench.freecad_api.state import (
     LEGACY_STATE_JSON_KEY,
     LEGACY_STATE_KEY,
     STATE_CACHE_JSON_KEY,
@@ -156,10 +156,10 @@ def test_project_state_store_records_load_and_save_metrics():
     state = read_state(doc)
 
     assert state is not None
-    assert doc.OCFStateMetrics["save"]["source"] == "controller"
-    assert doc.OCFStateMetrics["save"]["payload_bytes"] > 0
-    assert doc.OCFStateMetrics["load"]["source"] == "primary"
-    assert doc.OCFStateMetrics["load"]["controller_id"] == "metrics-demo"
+    assert doc.OCWStateMetrics["save"]["source"] == "controller"
+    assert doc.OCWStateMetrics["save"]["payload_bytes"] > 0
+    assert doc.OCWStateMetrics["load"]["source"] == "primary"
+    assert doc.OCWStateMetrics["load"]["controller_id"] == "metrics-demo"
 
 
 def test_read_state_migrates_legacy_state_container_into_controller_object():
@@ -208,7 +208,7 @@ def test_controller_object_uses_featurepython_proxy_and_claims_generated_group_o
     controller = get_controller_object(doc, create=True)
     generated = get_generated_group(doc, create=True)
     overlay = doc.addObject("App::FeaturePython", OVERLAY_OBJECT_NAME)
-    overlay.Label = "OCF Overlay"
+    overlay.Label = "OCW Overlay"
 
     claimed = controller.ViewObject.Proxy.claimChildren()
 
@@ -309,9 +309,9 @@ def test_iter_generated_objects_uses_group_membership_only():
     doc = FakeDocument()
     group = get_generated_group(doc, create=True)
     generated = doc.addObject("Part::Feature", "ControllerBody")
-    foreign = doc.addObject("Part::Feature", "OCF_Stray")
+    foreign = doc.addObject("Part::Feature", "OCW_Stray")
     overlay = doc.addObject("App::FeaturePython", OVERLAY_OBJECT_NAME)
-    overlay.Label = "OCF Overlay"
+    overlay.Label = "OCW Overlay"
 
     group_generated_object(doc, generated)
     members = iter_generated_objects(doc)
@@ -330,7 +330,7 @@ def test_clear_generated_group_removes_only_group_members():
     generated_two = doc.addObject("Part::Feature", "TopPlate")
     foreign = doc.addObject("Part::Feature", "UserSketch")
     overlay = doc.addObject("App::FeaturePython", OVERLAY_OBJECT_NAME)
-    overlay.Label = "OCF Overlay"
+    overlay.Label = "OCW Overlay"
 
     group_generated_object(doc, generated_one)
     group_generated_object(doc, generated_two)

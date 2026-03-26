@@ -4,11 +4,11 @@ from pathlib import Path
 
 import pytest
 
-from ocf_freecad.library.manager import ComponentLibraryManager
-from ocf_freecad.services.plugin_service import reset_plugin_service
-from ocf_freecad.templates.generator import TemplateGenerator
-from ocf_freecad.utils.yaml_io import dump_yaml
-from ocf_freecad.variants.generator import VariantGenerator
+from ocw_workbench.library.manager import ComponentLibraryManager
+from ocw_workbench.services.plugin_service import reset_plugin_service
+from ocw_workbench.templates.generator import TemplateGenerator
+from ocw_workbench.utils.yaml_io import dump_yaml
+from ocw_workbench.variants.generator import VariantGenerator
 
 
 @pytest.fixture(autouse=True)

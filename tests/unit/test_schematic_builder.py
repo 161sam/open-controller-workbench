@@ -1,9 +1,9 @@
-from ocf_freecad.domain.component import Component
-from ocf_freecad.domain.controller import Controller
-from ocf_freecad.generator.electrical_mapper import ElectricalMapper
-from ocf_freecad.generator.electrical_resolver import ElectricalResolver
-from ocf_freecad.generator.schematic_builder import SchematicBuilder
-from ocf_freecad.utils.yaml_io import load_yaml
+from ocw_workbench.domain.component import Component
+from ocw_workbench.domain.controller import Controller
+from ocw_workbench.generator.electrical_mapper import ElectricalMapper
+from ocw_workbench.generator.electrical_resolver import ElectricalResolver
+from ocw_workbench.generator.schematic_builder import SchematicBuilder
+from ocw_workbench.utils.yaml_io import load_yaml
 
 
 def _build_mapping(components, firmware=None):

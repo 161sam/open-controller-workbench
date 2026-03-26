@@ -1,8 +1,8 @@
 from types import SimpleNamespace
 
-from ocf_freecad.domain.component import Component
-from ocf_freecad.domain.controller import Controller
-from ocf_freecad.generator.controller_builder import ControllerBuilder
+from ocw_workbench.domain.component import Component
+from ocw_workbench.domain.controller import Controller
+from ocw_workbench.generator.controller_builder import ControllerBuilder
 
 
 class FakeShape:
@@ -53,7 +53,7 @@ class FakeDoc:
 
 def test_body_uses_hollow_shell_geometry(monkeypatch):
     monkeypatch.setitem(__import__("sys").modules, "FreeCAD", SimpleNamespace(Vector=FakeVector))
-    monkeypatch.setattr("ocf_freecad.generator.controller_builder.shapes.make_surface_prism_shape", _fake_make_surface_prism_shape)
+    monkeypatch.setattr("ocw_workbench.generator.controller_builder.shapes.make_surface_prism_shape", _fake_make_surface_prism_shape)
     doc = FakeDoc()
     builder = ControllerBuilder(doc=doc)
     controller = Controller(
@@ -104,7 +104,7 @@ def test_body_build_plan_exposes_outer_and_cavity_stages():
 
 def test_top_plate_adds_inner_lid_tongue(monkeypatch):
     monkeypatch.setitem(__import__("sys").modules, "FreeCAD", SimpleNamespace(Vector=FakeVector))
-    monkeypatch.setattr("ocf_freecad.generator.controller_builder.shapes.make_surface_prism_shape", _fake_make_surface_prism_shape)
+    monkeypatch.setattr("ocw_workbench.generator.controller_builder.shapes.make_surface_prism_shape", _fake_make_surface_prism_shape)
     doc = FakeDoc()
     builder = ControllerBuilder(doc=doc)
     controller = Controller(
@@ -159,7 +159,7 @@ def test_top_plate_build_plan_exposes_lid_tongue_stage():
 
 def test_rounded_rect_surface_is_used_for_shell(monkeypatch):
     monkeypatch.setitem(__import__("sys").modules, "FreeCAD", SimpleNamespace(Vector=FakeVector))
-    monkeypatch.setattr("ocf_freecad.generator.controller_builder.shapes.make_surface_prism_shape", _fake_make_surface_prism_shape)
+    monkeypatch.setattr("ocw_workbench.generator.controller_builder.shapes.make_surface_prism_shape", _fake_make_surface_prism_shape)
     doc = FakeDoc()
     builder = ControllerBuilder(doc=doc)
     controller = Controller(
@@ -205,10 +205,10 @@ def test_rect_cutout_shape_rotates_around_component_center(monkeypatch):
     rotate_calls = []
     builder = ControllerBuilder(doc=None)
 
-    monkeypatch.setattr("ocf_freecad.generator.controller_builder.shapes.make_rect_prism_shape", lambda width, depth, height: FakeShape("rect_cutout", width=width, depth=depth, height=height))
-    monkeypatch.setattr("ocf_freecad.generator.controller_builder.shapes.translate_shape", lambda shape, x=0, y=0, z=0: FakeShape("translated", shape=shape, x=x, y=y, z=z))
+    monkeypatch.setattr("ocw_workbench.generator.controller_builder.shapes.make_rect_prism_shape", lambda width, depth, height: FakeShape("rect_cutout", width=width, depth=depth, height=height))
+    monkeypatch.setattr("ocw_workbench.generator.controller_builder.shapes.translate_shape", lambda shape, x=0, y=0, z=0: FakeShape("translated", shape=shape, x=x, y=y, z=z))
     monkeypatch.setattr(
-        "ocf_freecad.generator.controller_builder.shapes.rotate_shape",
+        "ocw_workbench.generator.controller_builder.shapes.rotate_shape",
         lambda shape, angle_deg, center=(0, 0, 0), axis=(0, 0, 1): rotate_calls.append((angle_deg, center, axis)) or FakeShape("rotated", shape=shape, angle=angle_deg, center=center),
     )
 
@@ -229,10 +229,10 @@ def test_rect_cutout_shape_without_rotation_stays_unrotated(monkeypatch):
     builder = ControllerBuilder(doc=None)
     rotate_calls = []
 
-    monkeypatch.setattr("ocf_freecad.generator.controller_builder.shapes.make_rect_prism_shape", lambda width, depth, height: FakeShape("rect_cutout", width=width, depth=depth, height=height))
-    monkeypatch.setattr("ocf_freecad.generator.controller_builder.shapes.translate_shape", lambda shape, x=0, y=0, z=0: FakeShape("translated", shape=shape, x=x, y=y, z=z))
+    monkeypatch.setattr("ocw_workbench.generator.controller_builder.shapes.make_rect_prism_shape", lambda width, depth, height: FakeShape("rect_cutout", width=width, depth=depth, height=height))
+    monkeypatch.setattr("ocw_workbench.generator.controller_builder.shapes.translate_shape", lambda shape, x=0, y=0, z=0: FakeShape("translated", shape=shape, x=x, y=y, z=z))
     monkeypatch.setattr(
-        "ocf_freecad.generator.controller_builder.shapes.rotate_shape",
+        "ocw_workbench.generator.controller_builder.shapes.rotate_shape",
         lambda shape, angle_deg, center=(0, 0, 0), axis=(0, 0, 1): rotate_calls.append((angle_deg, center, axis)) or FakeShape("rotated", shape=shape),
     )
 
@@ -253,10 +253,10 @@ def test_slot_cutout_shape_uses_slot_factory_and_rotates(monkeypatch):
     builder = ControllerBuilder(doc=None)
     rotate_calls = []
 
-    monkeypatch.setattr("ocf_freecad.generator.controller_builder.shapes.make_slot_prism_shape", lambda width, depth, height: FakeShape("slot_cutout", width=width, depth=depth, height=height))
-    monkeypatch.setattr("ocf_freecad.generator.controller_builder.shapes.translate_shape", lambda shape, x=0, y=0, z=0: FakeShape("translated", shape=shape, x=x, y=y, z=z))
+    monkeypatch.setattr("ocw_workbench.generator.controller_builder.shapes.make_slot_prism_shape", lambda width, depth, height: FakeShape("slot_cutout", width=width, depth=depth, height=height))
+    monkeypatch.setattr("ocw_workbench.generator.controller_builder.shapes.translate_shape", lambda shape, x=0, y=0, z=0: FakeShape("translated", shape=shape, x=x, y=y, z=z))
     monkeypatch.setattr(
-        "ocf_freecad.generator.controller_builder.shapes.rotate_shape",
+        "ocw_workbench.generator.controller_builder.shapes.rotate_shape",
         lambda shape, angle_deg, center=(0, 0, 0), axis=(0, 0, 1): rotate_calls.append((angle_deg, center, axis)) or FakeShape("rotated", shape=shape, angle=angle_deg, center=center),
     )
 
@@ -276,7 +276,7 @@ def test_slot_cutout_shape_uses_slot_factory_and_rotates(monkeypatch):
 
 def test_polygon_surface_falls_back_to_solid_prism(monkeypatch):
     monkeypatch.setitem(__import__("sys").modules, "FreeCAD", SimpleNamespace(Vector=FakeVector))
-    monkeypatch.setattr("ocf_freecad.generator.controller_builder.shapes.make_surface_prism_shape", _fake_make_surface_prism_shape)
+    monkeypatch.setattr("ocw_workbench.generator.controller_builder.shapes.make_surface_prism_shape", _fake_make_surface_prism_shape)
     doc = FakeDoc()
     builder = ControllerBuilder(doc=doc)
     controller = Controller(

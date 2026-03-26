@@ -1,10 +1,10 @@
 import builtins
 import types
 
-from ocf_freecad.gui import docking
-from ocf_freecad.gui.panels import _common
-from ocf_freecad.gui.runtime import _show_message
-from ocf_freecad.workbench import OpenControllerWorkbench
+from ocw_workbench.gui import docking
+from ocw_workbench.gui.panels import _common
+from ocw_workbench.gui.runtime import _show_message
+from ocw_workbench.workbench import OpenControllerWorkbench
 
 
 class _Recorder:
@@ -106,8 +106,8 @@ def test_show_message_prefers_exec(monkeypatch):
             self.executed = "exec_"
 
     qtwidgets = types.SimpleNamespace(QMessageBox=FakeMessageBox)
-    monkeypatch.setattr("ocf_freecad.gui.runtime.load_qt", lambda: (object(), object(), qtwidgets))
-    monkeypatch.setattr("ocf_freecad.gui.runtime._main_window", lambda: None)
+    monkeypatch.setattr("ocw_workbench.gui.runtime.load_qt", lambda: (object(), object(), qtwidgets))
+    monkeypatch.setattr("ocw_workbench.gui.runtime._main_window", lambda: None)
 
     captured = {}
 
@@ -117,7 +117,7 @@ def test_show_message_prefers_exec(monkeypatch):
         captured["details"] = dialog.details
         return result
 
-    monkeypatch.setattr("ocf_freecad.gui.runtime.exec_dialog", fake_exec_dialog)
+    monkeypatch.setattr("ocw_workbench.gui.runtime.exec_dialog", fake_exec_dialog)
 
     _show_message("critical", "Failure", "Broken", details="trace")
 
@@ -130,10 +130,10 @@ def test_workbench_activated_logs_instead_of_raising(monkeypatch):
     fake_app = types.SimpleNamespace(ActiveDocument=fake_doc, newDocument=lambda name: fake_doc)
     logged = []
 
-    monkeypatch.setattr("ocf_freecad.workbench.App", fake_app)
-    monkeypatch.setattr("ocf_freecad.workbench.ensure_workbench_ui", lambda *_args, **_kwargs: (_ for _ in ()).throw(NameError("_init_pyside_extension is not defined")))
-    monkeypatch.setattr("ocf_freecad.workbench.log_exception", lambda context, exc: logged.append((context, str(exc))))
-    monkeypatch.setattr("ocf_freecad.workbench.ControllerService", lambda: types.SimpleNamespace(create_controller=lambda *_args, **_kwargs: None))
+    monkeypatch.setattr("ocw_workbench.workbench.App", fake_app)
+    monkeypatch.setattr("ocw_workbench.workbench.ensure_workbench_ui", lambda *_args, **_kwargs: (_ for _ in ()).throw(NameError("_init_pyside_extension is not defined")))
+    monkeypatch.setattr("ocw_workbench.workbench.log_exception", lambda context, exc: logged.append((context, str(exc))))
+    monkeypatch.setattr("ocw_workbench.workbench.ControllerService", lambda: types.SimpleNamespace(create_controller=lambda *_args, **_kwargs: None))
 
     workbench = OpenControllerWorkbench()
     workbench.Activated()
@@ -219,16 +219,16 @@ def test_create_or_reuse_dock_tabifies_existing_right_dock(monkeypatch):
     qtwidgets = types.SimpleNamespace(QDockWidget=FakeDockWidget)
     logs = []
 
-    monkeypatch.setattr("ocf_freecad.gui.docking.load_qt", lambda: (qtcore, object(), qtwidgets))
-    monkeypatch.setattr("ocf_freecad.gui.docking.get_main_window", lambda: fake_main_window)
-    monkeypatch.setattr("ocf_freecad.gui.docking.log_to_console", lambda message, level="message": logs.append((level, message)))
+    monkeypatch.setattr("ocw_workbench.gui.docking.load_qt", lambda: (qtcore, object(), qtwidgets))
+    monkeypatch.setattr("ocw_workbench.gui.docking.get_main_window", lambda: fake_main_window)
+    monkeypatch.setattr("ocw_workbench.gui.docking.log_to_console", lambda message, level="message": logs.append((level, message)))
 
     dock_widget = object()
     dock_ref = docking.create_or_reuse_dock("Open Controller", dock_widget)
 
     assert dock_ref is not None
     assert dock_ref.widget() is dock_widget
-    assert fake_main_window.tabified == [("PropertyView", "OCFWorkbenchV2Dock")]
+    assert fake_main_window.tabified == [("PropertyView", "OCWWorkbenchDock")]
     assert dock_ref.shown is True
     assert dock_ref.raised is True
     assert dock_ref.activated is True
@@ -236,8 +236,8 @@ def test_create_or_reuse_dock_tabifies_existing_right_dock(monkeypatch):
 
 
 def test_product_workbench_panel_uses_tab_shell():
-    from ocf_freecad.services.controller_service import ControllerService
-    from ocf_freecad.workbench import ProductWorkbenchPanel
+    from ocw_workbench.services.controller_service import ControllerService
+    from ocw_workbench.workbench import ProductWorkbenchPanel
 
     class FakeDocument:
         def __init__(self) -> None:

@@ -1,8 +1,8 @@
 include Init.py
 include InitGui.py
-include ocf_kicad_plugin.py
+include ocw_kicad_plugin.py
 include README.md
 include pyproject.toml
 recursive-include resources *.svg *.ui *.yaml *.json
-recursive-include ocf_freecad *.yaml *.svg *.json *.ui
+recursive-include ocw_workbench *.yaml *.svg *.json *.ui
 recursive-include examples *.yaml

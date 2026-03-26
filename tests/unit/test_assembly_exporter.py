@@ -1,7 +1,7 @@
 from pathlib import Path
 
-from ocf_freecad.exporters.assembly_exporter import export_assembly
-from ocf_freecad.manufacturing.assembly_builder import AssemblyBuilder
+from ocw_workbench.exporters.assembly_exporter import export_assembly
+from ocw_workbench.manufacturing.assembly_builder import AssemblyBuilder
 
 
 def test_assembly_builder_and_exporter_create_structured_output(tmp_path: Path):

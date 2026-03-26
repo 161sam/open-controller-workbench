@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from ocf_freecad.services.controller_state_service import ControllerStateService
+from ocw_workbench.services.controller_state_service import ControllerStateService
 
 
 class FakeDocument:

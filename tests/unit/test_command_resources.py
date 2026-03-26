@@ -2,13 +2,13 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from ocf_freecad.commands.add_component import AddComponentCommand
-from ocf_freecad.commands.apply_layout import ApplyLayoutCommand
-from ocf_freecad.commands.create_from_template import CreateFromTemplateCommand
-from ocf_freecad.commands.open_plugin_manager import OpenPluginManagerCommand
-from ocf_freecad.commands.toggle_overlay import ToggleOverlayCommand
-from ocf_freecad.commands.validate_constraints import ValidateConstraintsCommand
-from ocf_freecad.workbench import OpenControllerWorkbench
+from ocw_workbench.commands.add_component import AddComponentCommand
+from ocw_workbench.commands.apply_layout import ApplyLayoutCommand
+from ocw_workbench.commands.create_from_template import CreateFromTemplateCommand
+from ocw_workbench.commands.open_plugin_manager import OpenPluginManagerCommand
+from ocw_workbench.commands.toggle_overlay import ToggleOverlayCommand
+from ocw_workbench.commands.validate_constraints import ValidateConstraintsCommand
+from ocw_workbench.workbench import OpenControllerWorkbench
 
 
 def test_registered_command_resources_include_existing_pixmaps() -> None:

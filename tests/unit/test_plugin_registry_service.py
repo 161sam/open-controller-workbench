@@ -5,8 +5,8 @@ from pathlib import Path
 
 import pytest
 
-from ocf_freecad.services.plugin_registry_service import PluginRegistryService
-from ocf_freecad.userdata.plugin_registry_store import PluginRegistryCachePersistence
+from ocw_workbench.services.plugin_registry_service import PluginRegistryService
+from ocw_workbench.userdata.plugin_registry_store import PluginRegistryCachePersistence
 
 
 def _service(

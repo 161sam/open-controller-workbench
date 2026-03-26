@@ -1,5 +1,5 @@
-from ocf_freecad.domain.component import Component
-from ocf_freecad.generator.electrical_resolver import ElectricalResolver
+from ocw_workbench.domain.component import Component
+from ocw_workbench.generator.electrical_resolver import ElectricalResolver
 
 
 def test_encoder_direct_gpio_resolution():

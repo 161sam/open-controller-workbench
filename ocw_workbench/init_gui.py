@@ -1,0 +1,4 @@
+import FreeCADGui
+from ocw_workbench.workbench import OpenControllerWorkbench
+
+FreeCADGui.addWorkbench(OpenControllerWorkbench())

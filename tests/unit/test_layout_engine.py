@@ -1,6 +1,6 @@
-from ocf_freecad.domain.component import Component
-from ocf_freecad.domain.controller import Controller
-from ocf_freecad.services.layout_service import LayoutService
+from ocw_workbench.domain.component import Component
+from ocw_workbench.domain.controller import Controller
+from ocw_workbench.services.layout_service import LayoutService
 
 
 def test_places_simple_button_row():

@@ -1,9 +1,9 @@
 from pathlib import Path
 
-from ocf_freecad.domain.component import Component
-from ocf_freecad.domain.controller import Controller
-from ocf_freecad.services.electrical_service import ElectricalService
-from ocf_freecad.utils.yaml_io import load_yaml
+from ocw_workbench.domain.component import Component
+from ocw_workbench.domain.controller import Controller
+from ocw_workbench.services.electrical_service import ElectricalService
+from ocw_workbench.utils.yaml_io import load_yaml
 
 
 def test_maps_encoder_button_and_oled_roles_and_assignments(tmp_path: Path):

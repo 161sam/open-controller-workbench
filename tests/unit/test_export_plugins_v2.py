@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from ocf_freecad.services.export_plugin_service import ExportPluginService
+from ocw_workbench.services.export_plugin_service import ExportPluginService
 
 
 def _project() -> dict[str, object]:

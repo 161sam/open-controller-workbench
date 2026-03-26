@@ -7,15 +7,15 @@ import zipfile
 
 import pytest
 
-from ocf_freecad.gui.panels.create_panel import CreatePanel
-from ocf_freecad.services.controller_service import ControllerService
-from ocf_freecad.services.plugin_manager_service import PluginManagerService
-from ocf_freecad.services.plugin_registry_service import PluginRegistryService
-from ocf_freecad.services.plugin_service import reset_plugin_service
-from ocf_freecad.services.template_marketplace_service import TemplateMarketplaceService
-from ocf_freecad.services.template_service import TemplateService
-from ocf_freecad.userdata.plugin_registry_store import PluginRegistryCachePersistence
-from ocf_freecad.userdata.plugin_state_store import PluginStatePersistence
+from ocw_workbench.gui.panels.create_panel import CreatePanel
+from ocw_workbench.services.controller_service import ControllerService
+from ocw_workbench.services.plugin_manager_service import PluginManagerService
+from ocw_workbench.services.plugin_registry_service import PluginRegistryService
+from ocw_workbench.services.plugin_service import reset_plugin_service
+from ocw_workbench.services.template_marketplace_service import TemplateMarketplaceService
+from ocw_workbench.services.template_service import TemplateService
+from ocw_workbench.userdata.plugin_registry_store import PluginRegistryCachePersistence
+from ocw_workbench.userdata.plugin_state_store import PluginStatePersistence
 
 
 class FakeDocument:
@@ -98,7 +98,7 @@ def _marketplace_service(tmp_path: Path) -> TemplateMarketplaceService:
     )
     manager = PluginManagerService(
         persistence=PluginStatePersistence(base_dir=str(tmp_path / "state")),
-        internal_root=Path("ocf_freecad/plugins/internal"),
+        internal_root=Path("ocw_workbench/plugins/internal"),
         external_root=tmp_path / "external",
     )
     return TemplateMarketplaceService(

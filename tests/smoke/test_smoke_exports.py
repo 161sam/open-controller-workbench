@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from ocf_freecad.pipeline.runner import run_full_pipeline
+from ocw_workbench.pipeline.runner import run_full_pipeline
 
 
 def test_all_demo_projects_export(tmp_path: Path):

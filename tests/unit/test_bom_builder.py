@@ -1,4 +1,4 @@
-from ocf_freecad.manufacturing.bom_builder import BomBuilder
+from ocw_workbench.manufacturing.bom_builder import BomBuilder
 
 
 def test_bom_builder_aggregates_identical_components_and_adds_mechanical_parts():

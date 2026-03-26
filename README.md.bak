@@ -1,5 +1,5 @@
 
-# Open Controller FreeCAD
+# Open Controller Workbench
 
 FreeCAD Workbench for designing modular MIDI controllers.
 
@@ -11,7 +11,7 @@ FreeCAD Workbench for designing modular MIDI controllers.
   - Mechanical models (FreeCAD)
   - Hardware schema (`controller.hw.yaml`)
   - KiCad PCB layout (future)
-  - OCF device descriptors (future)
+  - OCF Framework device descriptors (future)
 
 ## Architecture
 
@@ -22,7 +22,7 @@ This plugin follows a layered architecture:
 - **Schema** → YAML import/export
 - **Generator** → geometry + layout
 - **Library** → component definitions
-- **Exporters** → outputs (CAD, KiCad, OCF)
+- **Exporters** → outputs (CAD, KiCad, OCF Framework)
 
 ## Status
 
@@ -34,10 +34,10 @@ This plugin follows a layered architecture:
 pip install -e .
 ````
 
-Then symlink into FreeCAD:
+Then symlink the repository root into FreeCAD:
 
 ```bash
-ln -s $(pwd)/ocf_freecad ~/.FreeCAD/Mod/OpenController
+ln -s "$(pwd)" ~/.FreeCAD/Mod/OpenControllerWorkbench
 ```
 
 ## License

@@ -1,11 +1,11 @@
-from ocf_freecad.gui.panels.components_panel import ComponentsPanel
-from ocf_freecad.gui.panels.constraints_panel import ConstraintsPanel
-from ocf_freecad.gui.panels._common import current_text, widget_value
-from ocf_freecad.gui.panels.create_panel import CreatePanel
-from ocf_freecad.gui.panels.info_panel import InfoPanel
-from ocf_freecad.gui.panels.layout_panel import LayoutPanel
-from ocf_freecad.services.controller_service import ControllerService
-from ocf_freecad.workbench import ProductWorkbenchPanel
+from ocw_workbench.gui.panels.components_panel import ComponentsPanel
+from ocw_workbench.gui.panels.constraints_panel import ConstraintsPanel
+from ocw_workbench.gui.panels._common import current_text, widget_value
+from ocw_workbench.gui.panels.create_panel import CreatePanel
+from ocw_workbench.gui.panels.info_panel import InfoPanel
+from ocw_workbench.gui.panels.layout_panel import LayoutPanel
+from ocw_workbench.services.controller_service import ControllerService
+from ocw_workbench.workbench import ProductWorkbenchPanel
 
 
 class FakeDocument:

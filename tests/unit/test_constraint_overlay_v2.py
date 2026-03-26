@@ -1,6 +1,6 @@
-from ocf_freecad.services.controller_service import ControllerService
-from ocf_freecad.services.interaction_service import InteractionService
-from ocf_freecad.services.overlay_service import OverlayService
+from ocw_workbench.services.controller_service import ControllerService
+from ocw_workbench.services.interaction_service import InteractionService
+from ocw_workbench.services.overlay_service import OverlayService
 
 
 class FakeDocument:

@@ -1,9 +1,9 @@
-from ocf_freecad.gui.interaction.selection import SelectionController
-from ocf_freecad.gui.overlay.renderer import OverlayRenderer
-from ocf_freecad.gui.interaction.hit_test import hit_test_item
-from ocf_freecad.services.controller_service import ControllerService
-from ocf_freecad.services.interaction_service import InteractionService
-from ocf_freecad.services.overlay_service import OverlayService
+from ocw_workbench.gui.interaction.selection import SelectionController
+from ocw_workbench.gui.overlay.renderer import OverlayRenderer
+from ocw_workbench.gui.interaction.hit_test import hit_test_item
+from ocw_workbench.services.controller_service import ControllerService
+from ocw_workbench.services.interaction_service import InteractionService
+from ocw_workbench.services.overlay_service import OverlayService
 
 
 class FakeDocument:
@@ -43,8 +43,8 @@ def test_overlay_renderer_refresh_stays_visual_only_without_recompute():
 
     assert payload["summary"]["visual_only"] is True
     assert doc.recompute_count == recomputes_before
-    assert doc.OCFOverlayRender["build_duration_ms"] >= 0.0
-    assert doc.OCFOverlayRender["render_duration_ms"] >= 0.0
+    assert doc.OCWOverlayRender["build_duration_ms"] >= 0.0
+    assert doc.OCWOverlayRender["render_duration_ms"] >= 0.0
 
 
 def test_overlay_renderer_render_ignores_recompute_requests_for_visual_updates():
@@ -71,14 +71,14 @@ def test_overlay_renderer_render_ignores_recompute_requests_for_visual_updates()
 
 def test_overlay_renderer_records_profile_metrics_when_enabled():
     doc = FakeDocument()
-    doc.OCFDebugProfiling = {"enabled": True, "log": False}
+    doc.OCWDebugProfiling = {"enabled": True, "log": False}
     controller_service = ControllerService()
     controller_service.create_from_template(doc, "encoder_module")
     renderer = OverlayRenderer(OverlayService(controller_service=controller_service))
 
     renderer.refresh(doc)
 
-    profile = doc.OCFPerformance["sections"]["overlay"]
+    profile = doc.OCWPerformance["sections"]["overlay"]
     assert profile["build"]["duration_ms"] >= 0.0
     assert profile["render"]["duration_ms"] >= 0.0
 

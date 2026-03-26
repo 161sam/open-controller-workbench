@@ -4,9 +4,9 @@ from pathlib import Path
 import sys
 import tempfile
 
-from ocf_freecad.freecad_api.state import read_state, write_state
-from ocf_freecad.services.controller_service import ControllerService
-from ocf_freecad.userdata.persistence import UserDataPersistence
+from ocw_workbench.freecad_api.state import read_state, write_state
+from ocw_workbench.services.controller_service import ControllerService
+from ocw_workbench.userdata.persistence import UserDataPersistence
 
 
 class SmokeDocument:
@@ -28,7 +28,7 @@ def main() -> int:
     if reloaded is None or reloaded["controller"]["id"] != "smoke":
         raise SystemExit("state persistence smoke failed")
 
-    with tempfile.TemporaryDirectory(prefix="ocf-quality-") as temp_dir:
+    with tempfile.TemporaryDirectory(prefix="ocw-quality-") as temp_dir:
         persistence = UserDataPersistence(base_dir=temp_dir)
         persistence.save(persistence.load())
         if not Path(temp_dir, "userdata.json").exists():

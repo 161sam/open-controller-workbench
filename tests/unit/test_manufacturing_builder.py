@@ -1,4 +1,4 @@
-from ocf_freecad.manufacturing.manufacturing_builder import ManufacturingBuilder
+from ocw_workbench.manufacturing.manufacturing_builder import ManufacturingBuilder
 
 
 def test_manufacturing_builder_creates_parts_and_operations():

@@ -4,13 +4,13 @@ from pathlib import Path
 
 import pytest
 
-from ocf_freecad.library.manager import ComponentLibraryManager
-from ocf_freecad.plugins.loader import PluginLoader
-from ocf_freecad.plugins.manifest import load_plugin_manifest
-from ocf_freecad.services.plugin_service import reset_plugin_service
-from ocf_freecad.templates.registry import TemplateRegistry
-from ocf_freecad.utils.yaml_io import dump_yaml
-from ocf_freecad.variants.registry import VariantRegistry
+from ocw_workbench.library.manager import ComponentLibraryManager
+from ocw_workbench.plugins.loader import PluginLoader
+from ocw_workbench.plugins.manifest import load_plugin_manifest
+from ocw_workbench.services.plugin_service import reset_plugin_service
+from ocw_workbench.templates.registry import TemplateRegistry
+from ocw_workbench.utils.yaml_io import dump_yaml
+from ocw_workbench.variants.registry import VariantRegistry
 
 
 @pytest.fixture(autouse=True)
@@ -20,7 +20,7 @@ def _reset_plugin_service_after_test():
 
 
 def test_plugin_manifest_loads_internal_template_pack() -> None:
-    manifest = load_plugin_manifest("ocf_freecad/plugins/internal/default_templates/manifest.yaml")
+    manifest = load_plugin_manifest("ocw_workbench/plugins/internal/default_templates/manifest.yaml")
 
     assert manifest.plugin_id == "default_templates"
     assert manifest.plugin_type == "template_pack"

@@ -1,4 +1,4 @@
-from ocf_freecad.services.variant_service import VariantService
+from ocw_workbench.services.variant_service import VariantService
 
 
 def test_all_variants_load():

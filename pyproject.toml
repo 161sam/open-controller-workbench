@@ -3,7 +3,7 @@ requires = ["setuptools>=69", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "ocf-freecad"
+name = "ocw-workbench"
 version = "0.1.0"
 description = "FreeCAD Workbench for modular MIDI controller design"
 authors = [{ name = "huckle lab" }]
@@ -14,18 +14,18 @@ dependencies = [
 
 [tool.setuptools]
 include-package-data = true
-py-modules = ["Init", "InitGui", "ocf_kicad_plugin"]
+py-modules = ["Init", "InitGui", "ocw_kicad_plugin"]
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["ocf_freecad*", "ocf_kicad*"]
+include = ["ocw_workbench*", "ocw_kicad*"]
 
 [tool.setuptools.package-data]
-ocf_freecad = [
+ocw_workbench = [
     "library/components/*.yaml",
     "plugins/internal/**/*.yaml",
     "templates/library/*.yaml",
     "variants/library/*.yaml",
 ]
 
-ocf_kicad = []
+ocw_kicad = []
