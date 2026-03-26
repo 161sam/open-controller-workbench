@@ -1,9 +1,10 @@
 from __future__ import annotations
-
-import json
 from copy import deepcopy
 from typing import Any
 
+from ocf_freecad.freecad_api import gui as freecad_gui
+from ocf_freecad.freecad_api.metadata import get_document_data, set_document_data, update_document_data
+from ocf_freecad.freecad_api.state import STATE_CONTAINER_LABEL, STATE_CONTAINER_NAME, read_state, write_state
 from ocf_freecad.domain.component import Component
 from ocf_freecad.domain.controller import Controller
 from ocf_freecad.generator.controller_builder import ControllerBuilder
@@ -48,6 +49,27 @@ DEFAULT_META = {
 }
 
 
+def _log_to_console(message: str, level: str = "message") -> None:
+    text = f"[OCF] {message}"
+    if not text.endswith("\n"):
+        text += "\n"
+    try:
+        import FreeCAD as App
+    except ImportError:
+        App = None
+    console = getattr(App, "Console", None) if App is not None else None
+    writer_name = {
+        "error": "PrintError",
+        "warning": "PrintWarning",
+        "message": "PrintMessage",
+    }.get(level, "PrintMessage")
+    writer = getattr(console, writer_name, None) if console is not None else None
+    if callable(writer):
+        writer(text)
+        return
+    print(text, end="")
+
+
 class ControllerService:
     def __init__(
         self,
@@ -72,6 +94,10 @@ class ControllerService:
         if controller_data is not None:
             state["controller"].update(deepcopy(controller_data))
         self.save_state(doc, state)
+        _log_to_console(
+            f"Creating controller in document '{getattr(doc, 'Name', '<unnamed>')}' "
+            f"with size {state['controller']['width']} x {state['controller']['depth']} mm."
+        )
         self.sync_document(doc)
         return deepcopy(state)
 
@@ -107,12 +133,9 @@ class ControllerService:
         )
 
     def get_state(self, doc: Any) -> dict[str, Any]:
-        state = getattr(doc, "OCFState", None)
+        state = read_state(doc)
         if isinstance(state, dict):
             return self._normalize_state(state)
-        serialized = getattr(doc, "OCF_State_JSON", None)
-        if isinstance(serialized, str) and serialized:
-            return self._normalize_state(json.loads(serialized))
         return self._normalize_state({
             "controller": deepcopy(DEFAULT_CONTROLLER),
             "components": [],
@@ -120,8 +143,7 @@ class ControllerService:
 
     def save_state(self, doc: Any, state: dict[str, Any]) -> None:
         normalized = self._normalize_state(state)
-        doc.OCFState = normalized
-        doc.OCF_State_JSON = json.dumps(normalized)
+        write_state(doc, normalized)
 
     def list_library_components(self, category: str | None = None) -> list[dict[str, Any]]:
         return self.library_service.list_by_category(category=category)
@@ -179,6 +201,10 @@ class ControllerService:
         )
         state["meta"]["selection"] = component_id
         self.save_state(doc, state)
+        _log_to_console(
+            f"Adding component '{component_id}' from '{library_ref}' "
+            f"at ({float(x):.2f}, {float(y):.2f}) in document '{getattr(doc, 'Name', '<unnamed>')}'."
+        )
         self.sync_document(doc)
         return deepcopy(state)
 
@@ -256,28 +282,7 @@ class ControllerService:
         config: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         state = self.get_state(doc)
-        controller = self._build_controller(state["controller"])
-        components = [self._build_component(item) for item in state["components"]]
-        result = self.layout_engine.place(controller, components, strategy=strategy, config=config)
-        placements = {placement["component_id"]: placement for placement in result["placements"]}
-        for component in state["components"]:
-            placement = placements.get(component["id"])
-            if placement is None:
-                continue
-            component["x"] = placement["x"]
-            component["y"] = placement["y"]
-            component["rotation"] = placement["rotation"]
-            if placement.get("zone_id") is not None:
-                component["zone_id"] = placement["zone_id"]
-        state["meta"]["layout"] = {
-            "strategy": strategy,
-            "config": deepcopy(config) if config is not None else {},
-            "result_summary": {
-                "placed_count": len(result["placed_components"]),
-                "unplaced_count": len(result["unplaced_component_ids"]),
-                "warning_count": len(result["warnings"]),
-            },
-        }
+        state, result = self._apply_layout_to_state(state, strategy=strategy, config=config)
         self.save_state(doc, state)
         self.sync_document(doc)
         return result
@@ -293,16 +298,24 @@ class ControllerService:
 
     def sync_document(self, doc: Any) -> None:
         state = self.get_state(doc)
-        doc.OCFLastSync = {
+        set_document_data(doc, "OCFLastSync", {
             "controller_id": state["controller"]["id"],
             "component_count": len(state["components"]),
             "template_id": state["meta"].get("template_id"),
             "variant_id": state["meta"].get("variant_id"),
             "selection": state["meta"].get("selection"),
-        }
+        })
+        _log_to_console(
+            f"Syncing document '{getattr(doc, 'Name', '<unnamed>')}' "
+            f"for controller '{state['controller']['id']}' with {len(state['components'])} components."
+        )
         if not hasattr(doc, "addObject"):
             if hasattr(doc, "recompute"):
                 doc.recompute()
+            _log_to_console(
+                f"Document '{getattr(doc, 'Name', '<unnamed>')}' has no FreeCAD object API; state-only sync complete.",
+                level="warning",
+            )
             return
 
         self._clear_generated_objects(doc)
@@ -319,6 +332,15 @@ class ControllerService:
         self._apply_selection_highlight(doc, state["meta"].get("selection"))
         if hasattr(doc, "recompute"):
             doc.recompute()
+        generated_count = self._generated_object_count(doc)
+        update_document_data(doc, "OCFLastSync", {"generated_object_count": generated_count})
+        revealed = freecad_gui.reveal_generated_objects(doc)
+        freecad_gui.activate_document(doc)
+        freecad_gui.focus_view(doc, fit=True)
+        _log_to_console(
+            f"Document sync complete for '{getattr(doc, 'Name', '<unnamed>')}': "
+            f"{generated_count} generated objects, {revealed} visible in the 3D view."
+        )
 
     def _create_component_markers(self, doc: Any, builder: ControllerBuilder, components: list[Component], z_height: float) -> None:
         for keepout in builder.build_keepouts(components):
@@ -354,11 +376,14 @@ class ControllerService:
         for obj in list(doc.Objects):
             name = getattr(obj, "Name", "")
             label = getattr(obj, "Label", "")
+            if name == STATE_CONTAINER_NAME or label == STATE_CONTAINER_LABEL:
+                continue
             if (
                 str(name).startswith("OCF_")
                 or str(label).startswith("OCF_")
                 or name in {"ControllerBody", "TopPlate"}
                 or str(name).startswith("TopPlate_")
+                or str(name).startswith("cutout_")
             ):
                 doc.removeObject(name)
 
@@ -407,9 +432,164 @@ class ControllerService:
         state["meta"]["overrides"] = deepcopy(overrides) if overrides is not None else {}
         if state["components"]:
             state["meta"]["selection"] = state["components"][0]["id"]
+        _log_to_console(
+            f"Generated project loaded for document '{getattr(doc, 'Name', '<unnamed>')}': "
+            f"template={template_id or '-'} variant={variant_id or '-'} components={len(state['components'])}."
+        )
+        state = self._prepare_initial_layout_state(state, project)
         self.save_state(doc, state)
         self.sync_document(doc)
         return deepcopy(state)
+
+    def _apply_layout_to_state(
+        self,
+        state: dict[str, Any],
+        strategy: str,
+        config: dict[str, Any] | None = None,
+        source: str | None = None,
+    ) -> tuple[dict[str, Any], dict[str, Any]]:
+        controller = self._build_controller(state["controller"])
+        components = [self._build_component(item) for item in state["components"]]
+        config_copy = deepcopy(config) if config is not None else {}
+        result = self.layout_engine.place(controller, components, strategy=strategy, config=config_copy)
+        placements = {placement["component_id"]: placement for placement in result["placements"]}
+        for component in state["components"]:
+            placement = placements.get(component["id"])
+            if placement is None:
+                continue
+            component["x"] = placement["x"]
+            component["y"] = placement["y"]
+            component["rotation"] = placement["rotation"]
+            if placement.get("zone_id") is not None:
+                component["zone_id"] = placement["zone_id"]
+        state["meta"]["layout"] = {
+            "strategy": strategy,
+            "config": config_copy,
+            "source": source or "manual",
+            "result_summary": {
+                "placed_count": len(result["placed_components"]),
+                "unplaced_count": len(result["unplaced_component_ids"]),
+                "warning_count": len(result["warnings"]),
+            },
+        }
+        return state, result
+
+    def _prepare_initial_layout_state(self, state: dict[str, Any], project: dict[str, Any]) -> dict[str, Any]:
+        if not state["components"]:
+            state["meta"]["layout"] = {
+                "strategy": "none",
+                "config": {},
+                "source": "empty",
+                "result_summary": {
+                    "placed_count": 0,
+                    "unplaced_count": 0,
+                    "warning_count": 0,
+                },
+            }
+            return state
+
+        layout_spec = deepcopy(project.get("layout", {})) if isinstance(project.get("layout"), dict) else {}
+        strategy = layout_spec.get("strategy")
+        config = deepcopy(layout_spec.get("config", {})) if isinstance(layout_spec.get("config"), dict) else {}
+
+        if isinstance(strategy, str) and strategy:
+            _log_to_console(
+                f"Applying initial layout for template='{state['meta'].get('template_id') or '-'}' "
+                f"variant='{state['meta'].get('variant_id') or '-'}' using strategy '{strategy}'."
+            )
+            state, result = self._apply_layout_to_state(state, strategy=strategy, config=config, source="template")
+            if result["unplaced_component_ids"]:
+                _log_to_console(
+                    f"Initial layout left {len(result['unplaced_component_ids'])} components unplaced; "
+                    "applying fallback grid positions.",
+                    level="warning",
+                )
+                self._fill_unplaced_components(state, result["unplaced_component_ids"], config=config)
+            return state
+
+        if self._has_authored_positions(state["components"]):
+            _log_to_console("No layout strategy provided; preserving authored component positions from template/variant.")
+            state["meta"]["layout"] = {
+                "strategy": "authored_positions",
+                "config": {},
+                "source": "template_positions",
+                "result_summary": {
+                    "placed_count": len(state["components"]),
+                    "unplaced_count": 0,
+                    "warning_count": 0,
+                },
+            }
+            return state
+
+        fallback_config = self._fallback_layout_config(state["controller"], len(state["components"]))
+        _log_to_console(
+            "No layout strategy provided and no authored positions found; applying fallback grid placement.",
+            level="warning",
+        )
+        state, result = self._apply_layout_to_state(state, strategy="grid", config=fallback_config, source="fallback")
+        if result["unplaced_component_ids"]:
+            _log_to_console(
+                f"Fallback grid left {len(result['unplaced_component_ids'])} components unplaced; "
+                "applying defensive sequential placement.",
+                level="warning",
+            )
+            self._fill_unplaced_components(state, result["unplaced_component_ids"], config=fallback_config)
+        return state
+
+    def _has_authored_positions(self, components: list[dict[str, Any]]) -> bool:
+        return any(
+            float(component.get("x", 0.0)) != 0.0 or float(component.get("y", 0.0)) != 0.0
+            for component in components
+        )
+
+    def _fallback_layout_config(self, controller: dict[str, Any], component_count: int) -> dict[str, Any]:
+        surface = controller.get("surface") or {}
+        width = float(surface.get("width", controller.get("width", 160.0)))
+        height = float(surface.get("height", controller.get("depth", 100.0)))
+        columns = max(1, min(component_count, int(width // 24.0) or 1))
+        rows = max(1, (component_count + columns - 1) // columns)
+        spacing_x = max(18.0, min(32.0, (width - 20.0) / max(columns, 1)))
+        spacing_y = max(18.0, min(28.0, (height - 20.0) / max(rows, 1)))
+        return {
+            "grid_mm": 1.0,
+            "padding_mm": 10.0,
+            "spacing_x_mm": spacing_x,
+            "spacing_y_mm": spacing_y,
+        }
+
+    def _fill_unplaced_components(
+        self,
+        state: dict[str, Any],
+        component_ids: list[str],
+        config: dict[str, Any] | None = None,
+    ) -> None:
+        controller = state["controller"]
+        surface = controller.get("surface") or {}
+        width = float(surface.get("width", controller.get("width", 160.0)))
+        height = float(surface.get("height", controller.get("depth", 100.0)))
+        config_data = deepcopy(config) if config is not None else {}
+        padding = float(config_data.get("padding_mm", 10.0))
+        spacing_x = float(config_data.get("spacing_x_mm", config_data.get("spacing_mm", 24.0)))
+        spacing_y = float(config_data.get("spacing_y_mm", config_data.get("spacing_mm", 24.0)))
+        columns = max(1, int(max(width - (2.0 * padding), spacing_x) // max(spacing_x, 1.0)))
+        placed_lookup = {component["id"]: component for component in state["components"]}
+        for index, component_id in enumerate(component_ids):
+            component = placed_lookup.get(component_id)
+            if component is None:
+                continue
+            column = index % columns
+            row = index // columns
+            component["x"] = padding + (column * spacing_x)
+            component["y"] = padding + (row * spacing_y)
+            component["rotation"] = float(component.get("rotation", 0.0) or 0.0)
+            max_y = max(padding, height - padding)
+            if component["y"] > max_y:
+                component["y"] = max_y
+        layout_meta = state["meta"].setdefault("layout", {})
+        summary = layout_meta.setdefault("result_summary", {})
+        summary["placed_count"] = len(state["components"])
+        summary["unplaced_count"] = 0
+        summary["warning_count"] = int(summary.get("warning_count", 0)) + len(component_ids)
 
     def _normalize_state(self, state: dict[str, Any]) -> dict[str, Any]:
         normalized = {
@@ -447,3 +627,12 @@ class ControllerService:
                 view.ShapeColor = (0.9, 0.3, 0.2) if is_selected else (0.7, 0.7, 0.7)
             if hasattr(view, "LineColor"):
                 view.LineColor = (0.9, 0.3, 0.2) if is_selected else (0.2, 0.2, 0.2)
+
+    def _generated_object_count(self, doc: Any) -> int:
+        count = 0
+        for obj in getattr(doc, "Objects", []):
+            name = str(getattr(obj, "Name", ""))
+            label = str(getattr(obj, "Label", ""))
+            if name.startswith("OCF_") or label.startswith("OCF_"):
+                count += 1
+        return count

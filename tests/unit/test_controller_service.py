@@ -72,6 +72,9 @@ def test_create_from_template_populates_metadata_and_components():
     assert state["meta"]["variant_id"] is None
     assert len(state["components"]) == 4
     assert state["meta"]["selection"] == "enc1"
+    assert state["meta"]["layout"]["strategy"] == "grid"
+    assert state["meta"]["layout"]["source"] == "template"
+    assert len({(component["x"], component["y"]) for component in state["components"]}) > 1
 
 
 def test_create_from_variant_populates_variant_metadata():
@@ -83,6 +86,8 @@ def test_create_from_variant_populates_variant_metadata():
     assert state["meta"]["template_id"] == "display_nav_module"
     assert state["meta"]["variant_id"] == "display_nav_right"
     assert state["controller"]["surface"]["width"] == 200.0
+    assert state["meta"]["layout"]["source"] == "template"
+    assert any(component["x"] != 0.0 or component["y"] != 0.0 for component in state["components"])
 
 
 def test_update_select_and_context_work_together():
@@ -103,3 +108,38 @@ def test_update_select_and_context_work_together():
     assert context["template_id"] == "transport_module"
     assert context["layout"]["strategy"] == "row"
     assert isinstance(context["validation"], dict)
+
+
+def test_create_from_template_uses_fallback_grid_when_layout_is_missing():
+    class FakeTemplateService:
+        def generate_from_template(self, template_id, overrides=None):
+            return {
+                "template": {"id": template_id},
+                "controller": {
+                    "id": template_id,
+                    "width": 120.0,
+                    "depth": 80.0,
+                    "height": 30.0,
+                    "top_thickness": 3.0,
+                    "surface": {"shape": "rectangle", "width": 120.0, "height": 80.0},
+                    "mounting_holes": [],
+                    "reserved_zones": [],
+                    "layout_zones": [],
+                },
+                "components": [
+                    {"id": "a", "type": "button", "library_ref": "omron_b3f_1000", "x": 0.0, "y": 0.0, "rotation": 0.0},
+                    {"id": "b", "type": "button", "library_ref": "omron_b3f_1000", "x": 0.0, "y": 0.0, "rotation": 0.0},
+                    {"id": "c", "type": "button", "library_ref": "omron_b3f_1000", "x": 0.0, "y": 0.0, "rotation": 0.0},
+                ],
+                "layout": {},
+            }
+
+    service = ControllerService(template_service=FakeTemplateService())
+    doc = FakeDocument()
+
+    state = service.create_from_template(doc, "fallback_demo")
+
+    assert state["meta"]["layout"]["strategy"] == "grid"
+    assert state["meta"]["layout"]["source"] == "fallback"
+    assert len({(component["x"], component["y"]) for component in state["components"]}) == 3
+    assert all(component["x"] != 0.0 or component["y"] != 0.0 for component in state["components"])
