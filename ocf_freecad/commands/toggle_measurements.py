@@ -1,21 +1,26 @@
 from __future__ import annotations
 
 from ocf_freecad.commands.base import BaseCommand
+from ocf_freecad.gui.runtime import show_error, show_info
 
 
 class ToggleMeasurementsCommand(BaseCommand):
+    ICON_NAME = "measurements"
+
     def GetResources(self):
-        return {
-            "MenuText": "Toggle Measurements",
-            "ToolTip": "Show or hide measurement markers in the constraint overlay",
-        }
+        return self.resources("Toggle Measurements", "Show or hide measurement markers in the constraint overlay")
 
     def Activated(self):
-        import FreeCAD as App
+        try:
+            import FreeCAD as App
 
-        from ocf_freecad.workbench import ensure_workbench_ui
+            from ocf_freecad.workbench import ensure_workbench_ui
 
-        doc = App.ActiveDocument
-        if doc is None:
-            raise RuntimeError("No active FreeCAD document")
-        ensure_workbench_ui(doc, focus="layout").toggle_measurements()
+            doc = App.ActiveDocument
+            if doc is None:
+                raise RuntimeError("No active FreeCAD document")
+            panel = ensure_workbench_ui(doc, focus="layout")
+            settings = panel.toggle_measurements()
+            show_info("Measurements", f"Measurements {'enabled' if settings['measurements_enabled'] else 'disabled'}.")
+        except Exception as exc:
+            show_error("Toggle Measurements", exc)

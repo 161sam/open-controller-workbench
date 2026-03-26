@@ -1,21 +1,32 @@
 from __future__ import annotations
 
 from ocf_freecad.commands.base import BaseCommand
+from ocf_freecad.gui.runtime import show_error, show_info
 
 
 class ToggleConflictLinesCommand(BaseCommand):
+    ICON_NAME = "conflict_lines"
+
     def GetResources(self):
-        return {
-            "MenuText": "Toggle Conflict Lines",
-            "ToolTip": "Show or hide conflict connection lines in the constraint overlay",
-        }
+        return self.resources(
+            "Toggle Conflict Lines",
+            "Show or hide conflict connection lines in the constraint overlay",
+        )
 
     def Activated(self):
-        import FreeCAD as App
+        try:
+            import FreeCAD as App
 
-        from ocf_freecad.workbench import ensure_workbench_ui
+            from ocf_freecad.workbench import ensure_workbench_ui
 
-        doc = App.ActiveDocument
-        if doc is None:
-            raise RuntimeError("No active FreeCAD document")
-        ensure_workbench_ui(doc, focus="layout").toggle_conflict_lines()
+            doc = App.ActiveDocument
+            if doc is None:
+                raise RuntimeError("No active FreeCAD document")
+            panel = ensure_workbench_ui(doc, focus="layout")
+            settings = panel.toggle_conflict_lines()
+            show_info(
+                "Conflict Lines",
+                f"Conflict lines {'enabled' if settings['conflict_lines_enabled'] else 'disabled'}.",
+            )
+        except Exception as exc:
+            show_error("Toggle Conflict Lines", exc)

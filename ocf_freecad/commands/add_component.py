@@ -1,21 +1,24 @@
 from __future__ import annotations
 
 from ocf_freecad.commands.base import BaseCommand
+from ocf_freecad.gui.command_views import show_add_component_dialog
+from ocf_freecad.gui.runtime import show_error
 
 
 class AddComponentCommand(BaseCommand):
+    ICON_NAME = "add_component"
+
     def GetResources(self):
-        return {
-            "MenuText": "Add Component",
-            "ToolTip": "Open the components panel with library picker",
-        }
+        return self.resources("Add Component", "Open the components panel with library picker")
 
     def Activated(self):
-        import FreeCAD as App
+        try:
+            import FreeCAD as App
 
-        from ocf_freecad.workbench import ensure_workbench_ui
+            from ocf_freecad.workbench import ensure_workbench_ui
 
-        doc = App.ActiveDocument
-        if doc is None:
-            raise RuntimeError("No active FreeCAD document")
-        ensure_workbench_ui(doc, focus="components")
+            doc = App.ActiveDocument or App.newDocument("Controller")
+            ensure_workbench_ui(doc, focus="components")
+            show_add_component_dialog(doc)
+        except Exception as exc:
+            show_error("Add Component", exc)

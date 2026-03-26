@@ -21,6 +21,7 @@ from ocf_freecad.gui.panels.create_panel import CreatePanel
 from ocf_freecad.gui.panels.info_panel import InfoPanel
 from ocf_freecad.gui.panels.layout_panel import LayoutPanel
 from ocf_freecad.gui.panels.plugin_manager_panel import PluginManagerPanel
+from ocf_freecad.gui.runtime import icon_path
 from ocf_freecad.services.controller_service import ControllerService
 from ocf_freecad.services.interaction_service import InteractionService
 from ocf_freecad.services.overlay_service import OverlayService
@@ -32,7 +33,7 @@ _ACTIVE_DOCK: Any | None = None
 class OpenControllerWorkbench((Gui.Workbench if Gui is not None else object)):
     MenuText = "Open Controller"
     ToolTip = "Modular MIDI Controller Design"
-    Icon = ""
+    Icon = icon_path("workbench")
 
     def GetClassName(self) -> str:
         return "Gui::PythonWorkbench"

@@ -1,21 +1,23 @@
 from __future__ import annotations
 
 from ocf_freecad.commands.base import BaseCommand
+from ocf_freecad.gui.runtime import show_error, show_info
 
 
 class ReloadPluginsCommand(BaseCommand):
+    ICON_NAME = "plugin_reload"
+
     def GetResources(self):
-        return {
-            "MenuText": "Refresh Plugins",
-            "ToolTip": "Re-scan plugin manifests and rebuild plugin status",
-        }
+        return self.resources("Refresh Plugins", "Re-scan plugin manifests and rebuild plugin status")
 
     def Activated(self):
-        import FreeCAD as App
+        try:
+            import FreeCAD as App
 
-        from ocf_freecad.workbench import ensure_workbench_ui
+            from ocf_freecad.workbench import ensure_workbench_ui
 
-        doc = App.ActiveDocument
-        if doc is None:
-            raise RuntimeError("No active FreeCAD document")
-        ensure_workbench_ui(doc, focus="plugins").reload_plugins()
+            doc = App.ActiveDocument or App.newDocument("Controller")
+            result = ensure_workbench_ui(doc, focus="plugins").reload_plugins()
+            show_info("Refresh Plugins", f"Discovered {len(result)} plugins.")
+        except Exception as exc:
+            show_error("Refresh Plugins", exc)

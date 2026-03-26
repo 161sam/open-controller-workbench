@@ -1,21 +1,32 @@
 from __future__ import annotations
 
 from ocf_freecad.commands.base import BaseCommand
+from ocf_freecad.gui.runtime import show_error, show_info
 
 
 class ToggleConstraintLabelsCommand(BaseCommand):
+    ICON_NAME = "constraint_labels"
+
     def GetResources(self):
-        return {
-            "MenuText": "Toggle Constraint Labels",
-            "ToolTip": "Show or hide textual labels for constraint feedback",
-        }
+        return self.resources(
+            "Toggle Constraint Labels",
+            "Show or hide textual labels for constraint feedback",
+        )
 
     def Activated(self):
-        import FreeCAD as App
+        try:
+            import FreeCAD as App
 
-        from ocf_freecad.workbench import ensure_workbench_ui
+            from ocf_freecad.workbench import ensure_workbench_ui
 
-        doc = App.ActiveDocument
-        if doc is None:
-            raise RuntimeError("No active FreeCAD document")
-        ensure_workbench_ui(doc, focus="layout").toggle_constraint_labels()
+            doc = App.ActiveDocument
+            if doc is None:
+                raise RuntimeError("No active FreeCAD document")
+            panel = ensure_workbench_ui(doc, focus="layout")
+            settings = panel.toggle_constraint_labels()
+            show_info(
+                "Constraint Labels",
+                f"Constraint labels {'enabled' if settings['constraint_labels_enabled'] else 'disabled'}.",
+            )
+        except Exception as exc:
+            show_error("Toggle Constraint Labels", exc)
