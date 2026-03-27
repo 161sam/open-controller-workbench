@@ -1,0 +1,120 @@
+name: Release v0.1
+
+on:
+  push:
+    tags:
+      - "v0.1.0"
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: "Release tag to publish"
+        required: true
+        default: "v0.1.0"
+      draft:
+        description: "Create the GitHub Release as draft"
+        required: false
+        default: true
+        type: boolean
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Resolve release metadata
+        id: meta
+        shell: bash
+        run: |
+          if [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" ]]; then
+            TAG_NAME="${{ inputs.tag_name }}"
+            DRAFT_VALUE="${{ inputs.draft }}"
+          else
+            TAG_NAME="${GITHUB_REF_NAME}"
+            DRAFT_VALUE="false"
+          fi
+
+          if [[ "${TAG_NAME}" != "v0.1.0" ]]; then
+            echo "This workflow only supports the v0.1.0 release tag." >&2
+            exit 1
+          fi
+
+          VERSION="${TAG_NAME#v}"
+          WORKBENCH_ARCHIVE="OpenControllerWorkbench-${TAG_NAME}-workbench.zip"
+
+          echo "tag_name=${TAG_NAME}" >> "${GITHUB_OUTPUT}"
+          echo "version=${VERSION}" >> "${GITHUB_OUTPUT}"
+          echo "draft=${DRAFT_VALUE}" >> "${GITHUB_OUTPUT}"
+          echo "workbench_archive=${WORKBENCH_ARCHIVE}" >> "${GITHUB_OUTPUT}"
+
+      - name: Install build tooling
+        run: python -m pip install --upgrade pip build
+
+      - name: Run release sanity tests
+        run: python -m pytest -q tests/unit/test_release_metadata.py tests/unit/test_release_workflow_metadata.py
+
+      - name: Build source and wheel distributions
+        run: python -m build --sdist --wheel
+
+      - name: Create workbench module archive
+        shell: bash
+        run: |
+          mkdir -p dist/release
+          python - <<'PY'
+          from pathlib import Path
+          import zipfile
+
+          repo_root = Path.cwd()
+          archive_path = repo_root / "dist" / "release" / "${{ steps.meta.outputs.workbench_archive }}"
+          include_paths = [
+              "Init.py",
+              "InitGui.py",
+              "README.md",
+              "CHANGELOG.md",
+              "RELEASE_NOTES_v0.1.md",
+              "docs",
+              "examples",
+              "ocw_kicad",
+              "ocw_kicad_plugin.py",
+              "ocw_workbench",
+              "pyproject.toml",
+              "resources",
+          ]
+
+          with zipfile.ZipFile(archive_path, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+              for rel in include_paths:
+                  path = repo_root / rel
+                  if path.is_file():
+                      archive.write(path, arcname=str(Path("OpenControllerWorkbench") / rel))
+                      continue
+                  for child in path.rglob("*"):
+                      if child.is_dir():
+                          continue
+                      if ".pytest_cache" in child.parts or "__pycache__" in child.parts or child.suffix == ".pyc":
+                          continue
+                      archive.write(child, arcname=str(Path("OpenControllerWorkbench") / child.relative_to(repo_root)))
+          PY
+
+      - name: Publish GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.meta.outputs.tag_name }}
+          name: Open Controller Workbench ${{ steps.meta.outputs.tag_name }}
+          body_path: RELEASE_NOTES_v0.1.md
+          draft: ${{ steps.meta.outputs.draft }}
+          files: |
+            dist/*.tar.gz
+            dist/*.whl
+            dist/release/*.zip

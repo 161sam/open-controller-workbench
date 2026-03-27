@@ -78,6 +78,7 @@ Important:
 - [Geometry Pipeline](docs/geometry-pipeline.md)
 - [Development](docs/development.md)
 - [Release Checklist](docs/release-checklist.md)
+- [Release Process](docs/release-process.md)
 - [Release Notes v0.1](RELEASE_NOTES_v0.1.md)
 - [Changelog](CHANGELOG.md)
 

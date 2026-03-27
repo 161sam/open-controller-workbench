@@ -21,6 +21,7 @@ This checklist is for preparing `v0.1.0` and later early OCW releases.
 
 - Update `CHANGELOG.md`
 - Update `RELEASE_NOTES_v0.1.md` or the current release-notes document
+- Update `docs/release-process.md` if the workflow or artifact set changes
 - Verify README installation and first-run sections
 - Verify docs links:
   - user guide
@@ -32,6 +33,7 @@ This checklist is for preparing `v0.1.0` and later early OCW releases.
 
 - Run the main unit test suite
 - Run `tests/unit/test_release_metadata.py`
+- Run `tests/unit/test_release_workflow_metadata.py`
 - Perform one manual FreeCAD startup check from a clean module-root symlink
 - Verify icons load in the workbench toolbar
 - Verify templates, variants, and libraries resolve in the Create panel
@@ -39,7 +41,6 @@ This checklist is for preparing `v0.1.0` and later early OCW releases.
 ## Release blockers
 
 - Final project license not selected yet
-- Public release publishing workflow not yet automated
 
 ## Manual smoke test
 
