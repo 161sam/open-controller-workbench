@@ -5,10 +5,10 @@ from typing import Any
 from ocw_workbench.gui.panels._common import set_label_text
 
 _STATUS_STYLES = {
-    "info": "color: #1f2937; background: #f3f4f6; border: 1px solid #d1d5db; border-radius: 4px; padding: 4px 6px;",
-    "success": "color: #065f46; background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 4px; padding: 4px 6px;",
-    "warning": "color: #92400e; background: #fffbeb; border: 1px solid #fcd34d; border-radius: 4px; padding: 4px 6px;",
-    "error": "color: #991b1b; background: #fef2f2; border: 1px solid #fca5a5; border-radius: 4px; padding: 4px 6px;",
+    "info": "color: #e5e7eb; background: #111827; border: 1px solid #374151; border-radius: 8px; padding: 6px 8px;",
+    "success": "color: #d1fae5; background: #052e2b; border: 1px solid #0f766e; border-radius: 8px; padding: 6px 8px;",
+    "warning": "color: #fef3c7; background: #3f2a0b; border: 1px solid #b45309; border-radius: 8px; padding: 6px 8px;",
+    "error": "color: #fee2e2; background: #3b0d12; border: 1px solid #b91c1c; border-radius: 8px; padding: 6px 8px;",
 }
 
 

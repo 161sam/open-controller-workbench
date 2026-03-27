@@ -53,17 +53,27 @@ def create_or_reuse_dock(title: str, widget: Any, object_name: str = DOCK_OBJECT
         dock = qtwidgets.QDockWidget(title, main_window)
         dock.setObjectName(object_name)
         dock.setAllowedAreas(qtcore.Qt.LeftDockWidgetArea | qtcore.Qt.RightDockWidgetArea)
+        if hasattr(dock, "setMinimumWidth"):
+            dock.setMinimumWidth(360)
         if hasattr(qtwidgets.QDockWidget, "DockWidgetClosable") and hasattr(qtwidgets.QDockWidget, "DockWidgetMovable"):
-            dock.setFeatures(
-                qtwidgets.QDockWidget.DockWidgetClosable | qtwidgets.QDockWidget.DockWidgetMovable
-            )
+            features = qtwidgets.QDockWidget.DockWidgetClosable | qtwidgets.QDockWidget.DockWidgetMovable
+            if hasattr(qtwidgets.QDockWidget, "DockWidgetFloatable"):
+                features |= qtwidgets.QDockWidget.DockWidgetFloatable
+            dock.setFeatures(features)
         main_window.addDockWidget(qtcore.Qt.RightDockWidgetArea, dock)
+        if hasattr(main_window, "resizeDocks"):
+            try:
+                main_window.resizeDocks([dock], [420], qtcore.Qt.Horizontal)
+            except Exception:
+                log_to_console("Dock resize hint skipped due to Qt/FreeCAD limitation.", level="warning")
         log_to_console("Created Open Controller dock in right dock area.")
 
     current_widget = dock.widget() if hasattr(dock, "widget") else None
     if current_widget is not widget and hasattr(dock, "setWidget"):
         dock.setWidget(widget)
         log_to_console("Dock widget content set.")
+    if hasattr(dock, "setWindowTitle"):
+        dock.setWindowTitle(title)
 
     if created:
         _tabify_with_existing_dock(main_window, dock, qtcore.Qt.RightDockWidgetArea)

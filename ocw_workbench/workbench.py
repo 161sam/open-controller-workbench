@@ -653,46 +653,93 @@ class ProductWorkbenchPanel:
         if qtwidgets is None:
             return {
                 "widget": object(),
-                "status": FallbackLabel("Open Controller workbench ready."),
+                "status": FallbackLabel("Workbench ready."),
                 "overlay_status": FallbackLabel("Overlay ready."),
             }
 
         widget = qtwidgets.QWidget()
         if hasattr(widget, "setMinimumSize"):
             widget.setMinimumSize(0, 0)
+        if hasattr(widget, "setObjectName"):
+            widget.setObjectName("OCWWorkbenchShell")
         root = qtwidgets.QVBoxLayout(widget)
-        title = qtwidgets.QLabel("Open Controller Studio")
-        title.setStyleSheet("font-size: 16px; font-weight: 600;")
-        subtitle = qtwidgets.QLabel("Create, lay out, validate and refine controllers without leaving the workbench.")
+        root.setContentsMargins(10, 10, 10, 10)
+        root.setSpacing(10)
+        widget.setStyleSheet(_workbench_shell_stylesheet())
+
+        header_box = qtwidgets.QFrame()
+        if hasattr(header_box, "setObjectName"):
+            header_box.setObjectName("OCWHeaderCard")
+        header_layout = qtwidgets.QVBoxLayout(header_box)
+        header_layout.setContentsMargins(12, 12, 12, 12)
+        header_layout.setSpacing(8)
+
+        title = qtwidgets.QLabel("Open Controller Workbench")
+        if hasattr(title, "setObjectName"):
+            title.setObjectName("OCWHeaderTitle")
+        subtitle = qtwidgets.QLabel("Build a controller, place components, then validate the result.")
+        if hasattr(subtitle, "setObjectName"):
+            subtitle.setObjectName("OCWHeaderSubtitle")
         subtitle.setWordWrap(True)
-        status = qtwidgets.QLabel("Open Controller workbench ready.")
+
+        hint = qtwidgets.QLabel("Start in Create, refine in Layout or Components, then confirm issues in Validate.")
+        if hasattr(hint, "setObjectName"):
+            hint.setObjectName("OCWHeaderHint")
+        hint.setWordWrap(True)
+
+        status_heading = qtwidgets.QLabel("Activity")
+        if hasattr(status_heading, "setObjectName"):
+            status_heading.setObjectName("OCWStatusHeading")
+        status = qtwidgets.QLabel("Workbench ready.")
         status.setWordWrap(True)
+        if hasattr(status, "setObjectName"):
+            status.setObjectName("OCWStatusCard")
+
+        overlay_heading = qtwidgets.QLabel("Overlay")
+        if hasattr(overlay_heading, "setObjectName"):
+            overlay_heading.setObjectName("OCWStatusHeading")
         overlay_status = qtwidgets.QLabel("Overlay ready.")
         overlay_status.setWordWrap(True)
+        if hasattr(overlay_status, "setObjectName"):
+            overlay_status.setObjectName("OCWOverlayCard")
+
+        status_grid = qtwidgets.QGridLayout()
+        status_grid.setContentsMargins(0, 0, 0, 0)
+        status_grid.setHorizontalSpacing(8)
+        status_grid.setVerticalSpacing(4)
+        status_grid.addWidget(status_heading, 0, 0)
+        status_grid.addWidget(overlay_heading, 0, 1)
+        status_grid.addWidget(status, 1, 0)
+        status_grid.addWidget(overlay_status, 1, 1)
+
+        header_layout.addWidget(title)
+        header_layout.addWidget(subtitle)
+        header_layout.addWidget(hint)
+        header_layout.addLayout(status_grid)
+
         tabs = qtwidgets.QTabWidget()
+        if hasattr(tabs, "setObjectName"):
+            tabs.setObjectName("OCWMainTabs")
         if hasattr(tabs, "setUsesScrollButtons"):
             tabs.setUsesScrollButtons(True)
+        if hasattr(tabs, "setDocumentMode"):
+            tabs.setDocumentMode(True)
+        if hasattr(tabs, "setElideMode") and _qtcore is not None:
+            tabs.setElideMode(_qtcore.Qt.ElideRight)
         set_size_policy(tabs, horizontal="preferred", vertical="expanding")
-        create_page = qtwidgets.QWidget()
-        create_layout = qtwidgets.QVBoxLayout(create_page)
-        layout_page = qtwidgets.QWidget()
-        layout_layout = qtwidgets.QVBoxLayout(layout_page)
-        components_page = qtwidgets.QWidget()
-        components_layout = qtwidgets.QVBoxLayout(components_page)
-        plugins_page = qtwidgets.QWidget()
-        plugins_layout = qtwidgets.QVBoxLayout(plugins_page)
+        create_page, create_layout = _scrollable_tab_page(qtwidgets)
+        layout_page, layout_layout = _scrollable_tab_page(qtwidgets)
+        components_page, components_layout = _scrollable_tab_page(qtwidgets)
+        plugins_page, plugins_layout = _scrollable_tab_page(qtwidgets)
         for layout in (create_layout, layout_layout, components_layout, plugins_layout):
-            layout.setContentsMargins(0, 0, 0, 0)
-            layout.setSpacing(6)
+            layout.setSpacing(8)
         tabs.addTab(create_page, "Create")
         tabs.addTab(layout_page, "Layout")
         tabs.addTab(components_page, "Components")
         tabs.addTab(plugins_page, "Plugins")
-        root.addWidget(title)
-        root.addWidget(subtitle)
-        root.addWidget(overlay_status)
+
+        root.addWidget(header_box)
         root.addWidget(tabs, 1)
-        root.addWidget(status)
         return {
             "widget": widget,
             "status": status,
@@ -880,13 +927,14 @@ def _group_box(title: str, child: Any) -> Any:
         group.setMinimumSize(0, 0)
     set_size_policy(group, horizontal="preferred", vertical="preferred")
     layout = qtwidgets.QVBoxLayout(group)
-    layout.setContentsMargins(4, 4, 4, 4)
+    layout.setContentsMargins(6, 6, 6, 6)
+    layout.setSpacing(6)
     layout.addWidget(child)
     return group
 
 
 def _show_in_dock(panel: ProductWorkbenchPanel) -> Any | None:
-    dock = create_or_reuse_dock("Open Controller", panel.widget)
+    dock = create_or_reuse_dock("Open Controller Workbench", panel.widget)
     if dock is None:
         log_to_console("Qt dock support unavailable; Open Controller dock not created.", level="warning")
     return dock
@@ -902,7 +950,7 @@ def _show_fallback_dock(exc: Exception) -> Any | None:
         return None
     widget = qtwidgets.QWidget()
     layout = qtwidgets.QVBoxLayout(widget)
-    title = qtwidgets.QLabel("Open Controller")
+    title = qtwidgets.QLabel("Open Controller Workbench")
     title.setStyleSheet("font-weight: 600;")
     message = qtwidgets.QLabel("The workbench UI could not be built. Check the FreeCAD report view for details.")
     message.setWordWrap(True)
@@ -912,7 +960,97 @@ def _show_fallback_dock(exc: Exception) -> Any | None:
     layout.addWidget(message)
     layout.addWidget(details)
     log_to_console("Showing fallback Open Controller dock after UI build failure.", level="warning")
-    return create_or_reuse_dock("Open Controller", widget)
+    return create_or_reuse_dock("Open Controller Workbench", widget)
+
+
+def _scrollable_tab_page(qtwidgets: Any) -> tuple[Any, Any]:
+    page = qtwidgets.QScrollArea()
+    page.setWidgetResizable(True)
+    if hasattr(page, "setFrameShape") and hasattr(qtwidgets, "QFrame"):
+        page.setFrameShape(qtwidgets.QFrame.NoFrame)
+    container = qtwidgets.QWidget()
+    layout = qtwidgets.QVBoxLayout(container)
+    layout.setContentsMargins(0, 0, 0, 0)
+    page.setWidget(container)
+    return page, layout
+
+
+def _workbench_shell_stylesheet() -> str:
+    return """
+QWidget#OCWWorkbenchShell {
+    background: #111827;
+}
+QFrame#OCWHeaderCard {
+    background: #0f172a;
+    border: 1px solid #253043;
+    border-radius: 10px;
+}
+QLabel#OCWHeaderTitle {
+    color: #f8fafc;
+    font-size: 17px;
+    font-weight: 700;
+}
+QLabel#OCWHeaderSubtitle {
+    color: #cbd5e1;
+    font-size: 12px;
+}
+QLabel#OCWHeaderHint {
+    color: #93c5fd;
+    background: #172554;
+    border: 1px solid #1d4ed8;
+    border-radius: 8px;
+    padding: 6px 8px;
+}
+QLabel#OCWStatusHeading {
+    color: #94a3b8;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+QLabel#OCWStatusCard, QLabel#OCWOverlayCard {
+    color: #e5e7eb;
+    background: #111827;
+    border: 1px solid #334155;
+    border-radius: 8px;
+    padding: 8px;
+}
+QTabWidget#OCWMainTabs::pane {
+    border: 1px solid #253043;
+    border-radius: 10px;
+    background: #0f172a;
+    top: -1px;
+}
+QTabBar::tab {
+    background: #172033;
+    color: #94a3b8;
+    border: 1px solid #253043;
+    padding: 8px 10px;
+    min-width: 72px;
+}
+QTabBar::tab:selected {
+    background: #0f172a;
+    color: #f8fafc;
+    border-bottom-color: #0f172a;
+}
+QGroupBox {
+    color: #e5e7eb;
+    font-weight: 600;
+    border: 1px solid #253043;
+    border-radius: 10px;
+    margin-top: 10px;
+    padding-top: 8px;
+    background: #0f172a;
+}
+QGroupBox::title {
+    subcontrol-origin: margin;
+    left: 10px;
+    padding: 0 4px;
+    color: #cbd5e1;
+}
+QScrollArea {
+    background: transparent;
+}
+"""
 
 
 def _bootstrap_document_if_needed(doc: Any) -> None:
