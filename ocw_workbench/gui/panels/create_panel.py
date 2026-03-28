@@ -553,7 +553,7 @@ class CreatePanel:
         validation = context.get("validation") or {}
         validation_summary = validation.get("summary", {}) if isinstance(validation, dict) else {}
         if not context.get("template_id") and not context.get("variant_id") and context.get("component_count", 0) == 0:
-            set_label_text(self.form["active_project"], "No controller in the document yet. Choose a template, then create a new controller.")
+            set_label_text(self.form["active_project"], "No controller loaded. Choose a template to begin.")
             return
         layout_text = layout.get("strategy", "not placed")
         validation_text = (
@@ -636,7 +636,7 @@ class CreatePanel:
     def _sync_marketplace_selection(self) -> None:
         entry = self.selected_marketplace_entry()
         if entry is None:
-            set_label_text(self.form["marketplace_summary"], "No marketplace template selected.")
+            set_label_text(self.form["marketplace_summary"], "No template selected.")
             set_text(self.form["marketplace_details"], "Browse local and remote templates to compare options before you create.")
             set_enabled(self.form["marketplace_apply_button"], False)
             set_enabled(self.form["marketplace_details_button"], False)
@@ -762,8 +762,8 @@ def _build_form() -> dict[str, Any]:
         }
 
     content, root = build_panel_container(qtwidgets)
-    header = create_status_label(qtwidgets, "Select template and variant, then create or update.")
-    active_project = create_status_label(qtwidgets, "No controller in the document yet.")
+    header = create_status_label(qtwidgets, "Choose a template and variant.")
+    active_project = create_status_label(qtwidgets, "No controller loaded.")
     shortcuts_row = qtwidgets.QHBoxLayout()
     shortcuts_row.setSpacing(6)
     shortcuts_row.addWidget(favorites_widget.widget, 1)
@@ -782,7 +782,7 @@ def _build_form() -> dict[str, Any]:
     marketplace_filter = qtwidgets.QComboBox()
     marketplace_filter.addItems(["all", "local", "remote"])
     marketplace_list = qtwidgets.QComboBox()
-    marketplace_summary = create_status_label(qtwidgets, "No marketplace template selected.")
+    marketplace_summary = create_status_label(qtwidgets, "No template selected.")
     marketplace_details = create_text_panel(qtwidgets, max_height=72)
     marketplace_apply_button = qtwidgets.QPushButton("Use")
     marketplace_details_button = qtwidgets.QPushButton("Details")

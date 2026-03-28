@@ -305,7 +305,7 @@ def _build_form() -> dict[str, Any]:
         }
 
     content, layout = build_panel_container(qtwidgets)
-    intro = create_status_label(qtwidgets, "Run validation and review findings.")
+    intro = create_status_label(qtwidgets, "Run validation and review issues.")
     validate_button = set_button_role(qtwidgets.QPushButton("Validate Layout"), "primary")
     set_tooltip(validate_button, "Run spacing, overlap and edge-distance checks for the current controller.")
     focus_button = set_button_role(qtwidgets.QPushButton("Focus Issue"), "secondary")
@@ -322,10 +322,6 @@ def _build_form() -> dict[str, Any]:
     summary_row.addWidget(state_value["card"], 1)
 
     results_overview = create_status_label(qtwidgets, "Run validation to populate the issue list.")
-    if hasattr(results_overview, "setStyleSheet"):
-        results_overview.setStyleSheet(
-            "color: #dbe5f1; background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 6px 8px;"
-        )
 
     results = qtwidgets.QTreeWidget()
     results.setColumnCount(4)
@@ -354,10 +350,7 @@ def _build_form() -> dict[str, Any]:
     set_size_policy(results, horizontal="expanding", vertical="expanding")
 
     list_box, list_layout = create_section_widget(qtwidgets, "Findings", spacing=6)
-    list_hint = create_hint_label(
-        qtwidgets,
-        "Errors are blocking. Warnings are advisory. Activate a row to focus its component.",
-    )
+    list_hint = create_hint_label(qtwidgets, "Errors block release. Activate a row to focus its component.")
     list_layout.addWidget(list_hint)
     list_layout.addWidget(results, 1)
 
@@ -374,7 +367,7 @@ def _build_form() -> dict[str, Any]:
     detail_description = create_text_panel(qtwidgets, max_height=84)
     if hasattr(detail_description, "setStyleSheet"):
         detail_description.setStyleSheet(
-            "background: #111827; color: #e5e7eb; border: 1px solid #334155; border-radius: 8px; padding: 6px;"
+            "background: #0c1420; color: #d9e2ec; border: 1px solid #293446; border-radius: 6px; padding: 6px;"
         )
     detail_hint = create_hint_label(qtwidgets, "Run validation and select a finding to inspect it.")
     detail_meta.addRow("Rule", detail_rule)
@@ -424,42 +417,41 @@ def _result_overview_text(summary: dict[str, Any]) -> str:
     warnings = int(summary.get("warning_count", 0))
     total = int(summary.get("total_count", errors + warnings))
     if errors:
-        return f"{total} findings. Errors are blocking and should be fixed first."
+        return f"{total} findings. Fix blocking errors first."
     if warnings:
-        return f"{total} findings. Warnings are advisory but should be reviewed."
+        return f"{total} findings. Review warnings next."
     return "No findings. The layout is currently clear."
 
 
 def _summary_card(qtwidgets: Any, title: str, value: str, level: str) -> dict[str, Any]:
     card = qtwidgets.QFrame()
     layout = qtwidgets.QVBoxLayout(card)
-    layout.setContentsMargins(10, 8, 10, 8)
-    layout.setSpacing(4)
+    layout.setContentsMargins(8, 6, 8, 6)
+    layout.setSpacing(2)
     title_label = qtwidgets.QLabel(title)
-    title_label.setStyleSheet("color: #94a3b8; font-size: 11px; font-weight: 600;")
+    title_label.setStyleSheet("color: #7f92a8; font-size: 10px; font-weight: 600;")
     value_label = qtwidgets.QLabel(value)
     value_label.setStyleSheet(_summary_value_style(level))
     layout.addWidget(title_label)
     layout.addWidget(value_label)
-    card.setStyleSheet("QFrame { background: #0f172a; border: 1px solid #334155; border-radius: 8px; }")
+    card.setStyleSheet("QFrame { background: #121b28; border: 1px solid #223043; border-radius: 6px; }")
     return {"card": card, "value": value_label}
 
 
 def _summary_value_style(level: str) -> str:
     palette = {
-        "success": ("#d1fae5", "#065f46"),
-        "warning": ("#fef3c7", "#92400e"),
-        "error": ("#fee2e2", "#991b1b"),
-        "info": ("#e5e7eb", "#1f2937"),
+        "success": "#8dd4b4",
+        "warning": "#e8c66a",
+        "error": "#f0a6a6",
+        "info": "#d9e2ec",
     }
-    foreground, accent = palette.get(level, palette["info"])
+    foreground = palette.get(level, palette["info"])
     return (
         f"color: {foreground};"
-        "font-size: 18px;"
+        "font-size: 16px;"
         "font-weight: 700;"
-        f"background: {accent};"
-        "border-radius: 6px;"
-        "padding: 4px 6px;"
+        "background: transparent;"
+        "padding: 0px;"
     )
 
 
@@ -506,16 +498,16 @@ def _rule_label(item: dict[str, Any]) -> str:
 
 def _detail_badge_style(level: str) -> str:
     palette = {
-        "success": ("#d1fae5", "#065f46"),
-        "warning": ("#fef3c7", "#92400e"),
-        "error": ("#fee2e2", "#991b1b"),
-        "info": ("#e5e7eb", "#1f2937"),
+        "success": ("#8dd4b4", "#173327"),
+        "warning": ("#e8c66a", "#3a2b11"),
+        "error": ("#f0a6a6", "#3d171a"),
+        "info": ("#d9e2ec", "#1a2433"),
     }
     foreground, background = palette.get(str(level).lower(), palette["info"])
     return (
         f"color: {foreground};"
         f"background: {background};"
-        "border-radius: 8px;"
-        "padding: 4px 8px;"
+        "border-radius: 7px;"
+        "padding: 3px 8px;"
         "font-weight: 700;"
     )

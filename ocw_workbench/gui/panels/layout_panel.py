@@ -323,7 +323,7 @@ def _build_form() -> dict[str, Any]:
         }
 
     content, layout = build_panel_container(qtwidgets)
-    intro = create_status_label(qtwidgets, "Auto Place first, then refine with view helpers.")
+    intro = create_status_label(qtwidgets, "Run Auto Place, then review helpers and feedback.")
     form = create_form_layout(qtwidgets, spacing=4)
     preset = qtwidgets.QComboBox()
     preset.addItems(["grid", "row", "column", "zone"])
