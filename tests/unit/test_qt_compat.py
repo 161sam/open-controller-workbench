@@ -121,6 +121,86 @@ def test_add_layout_content_routes_widgets_and_layouts(monkeypatch):
     assert parent.layouts == [row_layout]
 
 
+def test_wrap_widget_in_scroll_area_sets_resizable_container_and_layout_constraint(monkeypatch):
+    class FakeLayout:
+        SetMinAndMaxSize = 7
+
+        def __init__(self) -> None:
+            self.constraint = None
+
+        def setSizeConstraint(self, value) -> None:
+            self.constraint = value
+
+    class FakeWidget:
+        def __init__(self) -> None:
+            self._layout = FakeLayout()
+            self.minimum_size = None
+            self.size_policy = None
+
+        def layout(self):
+            return self._layout
+
+        def setMinimumSize(self, width: int, height: int) -> None:
+            self.minimum_size = (width, height)
+
+        def setSizePolicy(self, horizontal, vertical) -> None:
+            self.size_policy = (horizontal, vertical)
+
+    class FakeScrollArea:
+        def __init__(self) -> None:
+            self.resizable = False
+            self.widget = None
+            self.minimum_size = None
+            self.size_policy = None
+
+        def setWidgetResizable(self, value: bool) -> None:
+            self.resizable = value
+
+        def setHorizontalScrollBarPolicy(self, *_args) -> None:
+            return
+
+        def setVerticalScrollBarPolicy(self, *_args) -> None:
+            return
+
+        def setFrameShape(self, *_args) -> None:
+            return
+
+        def setWidget(self, widget) -> None:
+            self.widget = widget
+
+        def setMinimumSize(self, width: int, height: int) -> None:
+            self.minimum_size = (width, height)
+
+        def setSizePolicy(self, horizontal, vertical) -> None:
+            self.size_policy = (horizontal, vertical)
+
+    class FakeFrame:
+        NoFrame = 0
+
+    class FakeSizePolicy:
+        Fixed = 0
+        Minimum = 1
+        Preferred = 2
+        MinimumExpanding = 3
+        Expanding = 4
+
+    qtcore = types.SimpleNamespace(Qt=types.SimpleNamespace(ScrollBarAsNeeded=1))
+    qtwidgets = types.SimpleNamespace(
+        QScrollArea=FakeScrollArea,
+        QFrame=FakeFrame,
+        QSizePolicy=FakeSizePolicy,
+        QLayout=FakeLayout,
+    )
+    monkeypatch.setattr(_common, "load_qt", lambda: (qtcore, object(), qtwidgets))
+
+    content = FakeWidget()
+    scroll_area = _common.wrap_widget_in_scroll_area(content)
+
+    assert scroll_area.resizable is True
+    assert scroll_area.widget is content
+    assert content._layout.constraint == FakeLayout.SetMinAndMaxSize
+
+
 def test_show_message_prefers_exec(monkeypatch):
     class FakeMessageBox:
         Critical = 1

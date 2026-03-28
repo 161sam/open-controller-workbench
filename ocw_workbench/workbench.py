@@ -672,16 +672,16 @@ class ProductWorkbenchPanel:
         if hasattr(widget, "setObjectName"):
             widget.setObjectName("OCWWorkbenchShell")
         root = qtwidgets.QVBoxLayout(widget)
-        root.setContentsMargins(8, 8, 8, 8)
-        root.setSpacing(6)
+        root.setContentsMargins(12, 12, 12, 12)
+        root.setSpacing(12)
         widget.setStyleSheet(_workbench_shell_stylesheet())
 
         header_box = qtwidgets.QFrame()
         if hasattr(header_box, "setObjectName"):
             header_box.setObjectName("OCWHeaderBar")
         header_layout = qtwidgets.QVBoxLayout(header_box)
-        header_layout.setContentsMargins(10, 8, 10, 8)
-        header_layout.setSpacing(3)
+        header_layout.setContentsMargins(12, 10, 12, 10)
+        header_layout.setSpacing(4)
 
         title = qtwidgets.QLabel("Open Controller")
         if hasattr(title, "setObjectName"):
@@ -732,8 +732,8 @@ class ProductWorkbenchPanel:
         if hasattr(footer, "setObjectName"):
             footer.setObjectName("OCWFooterBar")
         footer_layout = qtwidgets.QVBoxLayout(footer)
-        footer_layout.setContentsMargins(10, 7, 10, 7)
-        footer_layout.setSpacing(2)
+        footer_layout.setContentsMargins(12, 8, 12, 8)
+        footer_layout.setSpacing(4)
         footer_layout.addWidget(status)
         footer_layout.addWidget(overlay_status)
 
@@ -1018,7 +1018,7 @@ def _build_unavailable_panel_widget(title_text: str, message_text: str, details_
 
 
 def _tab_page(qtwidgets: Any) -> tuple[Any, Any]:
-    return build_panel_container(qtwidgets)
+    return build_panel_container(qtwidgets, spacing=12, margins=(12, 12, 12, 12))
 
 
 def _section_splitter(orientation: str, widgets: list[Any], stretch_factors: list[int] | None = None) -> Any:
@@ -1170,7 +1170,7 @@ QTabWidget#OCWMainTabs::pane {
     border: 1px solid #253043;
     border-radius: 10px;
     background: #0f172a;
-    top: -1px;
+    top: 0px;
 }
 QTabBar::tab {
     background: #172033;
@@ -1191,18 +1191,19 @@ QGroupBox#OCWSectionGroup, QGroupBox {
     font-size: 11px;
     font-weight: 700;
     border: none;
-    margin-top: 10px;
-    padding-top: 4px;
+    margin-top: 14px;
+    padding-top: 8px;
     background: transparent;
 }
 QGroupBox::title {
     subcontrol-origin: margin;
     left: 0px;
-    padding: 0;
+    padding: 0 0 2px 0;
     color: #94a3b8;
 }
 QScrollArea {
     background: transparent;
+    border: none;
 }
 QSplitter::handle {
     background: #111827;

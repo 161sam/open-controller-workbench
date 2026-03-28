@@ -214,12 +214,16 @@ def wrap_widget_in_scroll_area(widget: Any) -> Any:
         scroll_area.setVerticalScrollBarPolicy(qtcore.Qt.ScrollBarAsNeeded)
     if hasattr(scroll_area, "setFrameShape") and hasattr(qtwidgets, "QFrame"):
         scroll_area.setFrameShape(qtwidgets.QFrame.NoFrame)
+    inner_layout = widget.layout() if hasattr(widget, "layout") else None
+    if inner_layout is not None:
+        _set_min_and_max_size_constraint(inner_layout, qtwidgets)
     if hasattr(widget, "setMinimumSize"):
         widget.setMinimumSize(0, 0)
+    set_size_policy(widget, horizontal="expanding", vertical="minimum_expanding")
     scroll_area.setWidget(widget)
     if hasattr(scroll_area, "setMinimumSize"):
         scroll_area.setMinimumSize(0, 0)
-    set_size_policy(scroll_area, horizontal="preferred", vertical="expanding")
+    set_size_policy(scroll_area, horizontal="expanding", vertical="expanding")
     return scroll_area
 
 
@@ -245,6 +249,10 @@ def build_panel_container(
     widget = qtwidgets.QWidget()
     layout = qtwidgets.QVBoxLayout(widget)
     configure_layout(layout, margins=margins, spacing=spacing)
+    _set_min_and_max_size_constraint(layout, qtwidgets)
+    if hasattr(widget, "setMinimumSize"):
+        widget.setMinimumSize(0, 0)
+    set_size_policy(widget, horizontal="expanding", vertical="expanding")
     return widget, layout
 
 
@@ -269,6 +277,12 @@ def build_group_box(
     }.get(layout_kind, qtwidgets.QVBoxLayout)
     layout = layout_factory(group)
     configure_layout(layout, margins=margins, spacing=spacing)
+    if layout_kind == "form":
+        _set_form_layout_spacing(layout)
+    _set_min_and_max_size_constraint(layout, qtwidgets)
+    if hasattr(group, "setMinimumSize"):
+        group.setMinimumSize(0, 0)
+    set_size_policy(group, horizontal="expanding", vertical="minimum_expanding")
     return group, layout
 
 
@@ -284,6 +298,10 @@ def build_collapsible_section(
     widget = qtwidgets.QWidget()
     outer = qtwidgets.QVBoxLayout(widget)
     configure_layout(outer, margins=(0, 0, 0, 0), spacing=SPACE_1)
+    _set_min_and_max_size_constraint(outer, qtwidgets)
+    if hasattr(widget, "setMinimumSize"):
+        widget.setMinimumSize(0, 0)
+    set_size_policy(widget, horizontal="expanding", vertical="minimum_expanding")
 
     toggle = qtwidgets.QToolButton()
     if hasattr(toggle, "setText"):
@@ -304,6 +322,10 @@ def build_collapsible_section(
         body.setObjectName("OCWCollapsibleBody")
     body_layout = qtwidgets.QVBoxLayout(body)
     configure_layout(body_layout, margins=margins, spacing=spacing)
+    _set_min_and_max_size_constraint(body_layout, qtwidgets)
+    if hasattr(body, "setMinimumSize"):
+        body.setMinimumSize(0, 0)
+    set_size_policy(body, horizontal="expanding", vertical="minimum_expanding")
     if hasattr(body, "setVisible"):
         body.setVisible(expanded)
 
@@ -342,6 +364,7 @@ def build_form_layout(
         layout.setLabelAlignment(qtcore.Qt.AlignLeft | qtcore.Qt.AlignVCenter)
     if qtcore is not None and hasattr(layout, "setFormAlignment"):
         layout.setFormAlignment(qtcore.Qt.AlignTop | qtcore.Qt.AlignLeft)
+    _set_form_layout_spacing(layout)
     return layout
 
 
@@ -377,6 +400,10 @@ def create_row_widget(qtwidgets: Any, *widgets: Any, spacing: int = SPACE_2, str
     row = qtwidgets.QWidget()
     layout = qtwidgets.QHBoxLayout(row)
     configure_layout(layout, spacing=spacing)
+    _set_min_and_max_size_constraint(layout, qtwidgets)
+    if hasattr(row, "setMinimumSize"):
+        row.setMinimumSize(0, 0)
+    set_size_policy(row, horizontal="expanding", vertical="preferred")
     for index, widget in enumerate(widgets):
         if stretch_index is not None and index == stretch_index:
             layout.addWidget(widget, 1)
@@ -428,16 +455,19 @@ def set_size_policy(widget: Any, horizontal: str = "preferred", vertical: str = 
     if qtwidgets is None or not hasattr(widget, "setSizePolicy") or not hasattr(qtwidgets, "QSizePolicy"):
         return
     policy = qtwidgets.QSizePolicy
+    minimum_expanding = getattr(policy, "MinimumExpanding", getattr(policy, "Expanding", policy.Preferred))
     horizontal_policy = {
         "fixed": policy.Fixed,
         "minimum": policy.Minimum,
         "preferred": policy.Preferred,
+        "minimum_expanding": minimum_expanding,
         "expanding": policy.Expanding,
     }.get(horizontal, policy.Preferred)
     vertical_policy = {
         "fixed": policy.Fixed,
         "minimum": policy.Minimum,
         "preferred": policy.Preferred,
+        "minimum_expanding": minimum_expanding,
         "expanding": policy.Expanding,
     }.get(vertical, policy.Preferred)
     widget.setSizePolicy(horizontal_policy, vertical_policy)
@@ -449,11 +479,11 @@ def configure_text_panel(widget: Any, max_height: int = 160) -> None:
         widget.setReadOnly(True)
     if qtwidgets is not None and hasattr(qtwidgets, "QPlainTextEdit") and isinstance(widget, qtwidgets.QPlainTextEdit):
         widget.setLineWrapMode(qtwidgets.QPlainTextEdit.WidgetWidth)
-    if hasattr(widget, "setMaximumHeight"):
-        widget.setMaximumHeight(max_height)
     if hasattr(widget, "setMinimumHeight"):
-        widget.setMinimumHeight(72)
-    set_size_policy(widget, horizontal="preferred", vertical="preferred")
+        widget.setMinimumHeight(min(72, max_height) if max_height > 0 else 72)
+    if hasattr(widget, "setMinimumSize"):
+        widget.setMinimumSize(0, 0)
+    set_size_policy(widget, horizontal="expanding", vertical="minimum_expanding")
 
 
 def configure_combo_box(widget: Any, minimum_contents_length: int = 12) -> None:
@@ -466,7 +496,22 @@ def configure_combo_box(widget: Any, minimum_contents_length: int = 12) -> None:
         widget.setMinimumContentsLength(minimum_contents_length)
     if hasattr(widget, "setSizeAdjustPolicy") and hasattr(qtwidgets, "QComboBox"):
         widget.setSizeAdjustPolicy(qtwidgets.QComboBox.AdjustToMinimumContentsLengthWithIcon)
-    set_size_policy(widget, horizontal="preferred", vertical="preferred")
+    set_size_policy(widget, horizontal="expanding", vertical="preferred")
+
+
+def _set_min_and_max_size_constraint(layout: Any, qtwidgets: Any) -> None:
+    if not hasattr(layout, "setSizeConstraint") or not hasattr(qtwidgets, "QLayout"):
+        return
+    constraint = getattr(qtwidgets.QLayout, "SetMinAndMaxSize", None)
+    if constraint is not None:
+        layout.setSizeConstraint(constraint)
+
+
+def _set_form_layout_spacing(layout: Any) -> None:
+    if hasattr(layout, "setVerticalSpacing"):
+        layout.setVerticalSpacing(SPACE_2)
+    if hasattr(layout, "setHorizontalSpacing"):
+        layout.setHorizontalSpacing(SPACE_2)
 
 
 class FallbackSignal:
