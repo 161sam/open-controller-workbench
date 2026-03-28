@@ -27,6 +27,7 @@ from ocw_workbench.gui.panels._common import (
     set_size_policy,
     set_text,
     text_value,
+    wrap_layout_in_widget,
     wrap_widget_in_scroll_area,
 )
 from ocw_workbench.gui.widgets.parameter_editor import ParameterEditorWidget
@@ -860,9 +861,9 @@ def _build_form() -> dict[str, Any]:
     form.addRow("", template_info)
     form.addRow("Variant", variant)
     form.addRow("", variant_info)
-    selection_layout.addLayout(form)
-    selection_layout.addWidget(parameter_status)
-    selection_layout.addWidget(preview)
+    selection_layout.addRow(wrap_layout_in_widget(qtwidgets, form))
+    selection_layout.addRow(parameter_status)
+    selection_layout.addRow(preview)
     top_row = qtwidgets.QHBoxLayout()
     top_row.setSpacing(6)
     top_row.addWidget(selection_box, 3)
