@@ -268,6 +268,12 @@ class OpenControllerWorkbench((Gui.Workbench if Gui is not None else object)):
             "OCW_ToggleConflictLines",
             "OCW_ToggleConstraintLabels",
         ]
+        view_commands = [
+            "OCW_ToggleOverlay",
+            "OCW_ToggleMeasurements",
+            "OCW_ToggleConflictLines",
+            "OCW_ToggleConstraintLabels",
+        ]
         plugin_commands = [
             "OCW_OpenPluginManager",
         ]
@@ -280,8 +286,9 @@ class OpenControllerWorkbench((Gui.Workbench if Gui is not None else object)):
         self.appendToolbar("OCW Components", component_commands)
         self.appendToolbar("OCW Favorites", _FAVORITE_COMMAND_IDS + [_FAVORITE_MORE_COMMAND_ID])
         self.appendToolbar("OCW Layout", layout_commands)
-        self.appendToolbar("OCW Validate", validate_commands[:3])
-        self.appendToolbar("OCW Tools", plugin_commands)
+        self.appendToolbar("OCW Validate", [validate_commands[0], validate_commands[2]])
+        self.appendToolbar("OCW View", view_commands)
+        self.appendToolbar("OCW Plugins", plugin_commands)
         self.appendMenu(
             "OCW",
             project_commands + component_commands + layout_commands + validate_commands[:1] + plugin_commands,
