@@ -9,7 +9,6 @@ from ocw_workbench.gui.panels._common import (
     configure_combo_box,
     create_button_row_layout,
     create_collapsible_section_widget,
-    create_compact_header_widget,
     create_form_layout,
     create_form_section_widget,
     create_hint_label,
@@ -773,7 +772,7 @@ def _build_form() -> dict[str, Any]:
     if qtwidgets is None:
         return {
             "widget": object(),
-            "header": FallbackLabel("Choose a template, adjust geometry if needed, then create."),
+            "header": FallbackLabel("Select a template, then create the controller."),
             "template_section": object(),
             "geometry_section": object(),
             "action_section": object(),
@@ -812,10 +811,16 @@ def _build_form() -> dict[str, Any]:
         }
 
     content, root = build_panel_container(qtwidgets)
-    header = create_hint_label(qtwidgets, "Choose a template, adjust geometry if needed, then create.")
+    header = create_hint_label(qtwidgets, "Select a template, then create the controller.")
     active_project = create_status_label(qtwidgets, "No controller loaded yet. Choose a template, review geometry, then create the controller.")
     template_section, template_layout = create_form_section_widget(qtwidgets, "Template Selection")
-    geometry_section, geometry_layout = create_form_section_widget(qtwidgets, "Geometry")
+    geometry_section, geometry_layout, _geometry_toggle = create_collapsible_section_widget(
+        qtwidgets,
+        "Geometry",
+        expanded=False,
+        spacing=4,
+        margins=(0, 0, 0, 0),
+    )
     action_section, action_layout = create_form_section_widget(qtwidgets, "Primary Action")
     library_section, marketplace_layout, _library_toggle = create_collapsible_section_widget(
         qtwidgets,
@@ -879,9 +884,6 @@ def _build_form() -> dict[str, Any]:
         variant,
     ):
         configure_combo_box(combo)
-    template_info = create_compact_header_widget(qtwidgets, template_summary, trailing=favorite_template_button, spacing=6, detail_spacing=2)
-    variant_info = create_compact_header_widget(qtwidgets, variant_summary, trailing=favorite_variant_button, spacing=6, detail_spacing=2)
-
     quick_access_section, quick_access_layout, _quick_access_toggle = create_collapsible_section_widget(
         qtwidgets,
         "Quick Access",
@@ -912,9 +914,7 @@ def _build_form() -> dict[str, Any]:
     ):
         set_size_policy(child, horizontal="expanding", vertical="preferred")
     selection_form.addRow("Template", template)
-    selection_form.addRow("", template_info)
     selection_form.addRow("Variant", variant)
-    selection_form.addRow("", variant_info)
     template_layout.addRow(wrap_layout_in_widget(qtwidgets, selection_form))
     template_layout.addRow(quick_access_section)
     template_layout.addRow(library_section)
@@ -941,9 +941,9 @@ def _build_form() -> dict[str, Any]:
 
     create_only_row = create_button_row_layout(qtwidgets, create_button)
     document_actions_layout.addWidget(active_project)
+    document_actions_layout.addWidget(preview)
     document_actions_layout.addWidget(apply_parameters_button)
     document_actions_layout.addWidget(status)
-    action_layout.addRow(preview)
     action_layout.addRow(wrap_layout_in_widget(qtwidgets, create_only_row))
     action_layout.addRow(document_actions_section)
 

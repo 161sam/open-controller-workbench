@@ -903,7 +903,6 @@ def test_create_panel_build_wraps_nested_form_inside_selection_form(monkeypatch)
     )
 
     template_layout = FakeFormLayout()
-    geometry_layout = FakeFormLayout()
     action_layout = FakeFormLayout()
     marketplace_form = FakeFormLayout()
     selection_form = FakeFormLayout()
@@ -912,17 +911,22 @@ def test_create_panel_build_wraps_nested_form_inside_selection_form(monkeypatch)
     created_sections = iter(
         [
             (FakeWidget("template-section"), template_layout),
-            (FakeWidget("geometry-section"), geometry_layout),
             (FakeWidget("action-section"), action_layout),
         ]
     )
+    geometry_layout = FakeFormLayout()
+
+    def _fake_collapsible(_qtwidgets, title, **_kwargs):
+        if title == "Geometry":
+            return (FakeWidget("geometry-section"), geometry_layout, object())
+        return (FakeWidget("section"), FakeLayout(), object())
 
     monkeypatch.setattr(create_panel, "load_qt", lambda: (None, object(), qtwidgets))
     monkeypatch.setattr(create_panel, "build_panel_container", lambda _qtwidgets: (FakeWidget("content"), FakeLayout()))
     monkeypatch.setattr(
         create_panel,
         "create_collapsible_section_widget",
-        lambda *_args, **_kwargs: (FakeWidget("section"), FakeLayout(), object()),
+        _fake_collapsible,
     )
     monkeypatch.setattr(
         create_panel,
@@ -934,7 +938,6 @@ def test_create_panel_build_wraps_nested_form_inside_selection_form(monkeypatch)
     monkeypatch.setattr(create_panel, "create_status_label", lambda _qtwidgets, text="": FakeWidget(text))
     monkeypatch.setattr(create_panel, "create_text_panel", lambda *_args, **_kwargs: FakeWidget("text-panel"))
     monkeypatch.setattr(create_panel, "create_button_row_layout", lambda *_args, **_kwargs: FakeLayout())
-    monkeypatch.setattr(create_panel, "create_compact_header_widget", lambda *_args, **_kwargs: FakeWidget("compact-header"))
     monkeypatch.setattr(create_panel, "configure_combo_box", lambda *_args, **_kwargs: None)
     monkeypatch.setattr(create_panel, "set_button_role", lambda button, *_args, **_kwargs: button)
     monkeypatch.setattr(create_panel, "set_size_policy", lambda *_args, **_kwargs: None)
@@ -956,9 +959,9 @@ def test_create_panel_build_wraps_nested_form_inside_selection_form(monkeypatch)
     assert form["geometry_section"] is not None
     assert form["action_section"] is not None
     assert form["document_actions_section"] is not None
-    assert len(selection_form.rows) == 4
+    assert len(selection_form.rows) == 2
     assert selection_form.rows[0] == ("Template", form["template"])
-    assert selection_form.rows[2] == ("Variant", form["variant"])
+    assert selection_form.rows[1] == ("Variant", form["variant"])
     assert len(wrapped_forms) == 2
     assert wrapped_forms[0][0] is selection_form
     assert wrapped_forms[1][0] is not selection_form
@@ -966,8 +969,8 @@ def test_create_panel_build_wraps_nested_form_inside_selection_form(monkeypatch)
     assert template_layout.rows[0][0].text == "wrapped-form"
     assert len(geometry_layout.rows) == 4
     assert geometry_layout.rows[0][0] is form["geometry_summary"]
-    assert len(action_layout.rows) == 3
-    assert action_layout.rows[1][0].text == "wrapped-form"
+    assert len(action_layout.rows) == 2
+    assert action_layout.rows[0][0].text == "wrapped-form"
 
 
 def test_create_or_reuse_dock_tabifies_existing_right_dock(monkeypatch):
