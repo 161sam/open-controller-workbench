@@ -181,6 +181,38 @@ def test_create_panel_reports_missing_project_parameter_source():
     assert panel.form["apply_parameters_button"].enabled is False
 
 
+def test_create_panel_uses_three_clear_sections_and_initial_state():
+    doc = FakeDocument()
+    service = ControllerService()
+    panel = CreatePanel(doc, controller_service=service)
+
+    assert panel.form["template_section"] is not None
+    assert panel.form["geometry_section"] is not None
+    assert panel.form["action_section"] is not None
+    assert "No controller loaded yet" in panel.form["active_project"].text
+    assert "Choose a template to load its default controller setup." == panel.form["template_summary"].text
+    assert "Choose a template to unlock geometry controls." == panel.form["parameter_status"].text
+    assert panel.form["create_button"].text == "Create Controller"
+    assert panel.form["apply_parameters_button"].text == "Apply Geometry"
+
+
+def test_create_panel_exposes_template_variant_and_geometry_controls():
+    doc = FakeDocument()
+    service = ControllerService()
+    panel = CreatePanel(doc, controller_service=service)
+
+    _select_combo_by_suffix(panel.form["template"], "(pad_grid_4x4)")
+    panel.handle_template_changed()
+
+    assert panel.form["template"] is not None
+    assert panel.form["variant"] is not None
+    assert panel.form["parameter_editor"].control_widget("case_width") is not None
+    assert panel.form["parameter_editor"].control_widget("case_depth") is not None
+    assert "Width" in panel.form["geometry_summary"].text
+    assert "Height" in panel.form["geometry_summary"].text
+    assert panel.form["create_button"].text == "Create Controller"
+
+
 def test_layout_components_constraints_and_info_panels_share_document_state():
     doc = FakeDocument()
     service = ControllerService()

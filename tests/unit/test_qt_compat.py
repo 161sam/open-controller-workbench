@@ -902,11 +902,20 @@ def test_create_panel_build_wraps_nested_form_inside_selection_form(monkeypatch)
         QPushButton=FakeWidget,
     )
 
-    selection_layout = FakeFormLayout()
+    template_layout = FakeFormLayout()
+    geometry_layout = FakeFormLayout()
+    action_layout = FakeFormLayout()
     marketplace_form = FakeFormLayout()
-    nested_form = FakeFormLayout()
-    created_forms = iter([marketplace_form, nested_form])
+    selection_form = FakeFormLayout()
+    created_forms = iter([marketplace_form, selection_form])
     wrapped_forms = []
+    created_sections = iter(
+        [
+            (FakeWidget("template-section"), template_layout),
+            (FakeWidget("geometry-section"), geometry_layout),
+            (FakeWidget("action-section"), action_layout),
+        ]
+    )
 
     monkeypatch.setattr(create_panel, "load_qt", lambda: (None, object(), qtwidgets))
     monkeypatch.setattr(create_panel, "build_panel_container", lambda _qtwidgets: (FakeWidget("content"), FakeLayout()))
@@ -918,9 +927,10 @@ def test_create_panel_build_wraps_nested_form_inside_selection_form(monkeypatch)
     monkeypatch.setattr(
         create_panel,
         "create_form_section_widget",
-        lambda *_args, **_kwargs: (FakeWidget("selection-box"), selection_layout),
+        lambda *_args, **_kwargs: next(created_sections),
     )
     monkeypatch.setattr(create_panel, "create_form_layout", lambda *_args, **_kwargs: next(created_forms))
+    monkeypatch.setattr(create_panel, "create_hint_label", lambda _qtwidgets, text="": FakeWidget(text))
     monkeypatch.setattr(create_panel, "create_status_label", lambda _qtwidgets, text="": FakeWidget(text))
     monkeypatch.setattr(create_panel, "create_text_panel", lambda *_args, **_kwargs: FakeWidget("text-panel"))
     monkeypatch.setattr(create_panel, "create_button_row_layout", lambda *_args, **_kwargs: FakeLayout())
@@ -942,13 +952,21 @@ def test_create_panel_build_wraps_nested_form_inside_selection_form(monkeypatch)
     form = create_panel._build_form()
 
     assert form["widget"] is not None
-    assert len(nested_form.rows) == 4
-    assert nested_form.rows[0] == ("Template", form["template"])
-    assert nested_form.rows[2] == ("Variant", form["variant"])
-    assert len(wrapped_forms) == 1
-    assert wrapped_forms[0][0] is nested_form
-    assert len(selection_layout.rows) == 3
-    assert selection_layout.rows[0][0].text == "wrapped-form"
+    assert form["template_section"] is not None
+    assert form["geometry_section"] is not None
+    assert form["action_section"] is not None
+    assert len(selection_form.rows) == 4
+    assert selection_form.rows[0] == ("Template", form["template"])
+    assert selection_form.rows[2] == ("Variant", form["variant"])
+    assert len(wrapped_forms) == 2
+    assert wrapped_forms[0][0] is selection_form
+    assert wrapped_forms[1][0] is not selection_form
+    assert len(template_layout.rows) == 4
+    assert template_layout.rows[1][0].text == "wrapped-form"
+    assert len(geometry_layout.rows) == 4
+    assert geometry_layout.rows[0][0] is form["geometry_summary"]
+    assert len(action_layout.rows) == 4
+    assert action_layout.rows[2][0].text == "wrapped-form"
 
 
 def test_create_or_reuse_dock_tabifies_existing_right_dock(monkeypatch):
