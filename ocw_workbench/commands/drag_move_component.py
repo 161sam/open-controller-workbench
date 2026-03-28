@@ -25,6 +25,6 @@ class DragMoveComponentCommand(BaseCommand):
             ensure_workbench_ui(doc, focus="components")
             started = start_component_drag_mode(doc)
             if started:
-                show_info("Drag Move Component", "Drag mode active. Drag a component or press ESC to cancel.")
+                show_info("Drag Move Component", "Hover a component, drag to move it, and press ESC to cancel.")
         except Exception as exc:
             show_error("Drag Move Component", exc)

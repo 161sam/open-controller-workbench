@@ -995,7 +995,7 @@ def ensure_workbench_ui(doc: Any | None = None, focus: str = "create") -> Produc
 def _show_in_dock(panel: ProductWorkbenchPanel) -> Any | None:
     dock = create_or_reuse_dock(_WORKBENCH_TITLE, panel.widget)
     if dock is None:
-        log_to_console("Qt dock support unavailable; Open Controller dock not created.", level="warning")
+        log_to_console("Qt dock support unavailable; Open Controller Workbench dock not created.", level="warning")
     return dock
 
 
@@ -1011,7 +1011,7 @@ def _show_fallback_dock(exc: Exception) -> Any | None:
     )
     if widget is None:
         return None
-    log_to_console("Showing fallback Open Controller dock after UI build failure.", level="warning")
+    log_to_console("Showing fallback Open Controller Workbench dock after UI build failure.", level="warning")
     return create_or_reuse_dock(_WORKBENCH_TITLE, widget)
 
 

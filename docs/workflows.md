@@ -25,7 +25,7 @@
 - Projekt erstellen
 - Parameter anpassen
 - Komponenten platzieren
-- Constraints prüfen
+- Validate-Schritt prüfen
 - Export
 
 ## Workflow 5 – Schema Export
@@ -43,7 +43,7 @@
 
 - fehlende Daten
 - Kollisionen
-- Constraints
+- Validate-Findings
 
 ## Workflow 8 – Import FCStd -> refine -> save
 
@@ -72,7 +72,7 @@
 - Preview prüfen
 - `Create` für neue Controller verwenden
 - `Apply Parameters` für bestehende Controller aus derselben Template-/Variant-Auswahl verwenden
-- Layout, Komponenten und Constraints danach wie gewohnt weiter bearbeiten
+- Layout, Komponenten und Validate danach wie gewohnt weiter bearbeiten
 
 ## Workflow 9a – Open Project -> Edit Parameters -> Regenerate
 
@@ -95,7 +95,7 @@
 - `Apply Changes` schreibt die Änderungen in den Project State
 - placements- oder variant-relevante Änderungen laufen über den normalen Geometrie-/Sync-Pfad
 - reine Metadatenänderungen bleiben state-only und vermeiden unnötige Voll-Rebuilds
-- bei Bedarf Constraints erneut validieren oder Overlay-/Preview-Feedback prüfen
+- bei Bedarf im Validate-Schritt erneut prüfen oder Overlay-/Preview-Feedback verwenden
 
 ## Workflow 10a – Multi-Select Basics
 

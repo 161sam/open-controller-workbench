@@ -9,14 +9,14 @@ The dock is the active UI hub for the main workflows:
 - `Create`: template selection, variants, presets, parameters
 - `Layout`: auto placement settings, overlay toggles, feedback
 - `Components`: selection, editing, quick add, bulk edit
+- `Validate`: validation results and issue review
 - `Plugins`: installed and remote plugin management
-- `Constraints`: validation results and issue review
 
 The commands currently registered in the Workbench mostly focus the dock and execute work there:
 
 - `Create Controller` -> focuses `create`
 - `Auto Place` -> focuses `layout` and applies immediately
-- `Validate Layout` -> focuses `constraints` and validates there
+- `Validate Layout` -> focuses `constraints` (Validate tab) and validates there
 - `Plugin Manager` -> focuses `plugins`
 
 ## Existing Task Panels
@@ -155,7 +155,7 @@ Not:
 - Keep plugin overview in the dock.
 - Move remote install/import/export into focused task panels if complexity grows.
 
-### Constraints / Validation
+### Validate
 
 **Keep primarily in the dock for now.**
 

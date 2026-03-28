@@ -47,6 +47,7 @@ This checklist is for preparing `v0.1.0` and later early OCW releases.
 1. Start FreeCAD with the repository root linked into the `Mod` directory.
 2. Open `Open Controller Workbench`.
 3. Create a controller from a template.
-4. Add or place a component.
-5. Validate constraints and confirm overlay output is visible.
-6. Reopen the document and confirm project parameters reload when available.
+4. Add or place a component, then confirm continuous place exits cleanly on `ESC`.
+5. Start drag-move, confirm hover highlight appears, and cancel once with `ESC`.
+6. Open `Validate`, confirm findings and overlay output stay visible.
+7. Reopen the document and confirm project parameters reload when available.

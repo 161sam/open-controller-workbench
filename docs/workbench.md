@@ -1,55 +1,70 @@
-
 # Workbench Guide
 
-## Ziel
+## Purpose
 
-Parametrischer Controller-Builder in FreeCAD.
+Open Controller Workbench is a dock-first FreeCAD workbench for building modular controller hardware.
 
-## Aktueller Stand
+The main workflow is:
 
-- Workbench registriert
-- erster Command vorhanden
-- GUI minimal
+1. `Create`
+2. `Layout`
+3. `Components`
+4. `Validate`
+5. `Plugins`
 
-## Nutzung
+## Main UI
 
-1. FreeCAD starten
-2. Workbench „Open Controller Workbench“
-3. Command ausführen
+The primary UI is a persistent right-side dock with:
 
-## Ziel-Workflow
+- one header
+- one tab-based navigation level
+- one footer status area
 
-1. Projekt erstellen
-2. Gehäuse definieren
-3. Komponenten platzieren
-4. Cutouts generieren
-5. Schema exportieren
+The dock is the main control surface. Legacy task panels still exist for a few focused flows, but they are not the primary path.
 
-## Konzepte
+## Core Workflows
 
-### Controller
-Gesamtobjekt
+### Create
 
-### Surface
-Bedienoberfläche
+Use `Create` to start a controller from a template or variant and to re-apply saved project parameters.
 
-### Component
-Bauteil (Encoder, Button etc.)
+### Layout
 
-### Cutout
-Ausschnitt
+Use `Layout` to run `Auto Place`, tune placement settings, and toggle overlay helpers.
 
-### Keepout
-Sperrbereich
+### Components
 
-### library_ref
-Verweis auf Bibliothek
+Use `Components` for:
 
-## Ziel UI
+- selection-aware editing
+- quick add
+- bulk edit
+- direct 3D move preparation
 
-- Projekt Wizard
-- Component Browser
-- Layout Grid
-- Validation Panel
-- Export Panel
+### Validate
 
+Use `Validate` to review blocking errors, warnings, and the next recommended action before moving on to plugins or exports.
+
+### Plugins
+
+Use `Plugins` for plugin overview and plugin operations.
+
+## Direct Interaction
+
+The current dock UI supports two interactive 3D workflows:
+
+- click-to-place with continuous placement until `ESC`
+- drag-to-move with hover highlight before the drag starts
+
+Both workflows:
+
+- keep preview state in transient metadata only
+- clean up on `ESC`
+- cancel automatically when another interactive tool starts
+
+## Release Notes For The Current UI
+
+- Naming is standardized around `Open Controller Workbench`.
+- The dock uses a single visible navigation level.
+- Validate is a first-class workflow step.
+- Placement and drag are now documented as part of the main dock workflow instead of as side behavior.

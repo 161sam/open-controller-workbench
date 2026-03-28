@@ -69,14 +69,16 @@
 - Favoriten werden in UserData gespeichert und bleiben über Neustarts erhalten
 - `Place In 3D` startet den interaktiven Platzierungsmodus im 3D-View
 - Die Ghost-Vorschau folgt der Maus nur über Overlay-Preview
-- Klick platziert die Komponente, `ESC` bricht den Modus ohne Modelländerung ab
+- Klick platziert die Komponente; weitere Klicks platzieren sofort weiter
+- `ESC` bricht den aktiven Place-Modus ohne zusätzliche Modelländerung ab
 - `OCW_DragMoveComponent` startet den Drag-Modus für bestehende Komponenten
+- Hover hebt vor dem Ziehen das getroffene Bauteil sichtbar hervor
 - Klicke eine vorhandene Komponente im 3D-View an, ziehe sie und lasse los zum Commit
 - Während des Ziehens bleibt das Modell unverändert; nur das Overlay-Ghost wird aktualisiert
 
 ## Interactive Placement And Drag
 
-- `Place In 3D` starts a single active placement session for the current document.
+- `Place In 3D` starts one active placement session for the current document and supports continuous placement until `ESC`.
 - `OCW_DragMoveComponent` starts a single active drag session for existing components.
 - Starting a second interactive tool automatically cancels the previous one and clears its preview ghost.
 - `ESC` always cancels the active interaction and removes transient preview metadata.
@@ -85,9 +87,11 @@
 - Blue preview means the current position is valid.
 - Orange preview means a warning-level risk was detected.
 - Red preview means the preview is invalid, for example out of bounds, overlapping, or conflicting with keepout-related clearance.
+- Hover before drag reports a ready-to-drag status for the currently hit component.
 - The status area reports the current preview state as `Valid placement`, `Out of bounds`, `Overlap risk`, or `Keepout warning`.
 - If the active document changes, the document closes, or the 3D view becomes unavailable, the current interaction is cancelled and callbacks are removed before another tool can start.
-- A committed click or drag release applies the model change and then clears preview state and view callbacks.
+- A committed drag release applies the model change and then clears preview state and view callbacks.
+- A committed placement click keeps placement active for the next click until `ESC` ends the session.
 - If an interaction update or commit raises an exception, the session is cleaned up and the workbench reports `Interaction error`.
 - Invalid preview states block commit until the component is moved back to an allowed position.
 

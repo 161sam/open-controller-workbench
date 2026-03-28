@@ -201,7 +201,7 @@ class ComponentPalettePanel:
 
         started = start_component_place_mode(self.doc, template_id)
         if started:
-            self._publish_status(f"Placing '{template_id}' in the 3D view. Click to place or press ESC to cancel.")
+            self._publish_status(f"Placing '{template_id}' in the 3D view. Click to place, keep clicking to continue, or press ESC to cancel.")
         return started
 
     def handle_place_clicked(self, *_args: Any) -> None:
