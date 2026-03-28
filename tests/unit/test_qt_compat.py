@@ -3,6 +3,7 @@ import types
 
 from ocw_workbench.gui import docking
 from ocw_workbench.gui.panels import _common
+from ocw_workbench.gui.widgets import plugin_list
 from ocw_workbench.gui.runtime import _show_message
 from ocw_workbench.workbench import OpenControllerWorkbench
 
@@ -85,6 +86,39 @@ def test_qt_self_check_logs_binding(monkeypatch):
 
     assert "binding=PySide6" in message
     assert recorder.entries == [("message", message)]
+
+
+def test_add_layout_content_routes_widgets_and_layouts(monkeypatch):
+    class FakeWidget:
+        pass
+
+    class FakeLayout:
+        def __init__(self, *_args, **_kwargs) -> None:
+            self.widgets = []
+            self.layouts = []
+
+        def addWidget(self, widget, *_args):
+            if isinstance(widget, FakeLayout):
+                raise TypeError("layout passed to addWidget")
+            self.widgets.append(widget)
+
+        def addLayout(self, layout, *_args):
+            if not isinstance(layout, FakeLayout):
+                raise TypeError("widget passed to addLayout")
+            self.layouts.append(layout)
+
+    qtwidgets = types.SimpleNamespace(QLayout=FakeLayout)
+    monkeypatch.setattr(_common, "load_qt", lambda: (None, None, qtwidgets))
+
+    parent = FakeLayout()
+    row_widget = FakeWidget()
+    row_layout = FakeLayout()
+
+    _common.add_layout_content(parent, row_widget)
+    _common.add_layout_content(parent, row_layout)
+
+    assert parent.widgets == [row_widget]
+    assert parent.layouts == [row_layout]
 
 
 def test_show_message_prefers_exec(monkeypatch):
@@ -250,3 +284,201 @@ def test_product_workbench_panel_uses_tab_shell():
     panel = ProductWorkbenchPanel(doc, controller_service=ControllerService())
 
     assert "tabs" not in panel.form or panel.form["tabs"] is not None
+
+
+def test_plugin_list_build_uses_widget_safe_row_insertion(monkeypatch):
+    class FakeWidget:
+        def __init__(self, *_args, **_kwargs) -> None:
+            self.layout_ref = None
+            self.visible = True
+            self.object_name = ""
+            self.text_value = ""
+
+        def setLayout(self, layout) -> None:
+            self.layout_ref = layout
+
+        def setObjectName(self, name: str) -> None:
+            self.object_name = name
+
+        def setVisible(self, visible: bool) -> None:
+            self.visible = visible
+
+        def setWordWrap(self, *_args) -> None:
+            return
+
+        def setText(self, text: str) -> None:
+            self.text_value = text
+
+        def setCheckable(self, *_args) -> None:
+            return
+
+        def setChecked(self, *_args) -> None:
+            return
+
+        def setToolButtonStyle(self, *_args) -> None:
+            return
+
+        def setArrowType(self, *_args) -> None:
+            return
+
+        def setReadOnly(self, *_args) -> None:
+            return
+
+        def setLineWrapMode(self, *_args) -> None:
+            return
+
+        def setMaximumHeight(self, *_args) -> None:
+            return
+
+        def setMinimumHeight(self, *_args) -> None:
+            return
+
+        def setSizePolicy(self, *_args) -> None:
+            return
+
+        def setToolTip(self, *_args) -> None:
+            return
+
+        def setMinimumSize(self, *_args) -> None:
+            return
+
+    class FakeSignal:
+        def connect(self, *_args, **_kwargs) -> None:
+            return
+
+    class FakeToolButton(FakeWidget):
+        def __init__(self, *_args, **_kwargs) -> None:
+            super().__init__()
+            self.toggled = FakeSignal()
+
+    class FakePlainTextEdit(FakeWidget):
+        WidgetWidth = 1
+
+    class FakeLayout:
+        def __init__(self, parent=None) -> None:
+            self.widgets = []
+            self.layouts = []
+            if parent is not None and hasattr(parent, "setLayout"):
+                parent.setLayout(self)
+
+        def setContentsMargins(self, *_args) -> None:
+            return
+
+        def setSpacing(self, *_args) -> None:
+            return
+
+        def addWidget(self, widget, *_args) -> None:
+            if isinstance(widget, FakeLayout):
+                raise TypeError("layout passed to addWidget")
+            self.widgets.append(widget)
+
+        def addLayout(self, layout, *_args) -> None:
+            if not isinstance(layout, FakeLayout):
+                raise TypeError("widget passed to addLayout")
+            self.layouts.append(layout)
+
+    class FakeComboBox(FakeWidget):
+        AdjustToMinimumContentsLengthWithIcon = 1
+
+        def addItems(self, items) -> None:
+            self.items = list(items)
+
+        def setSizeAdjustPolicy(self, *_args) -> None:
+            return
+
+        def setMinimumContentsLength(self, *_args) -> None:
+            return
+
+    class FakeLineEdit(FakeWidget):
+        pass
+
+    class FakePushButton(FakeWidget):
+        pass
+
+    class FakeLabel(FakeWidget):
+        pass
+
+    class FakeGroupBox(FakeWidget):
+        pass
+
+    class FakeFrame(FakeWidget):
+        NoFrame = 0
+
+        def setFrameShape(self, *_args) -> None:
+            return
+
+    class FakeScrollArea(FakeWidget):
+        def setWidgetResizable(self, *_args) -> None:
+            return
+
+        def setHorizontalScrollBarPolicy(self, *_args) -> None:
+            return
+
+        def setVerticalScrollBarPolicy(self, *_args) -> None:
+            return
+
+        def setFrameShape(self, *_args) -> None:
+            return
+
+        def setWidget(self, widget) -> None:
+            self.widget = widget
+
+    class FakeSizePolicy:
+        Fixed = 0
+        Minimum = 1
+        Preferred = 2
+        Expanding = 3
+
+    qtcore = types.SimpleNamespace(
+        Qt=types.SimpleNamespace(
+            ToolButtonTextBesideIcon=1,
+            DownArrow=2,
+            RightArrow=3,
+            ScrollBarAsNeeded=4,
+        )
+    )
+    qtwidgets = types.SimpleNamespace(
+        QWidget=FakeWidget,
+        QLayout=FakeLayout,
+        QVBoxLayout=FakeLayout,
+        QHBoxLayout=FakeLayout,
+        QFormLayout=FakeLayout,
+        QGridLayout=FakeLayout,
+        QGroupBox=FakeGroupBox,
+        QComboBox=FakeComboBox,
+        QLineEdit=FakeLineEdit,
+        QPushButton=FakePushButton,
+        QLabel=FakeLabel,
+        QPlainTextEdit=FakePlainTextEdit,
+        QToolButton=FakeToolButton,
+        QFrame=FakeFrame,
+        QScrollArea=FakeScrollArea,
+        QSizePolicy=FakeSizePolicy,
+    )
+
+    monkeypatch.setattr(plugin_list, "load_qt", lambda: (qtcore, object(), qtwidgets))
+    monkeypatch.setattr("ocw_workbench.gui.widgets.plugin_status_badge.load_qt", lambda: (qtcore, object(), qtwidgets))
+    monkeypatch.setattr("ocw_workbench.gui.panels._common.load_qt", lambda: (qtcore, object(), qtwidgets))
+
+    widget = plugin_list.PluginListWidget()
+
+    assert widget.widget is not None
+
+
+def test_product_workbench_panel_survives_plugin_panel_init_failure(monkeypatch):
+    from ocw_workbench.services.controller_service import ControllerService
+    from ocw_workbench.workbench import ProductWorkbenchPanel, _UnavailablePluginManagerPanel
+
+    class FakeDocument:
+        def __init__(self) -> None:
+            self.Objects = []
+
+        def recompute(self) -> None:
+            return
+
+    monkeypatch.setattr("ocw_workbench.workbench.PluginManagerPanel", lambda *args, **kwargs: (_ for _ in ()).throw(TypeError("broken plugin panel")))
+
+    panel = ProductWorkbenchPanel(FakeDocument(), controller_service=ControllerService())
+
+    assert isinstance(panel.plugin_manager_panel, _UnavailablePluginManagerPanel)
+    assert panel.plugin_manager_panel.error_message == "Plugins panel unavailable. Check the report view for details."

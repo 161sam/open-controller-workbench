@@ -579,8 +579,8 @@ def _build_form() -> dict[str, Any]:
             "tags": FallbackText(),
             "visible": FallbackCheckBox(True),
             "specific_editor": specific_editor,
-            "update_button": FallbackButton("Apply"),
-            "arm_move_button": FallbackButton("Move In 3D"),
+            "update_button": FallbackButton("Apply Changes"),
+            "arm_move_button": FallbackButton("Pick In 3D"),
             "snap_button": FallbackButton("Snap"),
             "reset_button": FallbackButton("Reset"),
             "bulk_count": FallbackLabel("Selected: 0"),
@@ -634,13 +634,13 @@ def _build_form() -> dict[str, Any]:
     tags = qtwidgets.QLineEdit()
     visible = qtwidgets.QCheckBox()
     visible.setChecked(True)
-    update_button = qtwidgets.QPushButton("Apply")
-    arm_move_button = qtwidgets.QPushButton("Move In 3D")
+    update_button = qtwidgets.QPushButton("Apply Changes")
+    arm_move_button = qtwidgets.QPushButton("Pick In 3D")
     snap_button = qtwidgets.QPushButton("Snap")
     reset_button = qtwidgets.QPushButton("Reset")
     configure_combo_box(library_ref)
     set_tooltip(component, "Select a component to inspect or edit.")
-    set_tooltip(x, "Center X position in millimeters.")
+    set_tooltip(x, "Horizontal center position in millimeters.")
     set_tooltip(y, "Center Y position in millimeters.")
     set_tooltip(rotation, "Rotation in degrees.")
     set_tooltip(library_ref, "Choose a variant from the same library family.")
@@ -648,7 +648,7 @@ def _build_form() -> dict[str, Any]:
     set_tooltip(tags, "Comma-separated tags for filtering or export workflows.")
     set_tooltip(visible, "Include this component as visible metadata.")
     set_tooltip(update_button, "Apply the current edits.")
-    set_tooltip(arm_move_button, "Pick a new position in the 3D view.")
+    set_tooltip(arm_move_button, "Pick a new location directly in the 3D view.")
     set_tooltip(snap_button, "Snap the selected component to the grid.")
     set_tooltip(reset_button, "Discard unsaved edits.")
     for spinbox in (x, y, rotation):

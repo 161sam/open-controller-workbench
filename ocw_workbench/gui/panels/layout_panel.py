@@ -284,7 +284,7 @@ class LayoutPanel:
         set_value(self.form["padding_mm"], float(config.get("padding_mm", 8.0)))
 
     def _configure_tooltips(self) -> None:
-        set_tooltip(self.form["preset"], "Choose the strategy used by Auto Place.")
+        set_tooltip(self.form["preset"], "Choose the placement strategy used by Auto Place.")
         set_tooltip(self.form["grid_mm"], "Base grid used for snapping and placement rounding.")
         set_tooltip(self.form["spacing_mm"], "Center-to-center spacing target for grid, row or column placement.")
         set_tooltip(self.form["padding_mm"], "Padding kept free near the controller edge or placement zone border.")
@@ -309,7 +309,7 @@ def _build_form() -> dict[str, Any]:
             "padding_mm": FallbackValue(8.0),
             "apply_button": FallbackButton("Auto Place"),
             "rerun_button": FallbackButton("Re-run Placement"),
-            "overlay_button": FallbackButton("Overlay"),
+            "overlay_button": FallbackButton("Overlay Visibility"),
             "constraint_overlay_button": FallbackButton("Issues"),
             "snap_button": FallbackButton("Snap"),
             "measurements_button": FallbackButton("Guides"),
@@ -338,19 +338,19 @@ def _build_form() -> dict[str, Any]:
     padding_mm.setValue(8.0)
     apply_button = qtwidgets.QPushButton("Auto Place")
     rerun_button = qtwidgets.QPushButton("Re-run Placement")
-    overlay_button = qtwidgets.QPushButton("Overlay")
+    overlay_button = qtwidgets.QPushButton("Overlay Visibility")
     constraint_overlay_button = qtwidgets.QPushButton("Issues")
     snap_button = qtwidgets.QPushButton("Snap")
     measurements_button = qtwidgets.QPushButton("Guides")
     conflict_lines_button = qtwidgets.QPushButton("Conflict Lines")
     constraint_labels_button = qtwidgets.QPushButton("Issue Labels")
-    set_tooltip(preset, "Choose the Auto Place strategy.")
+    set_tooltip(preset, "Choose the placement strategy used by Auto Place.")
     set_tooltip(grid_mm, "Grid size for snapping and placement.")
     set_tooltip(spacing_mm, "Target spacing between component centers.")
     set_tooltip(padding_mm, "Clearance at the controller edge.")
     set_tooltip(apply_button, "Place all components with the current settings.")
     set_tooltip(rerun_button, "Run Auto Place again with the current settings.")
-    set_tooltip(overlay_button, "Show or hide layout helpers.")
+    set_tooltip(overlay_button, "Show or hide helper graphics such as outlines and cutout previews.")
     set_tooltip(constraint_overlay_button, "Show or hide validation issues in the view.")
     set_tooltip(snap_button, "Turn snap to grid on or off.")
     set_tooltip(measurements_button, "Show or hide measurement guides.")

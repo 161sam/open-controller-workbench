@@ -371,6 +371,25 @@ def create_button_row(qtwidgets: Any, *buttons: Any, spacing: int = 8) -> Any:
     return layout
 
 
+def add_layout_content(layout: Any, content: Any, *, stretch: int | None = None) -> None:
+    _qtcore, _qtgui, qtwidgets = load_qt()
+    is_layout = bool(
+        qtwidgets is not None
+        and hasattr(qtwidgets, "QLayout")
+        and isinstance(content, qtwidgets.QLayout)
+    )
+    if is_layout:
+        if stretch is None:
+            layout.addLayout(content)
+        else:
+            layout.addLayout(content, stretch)
+        return
+    if stretch is None:
+        layout.addWidget(content)
+    else:
+        layout.addWidget(content, stretch)
+
+
 def set_size_policy(widget: Any, horizontal: str = "preferred", vertical: str = "preferred") -> None:
     _qtcore, _qtgui, qtwidgets = load_qt()
     if qtwidgets is None or not hasattr(widget, "setSizePolicy") or not hasattr(qtwidgets, "QSizePolicy"):

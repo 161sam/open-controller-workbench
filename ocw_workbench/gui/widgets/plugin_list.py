@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from ocw_workbench.gui.panels._common import (
+    add_layout_content,
     build_group_box,
     build_collapsible_section,
     configure_combo_box,
@@ -191,9 +192,9 @@ def _build_widget() -> dict[str, Any]:
     layout.addWidget(plugin_combo)
     layout.addWidget(badge.widget)
     layout.addWidget(summary)
-    layout.addLayout(row)
-    layout.addLayout(export_row)
-    layout.addLayout(import_row)
+    add_layout_content(layout, row)
+    add_layout_content(layout, export_row)
+    add_layout_content(layout, import_row)
     remote_section, remote_layout, _remote_toggle = build_collapsible_section(
         qtwidgets,
         "Remote Plugins",
@@ -201,11 +202,11 @@ def _build_widget() -> dict[str, Any]:
         spacing=6,
         margins=(0, 0, 0, 0),
     )
-    remote_layout.addLayout(remote_url_row)
+    add_layout_content(remote_layout, remote_url_row)
     remote_layout.addWidget(remote_plugin_combo)
     remote_layout.addWidget(remote_summary)
     remote_layout.addWidget(remote_details)
-    remote_layout.addLayout(remote_download_row)
+    add_layout_content(remote_layout, remote_download_row)
     layout.addWidget(remote_section)
     return {
         "widget": widget,

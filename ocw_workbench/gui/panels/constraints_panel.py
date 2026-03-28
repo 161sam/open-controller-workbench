@@ -178,11 +178,15 @@ class ConstraintsPanel:
         _qtcore, _qtgui, qtwidgets = load_qt()
         results = self.form["results"]
         if qtwidgets is None or not hasattr(qtwidgets, "QTreeWidgetItem"):
-            lines = [
-                _format_message("ERROR", item) for item in report.get("errors", [])
-            ] + [
-                _format_message("WARN", item) for item in report.get("warnings", [])
-            ]
+            lines: list[str] = []
+            errors = [_format_message("ERROR", item) for item in report.get("errors", [])]
+            warnings = [_format_message("WARN", item) for item in report.get("warnings", [])]
+            if errors:
+                lines.extend(["Errors:", *errors])
+            if warnings:
+                if lines:
+                    lines.append("")
+                lines.extend(["Warnings:", *warnings])
             set_text(results, "\n".join(lines) if lines else "No issues found.")
             return
         results.clear()

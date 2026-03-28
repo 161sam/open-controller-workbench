@@ -47,6 +47,24 @@ _FAVORITE_COMMAND_IDS = [f"OCW_FavoriteComponent_{index + 1}" for index in range
 _FAVORITE_MORE_COMMAND_ID = "OCW_OpenComponentPaletteMore"
 
 
+class _UnavailablePluginManagerPanel:
+    def __init__(self, widget: Any, error_message: str) -> None:
+        self.widget = widget
+        self.error_message = error_message
+
+    def refresh(self) -> list[dict[str, Any]]:
+        return []
+
+    def enable_selected_plugin(self) -> dict[str, Any]:
+        raise RuntimeError(self.error_message)
+
+    def disable_selected_plugin(self) -> dict[str, Any]:
+        raise RuntimeError(self.error_message)
+
+    def reload_plugins(self) -> list[dict[str, Any]]:
+        raise RuntimeError(self.error_message)
+
+
 class _LoggedCommand:
     def __init__(self, command_id: str, command: Any) -> None:
         self.command_id = command_id
@@ -347,10 +365,7 @@ class ProductWorkbenchPanel:
             on_updated=self._handle_controller_updated,
             on_status=self.set_status,
         )
-        self.plugin_manager_panel = PluginManagerPanel(
-            on_status=self.set_status,
-            on_plugins_changed=self._handle_plugins_changed,
-        )
+        self.plugin_manager_panel = self._build_plugin_manager_panel()
         self._mount_panels()
         self.refresh_all()
         self.focus_panel("create")
@@ -426,7 +441,7 @@ class ProductWorkbenchPanel:
             format_toggle_message(
                 "Overlay",
                 settings["overlay_enabled"],
-                "Shows layout guides without changing the model.",
+                "Shows layout guides without changing model geometry.",
             )
         )
         return settings
@@ -839,7 +854,7 @@ class ProductWorkbenchPanel:
         self.refresh_context_panels(refresh_components=True)
         self.refresh_overlay()
         self.focus_panel("create")
-        self.set_status("Controller created. Review geometry, then refine the layout.")
+        self.set_status("Controller created. Next use Components or Auto Place to refine the layout.")
 
     def _handle_layout_applied(self, _result: dict[str, Any]) -> None:
         self.refresh_context_panels(refresh_components=True)
@@ -886,6 +901,25 @@ class ProductWorkbenchPanel:
         self.components_panel.refresh()
         self.constraints_panel.refresh()
         self.info_panel.refresh()
+
+    def _build_plugin_manager_panel(self) -> Any:
+        try:
+            return PluginManagerPanel(
+                on_status=self.set_status,
+                on_plugins_changed=self._handle_plugins_changed,
+            )
+        except Exception as exc:
+            log_exception("Plugin manager panel failed to initialize", exc)
+            error_message = "Plugins panel unavailable. Check the report view for details."
+            self.set_status(error_message)
+            return _UnavailablePluginManagerPanel(
+                _build_unavailable_panel_widget(
+                    "Plugins unavailable",
+                    "The plugin manager could not be loaded. Core workbench panels remain available.",
+                    f"{exc.__class__.__name__}: {exc}",
+                ),
+                error_message,
+            )
 
     def _handle_interaction_finished(self, controller: Any) -> None:
         self.interaction_manager.clear(controller.cancel)
@@ -1004,21 +1038,32 @@ def _show_existing_dock(dock: Any | None) -> None:
 
 
 def _show_fallback_dock(exc: Exception) -> Any | None:
+    widget = _build_unavailable_panel_widget(
+        "Open Controller Workbench",
+        "The Workbench UI could not be loaded. Check the FreeCAD report view for details.",
+        f"{exc.__class__.__name__}: {exc}",
+    )
+    if widget is None:
+        return None
+    log_to_console("Showing fallback Open Controller dock after UI build failure.", level="warning")
+    return create_or_reuse_dock("Open Controller Workbench", widget)
+
+
+def _build_unavailable_panel_widget(title_text: str, message_text: str, details_text: str) -> Any | None:
     _qtcore, _qtgui, qtwidgets = load_qt()
     if qtwidgets is None:
         return None
     widget, layout = build_panel_container(qtwidgets)
-    title = qtwidgets.QLabel("Open Controller Workbench")
+    title = qtwidgets.QLabel(title_text)
     title.setStyleSheet("font-weight: 600;")
-    message = qtwidgets.QLabel("The Workbench UI could not be loaded. Check the FreeCAD report view for details.")
+    message = qtwidgets.QLabel(message_text)
     message.setWordWrap(True)
-    details = qtwidgets.QLabel(f"{exc.__class__.__name__}: {exc}")
+    details = qtwidgets.QLabel(details_text)
     details.setWordWrap(True)
     layout.addWidget(title)
     layout.addWidget(message)
     layout.addWidget(details)
-    log_to_console("Showing fallback Open Controller dock after UI build failure.", level="warning")
-    return create_or_reuse_dock("Open Controller Workbench", widget)
+    return widget
 
 
 def _tab_page(qtwidgets: Any) -> tuple[Any, Any]:
