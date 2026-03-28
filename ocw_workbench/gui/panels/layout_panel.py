@@ -5,6 +5,7 @@ from typing import Any
 
 from ocw_workbench.gui.feedback import apply_status_message, format_layout_message, format_toggle_message, friendly_ui_error
 from ocw_workbench.gui.panels._common import (
+    build_group_box,
     build_panel_container,
     build_form_layout,
     configure_combo_box,
