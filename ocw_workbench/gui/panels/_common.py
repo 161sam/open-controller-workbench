@@ -263,6 +263,55 @@ def build_group_box(
     return group, layout
 
 
+def build_collapsible_section(
+    qtwidgets: Any,
+    title: str,
+    *,
+    expanded: bool = True,
+    spacing: int = 6,
+    margins: tuple[int, int, int, int] = (8, 8, 8, 8),
+) -> tuple[Any, Any, Any]:
+    qtcore, _qtgui, _qtwidgets = load_qt()
+    widget = qtwidgets.QWidget()
+    outer = qtwidgets.QVBoxLayout(widget)
+    configure_layout(outer, margins=(0, 0, 0, 0), spacing=4)
+
+    toggle = qtwidgets.QToolButton()
+    if hasattr(toggle, "setText"):
+        toggle.setText(title)
+    if hasattr(toggle, "setCheckable"):
+        toggle.setCheckable(True)
+    if hasattr(toggle, "setChecked"):
+        toggle.setChecked(expanded)
+    if hasattr(toggle, "setToolButtonStyle") and qtcore is not None:
+        toggle.setToolButtonStyle(qtcore.Qt.ToolButtonTextBesideIcon)
+    if hasattr(toggle, "setArrowType") and qtcore is not None:
+        toggle.setArrowType(qtcore.Qt.DownArrow if expanded else qtcore.Qt.RightArrow)
+    if hasattr(toggle, "setObjectName"):
+        toggle.setObjectName("OCWCollapsibleToggle")
+
+    body = qtwidgets.QFrame()
+    if hasattr(body, "setObjectName"):
+        body.setObjectName("OCWCollapsibleBody")
+    body_layout = qtwidgets.QVBoxLayout(body)
+    configure_layout(body_layout, margins=margins, spacing=spacing)
+    if hasattr(body, "setVisible"):
+        body.setVisible(expanded)
+
+    if hasattr(toggle, "toggled"):
+        def _handle_toggled(checked: bool) -> None:
+            if hasattr(body, "setVisible"):
+                body.setVisible(bool(checked))
+            if hasattr(toggle, "setArrowType") and qtcore is not None:
+                toggle.setArrowType(qtcore.Qt.DownArrow if checked else qtcore.Qt.RightArrow)
+
+        toggle.toggled.connect(_handle_toggled)
+
+    outer.addWidget(toggle)
+    outer.addWidget(body)
+    return widget, body_layout, toggle
+
+
 def create_text_panel(qtwidgets: Any, *, max_height: int = 160) -> Any:
     widget = qtwidgets.QPlainTextEdit()
     configure_text_panel(widget, max_height=max_height)

@@ -1145,6 +1145,22 @@ QLabel#OCWTabsHint {
     color: #94a3b8;
     font-size: 12px;
 }
+QToolButton#OCWCollapsibleToggle {
+    color: #dbe5f1;
+    background: #162033;
+    border: 1px solid #253043;
+    border-radius: 8px;
+    padding: 6px 8px;
+    font-weight: 600;
+    text-align: left;
+}
+QToolButton#OCWCollapsibleToggle:hover {
+    background: #1b2940;
+}
+QFrame#OCWCollapsibleBody {
+    background: transparent;
+    border: none;
+}
 QTabWidget#OCWMainTabs::pane {
     border: 1px solid #253043;
     border-radius: 10px;

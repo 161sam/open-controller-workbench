@@ -4,6 +4,7 @@ from typing import Any
 
 from ocw_workbench.gui.panels._common import (
     build_group_box,
+    build_collapsible_section,
     configure_combo_box,
     create_text_panel,
     FallbackButton,
@@ -143,7 +144,7 @@ def _build_widget() -> dict[str, Any]:
             "download_button": FallbackButton("Download ZIP"),
         }
 
-    widget, layout = build_group_box(qtwidgets, "Installed Plugins")
+    widget, layout = build_group_box(qtwidgets, "Installed Plugins", spacing=6)
     filter_combo = qtwidgets.QComboBox()
     filter_combo.addItems(["all", "enabled", "disabled", "errors"])
     plugin_combo = qtwidgets.QComboBox()
@@ -163,7 +164,7 @@ def _build_widget() -> dict[str, Any]:
     remote_summary.setWordWrap(True)
     for combo in (filter_combo, plugin_combo, remote_plugin_combo):
         configure_combo_box(combo)
-    remote_details = create_text_panel(qtwidgets, max_height=120)
+    remote_details = create_text_panel(qtwidgets, max_height=96)
     download_path = qtwidgets.QLineEdit(".plugin_downloads")
     download_button = qtwidgets.QPushButton("Download")
     for child in (filter_combo, plugin_combo, export_path, import_path, remote_url, remote_plugin_combo, download_path):
@@ -195,13 +196,19 @@ def _build_widget() -> dict[str, Any]:
     layout.addLayout(row)
     layout.addLayout(export_row)
     layout.addLayout(import_row)
-    layout.addSpacing(8)
-    layout.addWidget(qtwidgets.QLabel("Remote Plugins"))
-    layout.addLayout(remote_url_row)
-    layout.addWidget(remote_plugin_combo)
-    layout.addWidget(remote_summary)
-    layout.addWidget(remote_details)
-    layout.addLayout(remote_download_row)
+    remote_section, remote_layout, _remote_toggle = build_collapsible_section(
+        qtwidgets,
+        "Remote Plugins",
+        expanded=False,
+        spacing=6,
+        margins=(0, 0, 0, 0),
+    )
+    remote_layout.addLayout(remote_url_row)
+    remote_layout.addWidget(remote_plugin_combo)
+    remote_layout.addWidget(remote_summary)
+    remote_layout.addWidget(remote_details)
+    remote_layout.addLayout(remote_download_row)
+    layout.addWidget(remote_section)
     return {
         "widget": widget,
         "filter_combo": filter_combo,

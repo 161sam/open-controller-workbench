@@ -67,7 +67,7 @@ def _build_widget() -> dict[str, Any]:
 
     widget, layout = build_group_box(qtwidgets, "Plugin Details")
     title = qtwidgets.QLabel("Plugin Details")
-    details = create_text_panel(qtwidgets, max_height=150)
+    details = create_text_panel(qtwidgets, max_height=120)
     layout.addWidget(title)
     layout.addWidget(badge.widget)
     layout.addWidget(details)

@@ -7,6 +7,7 @@ from typing import Any
 from ocw_workbench.gui.panels._common import (
     build_group_box,
     build_panel_container,
+    build_collapsible_section,
     configure_combo_box,
     create_button_row,
     create_text_panel,
@@ -757,18 +758,24 @@ def _build_form() -> dict[str, Any]:
         }
 
     content, root = build_panel_container(qtwidgets)
-    header = qtwidgets.QLabel("Choose a template, optionally a variant, then create the controller.")
+    header = qtwidgets.QLabel("Select a template and variant, then create or update the current controller.")
     header.setWordWrap(True)
     active_project = qtwidgets.QLabel("No controller in the document yet.")
     active_project.setWordWrap(True)
     shortcuts_row = qtwidgets.QHBoxLayout()
-    shortcuts_row.setSpacing(8)
+    shortcuts_row.setSpacing(6)
     shortcuts_row.addWidget(favorites_widget.widget, 1)
     shortcuts_row.addWidget(recents_widget.widget, 1)
-    marketplace_box, marketplace_layout = build_group_box(qtwidgets, "Template Library")
+    library_section, marketplace_layout, _library_toggle = build_collapsible_section(
+        qtwidgets,
+        "Template Library",
+        expanded=False,
+        spacing=6,
+        margins=(8, 8, 8, 8),
+    )
     marketplace_controls = qtwidgets.QFormLayout()
     marketplace_controls.setContentsMargins(0, 0, 0, 0)
-    marketplace_controls.setSpacing(6)
+    marketplace_controls.setSpacing(4)
     marketplace_registry_url = qtwidgets.QLineEdit()
     marketplace_refresh_button = qtwidgets.QPushButton("Reload")
     marketplace_search = qtwidgets.QLineEdit()
@@ -777,13 +784,15 @@ def _build_form() -> dict[str, Any]:
     marketplace_list = qtwidgets.QComboBox()
     marketplace_summary = qtwidgets.QLabel("No marketplace template selected.")
     marketplace_summary.setWordWrap(True)
-    marketplace_details = create_text_panel(qtwidgets, max_height=88)
-    marketplace_actions = qtwidgets.QGridLayout()
+    marketplace_details = create_text_panel(qtwidgets, max_height=72)
+    marketplace_actions = qtwidgets.QHBoxLayout()
+    marketplace_actions.setContentsMargins(0, 0, 0, 0)
+    marketplace_actions.setSpacing(6)
     marketplace_apply_button = qtwidgets.QPushButton("Use")
     marketplace_details_button = qtwidgets.QPushButton("Details")
-    marketplace_actions.addWidget(marketplace_refresh_button, 0, 0)
-    marketplace_actions.addWidget(marketplace_apply_button, 0, 1)
-    marketplace_actions.addWidget(marketplace_details_button, 1, 0, 1, 2)
+    marketplace_actions.addWidget(marketplace_refresh_button)
+    marketplace_actions.addWidget(marketplace_apply_button)
+    marketplace_actions.addWidget(marketplace_details_button)
     marketplace_controls.addRow("Registry", marketplace_registry_url)
     marketplace_controls.addRow("Search", marketplace_search)
     marketplace_controls.addRow("Filter", marketplace_filter)
@@ -795,7 +804,7 @@ def _build_form() -> dict[str, Any]:
     selection_box, selection_layout = build_group_box(qtwidgets, "Current Selection")
     form = qtwidgets.QFormLayout()
     form.setContentsMargins(0, 0, 0, 0)
-    form.setSpacing(6)
+    form.setSpacing(4)
     template = qtwidgets.QComboBox()
     template_summary = qtwidgets.QLabel()
     template_summary.setWordWrap(True)
@@ -810,7 +819,7 @@ def _build_form() -> dict[str, Any]:
     favorite_variant_button = qtwidgets.QPushButton("Favorite")
     parameter_status = qtwidgets.QLabel("Choose a template to review its parameters.")
     parameter_status.setWordWrap(True)
-    preview = create_text_panel(qtwidgets, max_height=96)
+    preview = create_text_panel(qtwidgets, max_height=72)
     apply_parameters_button = qtwidgets.QPushButton("Apply")
     create_button = qtwidgets.QPushButton("Create Controller")
     status = qtwidgets.QLabel()
@@ -825,12 +834,36 @@ def _build_form() -> dict[str, Any]:
         variant,
     ):
         configure_combo_box(combo)
+    template_info = qtwidgets.QWidget()
+    template_info_layout = qtwidgets.QHBoxLayout(template_info)
+    template_info_layout.setContentsMargins(0, 0, 0, 0)
+    template_info_layout.setSpacing(6)
+    template_info_text = qtwidgets.QVBoxLayout()
+    template_info_text.setContentsMargins(0, 0, 0, 0)
+    template_info_text.setSpacing(3)
+    template_info_text.addWidget(template_summary)
+    template_info_text.addWidget(favorite_template_status)
+    template_info_layout.addLayout(template_info_text, 1)
+    template_info_layout.addWidget(favorite_template_button)
+
+    variant_info = qtwidgets.QWidget()
+    variant_info_layout = qtwidgets.QHBoxLayout(variant_info)
+    variant_info_layout.setContentsMargins(0, 0, 0, 0)
+    variant_info_layout.setSpacing(6)
+    variant_info_text = qtwidgets.QVBoxLayout()
+    variant_info_text.setContentsMargins(0, 0, 0, 0)
+    variant_info_text.setSpacing(3)
+    variant_info_text.addWidget(variant_summary)
+    variant_info_text.addWidget(favorite_variant_status)
+    variant_info_layout.addLayout(variant_info_text, 1)
+    variant_info_layout.addWidget(favorite_variant_button)
+
     for child in (
         favorites_widget.widget,
         recents_widget.widget,
         presets_widget.widget,
         parameter_editor.widget,
-        marketplace_box,
+        library_section,
         template,
         variant,
         apply_parameters_button,
@@ -838,27 +871,31 @@ def _build_form() -> dict[str, Any]:
     ):
         set_size_policy(child, horizontal="expanding", vertical="preferred")
     form.addRow("Template", template)
-    form.addRow("", template_summary)
-    form.addRow("", favorite_template_status)
-    form.addRow("", favorite_template_button)
+    form.addRow("", template_info)
     form.addRow("Variant", variant)
-    form.addRow("", variant_summary)
-    form.addRow("", favorite_variant_status)
-    form.addRow("", favorite_variant_button)
+    form.addRow("", variant_info)
     selection_layout.addLayout(form)
     selection_layout.addWidget(parameter_status)
     selection_layout.addWidget(preview)
     top_row = qtwidgets.QHBoxLayout()
-    top_row.setSpacing(8)
-    top_row.addWidget(selection_box, 1)
-    top_row.addWidget(marketplace_box, 1)
+    top_row.setSpacing(6)
+    top_row.addWidget(selection_box, 3)
+    top_row.addWidget(library_section, 2)
 
     actions_row = create_button_row(qtwidgets, apply_parameters_button, create_button)
 
     bottom_row = qtwidgets.QHBoxLayout()
-    bottom_row.setSpacing(8)
+    bottom_row.setSpacing(6)
     bottom_row.addWidget(parameter_editor.widget, 2)
-    bottom_row.addWidget(presets_widget.widget, 1)
+    presets_section, presets_layout, _presets_toggle = build_collapsible_section(
+        qtwidgets,
+        "Presets",
+        expanded=False,
+        spacing=6,
+        margins=(0, 0, 0, 0),
+    )
+    presets_layout.addWidget(presets_widget.widget)
+    bottom_row.addWidget(presets_section, 1)
 
     root.addWidget(header)
     root.addWidget(active_project)
@@ -867,6 +904,7 @@ def _build_form() -> dict[str, Any]:
     root.addLayout(bottom_row)
     root.addLayout(actions_row)
     root.addWidget(status)
+    root.addStretch(1)
     widget = wrap_widget_in_scroll_area(content)
     return {
         "widget": widget,
