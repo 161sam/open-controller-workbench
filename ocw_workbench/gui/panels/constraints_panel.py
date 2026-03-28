@@ -61,6 +61,10 @@ class ConstraintsPanel:
             self._set_summary_counts(errors=0, warnings=0)
             self._set_review_state("Not run", "info")
             self._set_result_overview("Run Validate Layout to check spacing, edge distance, and placement issues.")
+            self._set_widget_visible(self.form["success_box"], False)
+            self._set_widget_visible(self.form["list_box"], False)
+            self._set_widget_visible(self.form["detail_box"], False)
+            self._set_widget_visible(self.form["empty_state_box"], True)
             self._clear_results()
             self._clear_detail()
             self._set_next_step_message("Run Validate after layout or component edits.")
@@ -89,7 +93,7 @@ class ConstraintsPanel:
     def handle_result_selection_changed(self) -> None:
         issue_index = self._selected_issue_index()
         if issue_index is None:
-            self._clear_detail("Select an issue to inspect its details.")
+            self._clear_detail("Select an issue to inspect details and focus its component.")
             set_enabled(self.form["focus_button"], False)
             return
         item = self._messages[issue_index]
@@ -118,11 +122,16 @@ class ConstraintsPanel:
     def _render_report(self, report: dict[str, Any]) -> None:
         summary = report["summary"]
         self._messages = list(report["errors"]) + list(report["warnings"])
+        has_issues = bool(self._messages)
         self._set_summary_counts(
             errors=int(summary.get("error_count", 0)),
             warnings=int(summary.get("warning_count", 0)),
         )
         self._set_result_overview(_result_overview_text(summary))
+        self._set_widget_visible(self.form["empty_state_box"], False)
+        self._set_widget_visible(self.form["success_box"], not has_issues)
+        self._set_widget_visible(self.form["list_box"], has_issues)
+        self._set_widget_visible(self.form["detail_box"], has_issues)
         self._populate_results(report)
         message, level = format_validation_message(report)
         apply_status_message(self.form["status"], message, level=level)
@@ -130,6 +139,8 @@ class ConstraintsPanel:
             self._render_issue_detail(self._messages[0])
             self.handle_result_selection_changed()
         else:
+            set_label_text(self.form["success_title"], "Layout valid - ready for export")
+            set_label_text(self.form["success_message"], "No blocking issues or warnings were found. Continue with Plugins or export workflows.")
             self._clear_detail("Validation passed. No issues to review.")
             set_enabled(self.form["focus_button"], False)
 
@@ -188,6 +199,15 @@ class ConstraintsPanel:
 
     def _set_next_step_message(self, message: str) -> None:
         set_label_text(self.form["next_step"], message)
+
+    def _set_widget_visible(self, widget: Any, visible: bool) -> None:
+        if hasattr(widget, "setVisible"):
+            widget.setVisible(visible)
+            return
+        try:
+            widget.visible = bool(visible)
+        except Exception:
+            return
 
     def _clear_results(self) -> None:
         results = self.form["results"]
@@ -314,6 +334,12 @@ def _build_form() -> dict[str, Any]:
             "state_value": FallbackLabel("Ready"),
             "review_value": FallbackLabel("Not run"),
             "results_overview": FallbackLabel(),
+            "success_box": FallbackLabel(),
+            "success_title": FallbackLabel("Layout valid - ready for export"),
+            "success_message": FallbackLabel(),
+            "empty_state_box": FallbackLabel(),
+            "list_box": FallbackLabel(),
+            "detail_box": FallbackLabel(),
             "results": FallbackText(),
             "next_step": FallbackLabel("Run Validate after layout or component edits."),
             "detail_severity": FallbackLabel("No issue"),
@@ -322,7 +348,7 @@ def _build_form() -> dict[str, Any]:
             "detail_message": FallbackLabel("No issue selected."),
             "detail_description": FallbackText(),
             "detail_hint": FallbackLabel("Run validation and select a finding to inspect it."),
-            "focus_button": FallbackButton("Focus Issue"),
+            "focus_button": FallbackButton("Focus In Components"),
             "status": FallbackLabel(),
         }
 
@@ -330,7 +356,7 @@ def _build_form() -> dict[str, Any]:
     intro = create_status_label(qtwidgets, "Step 4 of 5. Validate before Plugins or export work.")
     validate_button = set_button_role(qtwidgets.QPushButton("Validate Layout"), "primary")
     set_tooltip(validate_button, "Run spacing, overlap and edge-distance checks for the current controller.")
-    focus_button = set_button_role(qtwidgets.QPushButton("Focus Issue"), "secondary")
+    focus_button = set_button_role(qtwidgets.QPushButton("Focus In Components"), "secondary")
     set_enabled(focus_button, False)
     actions = create_button_row_layout(qtwidgets, validate_button, focus_button, spacing=6)
     validation_scope = create_hint_label(qtwidgets, "Reviewing 0 components before Plugins.")
@@ -348,6 +374,13 @@ def _build_form() -> dict[str, Any]:
 
     results_overview = create_status_label(qtwidgets, "Run validation to populate the issue list.")
     next_step = create_hint_label(qtwidgets, "Run Validate after layout or component edits.")
+    success_box, success_layout = create_section_widget(qtwidgets, "Validation Result", spacing=6)
+    success_title = qtwidgets.QLabel("Layout valid - ready for export")
+    if hasattr(success_title, "setStyleSheet"):
+        success_title.setStyleSheet("color: #8dd4b4; font-size: 15px; font-weight: 700;")
+    success_message = create_status_label(qtwidgets, "No issues found.")
+    success_layout.addWidget(success_title)
+    success_layout.addWidget(success_message)
 
     results = qtwidgets.QTreeWidget()
     results.setColumnCount(4)
@@ -375,10 +408,13 @@ def _build_form() -> dict[str, Any]:
         )
     set_size_policy(results, horizontal="expanding", vertical="expanding")
 
-    list_box, list_layout = create_section_widget(qtwidgets, "Findings", spacing=6)
-    list_hint = create_hint_label(qtwidgets, "Errors block release. Activate a row to focus its component.")
+    list_box, list_layout = create_section_widget(qtwidgets, "Issues To Resolve", spacing=6)
+    list_hint = create_hint_label(qtwidgets, "Errors block release. Select a row, then focus the affected component.")
     list_layout.addWidget(list_hint)
     list_layout.addWidget(results, 1)
+    empty_state_box, empty_state_layout = create_section_widget(qtwidgets, "Validation Result", spacing=6)
+    empty_state_message = create_hint_label(qtwidgets, "No validation data yet. Run Validate Layout to see blocking issues, warnings, and export readiness.")
+    empty_state_layout.addWidget(empty_state_message)
 
     detail_box, detail_layout = create_section_widget(qtwidgets, "Selected Finding", spacing=6)
     detail_severity = qtwidgets.QLabel("No issue")
@@ -416,10 +452,18 @@ def _build_form() -> dict[str, Any]:
     layout.addLayout(summary_row)
     layout.addWidget(results_overview)
     layout.addWidget(next_step)
+    layout.addWidget(success_box)
+    layout.addWidget(empty_state_box)
     layout.addWidget(list_box, 1)
     layout.addWidget(detail_box)
     layout.addWidget(status)
     layout.addStretch(1)
+    if hasattr(success_box, "setVisible"):
+        success_box.setVisible(False)
+    if hasattr(list_box, "setVisible"):
+        list_box.setVisible(False)
+    if hasattr(detail_box, "setVisible"):
+        detail_box.setVisible(False)
     widget = wrap_widget_in_scroll_area(content)
     return {
         "widget": widget,
@@ -431,6 +475,12 @@ def _build_form() -> dict[str, Any]:
         "state_value": state_value["value"],
         "review_value": review_value["value"],
         "results_overview": results_overview,
+        "success_box": success_box,
+        "success_title": success_title,
+        "success_message": success_message,
+        "empty_state_box": empty_state_box,
+        "list_box": list_box,
+        "detail_box": detail_box,
         "results": results,
         "next_step": next_step,
         "detail_severity": detail_severity,

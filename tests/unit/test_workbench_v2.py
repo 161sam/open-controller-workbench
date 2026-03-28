@@ -748,8 +748,28 @@ def test_constraints_panel_exposes_validate_step_state_and_release_hint():
     assert panel.form["review_value"].text == "Not run"
     assert "Run Validate" in panel.form["next_step"].text
     assert "Reviewing 1 component" in panel.form["validation_scope"].text
+    assert panel.form["empty_state_box"].visible is True
 
     panel.validate()
 
     assert panel.form["review_value"].text == "Ready for Plugins"
     assert "Continue with Plugins" in panel.form["next_step"].text
+    assert panel.form["success_box"].visible is True
+    assert panel.form["success_title"].text == "Layout valid - ready for export"
+
+
+def test_constraints_panel_shows_issue_list_and_clearer_focus_action_when_report_has_findings():
+    doc = FakeDocument()
+    service = ControllerService()
+    service.create_controller(doc, {"id": "demo", "width": 120.0, "depth": 80.0})
+    service.add_component(doc, "omron_b3f_1000", component_id="btn1", x=5.0, y=5.0)
+    service.add_component(doc, "omron_b3f_1000", component_id="btn2", x=6.0, y=5.0)
+    panel = ConstraintsPanel(doc, controller_service=service)
+
+    report = panel.validate()
+
+    assert report["summary"]["error_count"] > 0 or report["summary"]["warning_count"] > 0
+    assert panel.form["list_box"].visible is True
+    assert panel.form["detail_box"].visible is True
+    assert panel.form["success_box"].visible is False
+    assert panel.form["focus_button"].text == "Focus In Components"
