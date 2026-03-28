@@ -11,7 +11,7 @@ class CreateFromTemplateCommand(BaseCommand):
     def GetResources(self):
         return self.resources(
             "Create Controller",
-            "Create a new controller from a template or variant.",
+            "Create a controller from a template or variant.",
         )
 
     def Activated(self):

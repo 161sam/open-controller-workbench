@@ -10,7 +10,7 @@ class ToggleMeasurementsCommand(BaseCommand):
     def GetResources(self):
         return self.resources(
             "Guides",
-            "Show or hide measurement guides in the overlay.",
+            "Show or hide measurement guides in the 3D view.",
         )
 
     def Activated(self):

@@ -10,7 +10,7 @@ class DisablePluginCommand(BaseCommand):
     def GetResources(self):
         return self.resources(
             "Disable Plugin",
-            "Disable the selected plugin in the Plugin Manager.",
+            "Disable the selected plugin.",
         )
 
     def Activated(self):

@@ -10,7 +10,7 @@ class EnablePluginCommand(BaseCommand):
     def GetResources(self):
         return self.resources(
             "Enable Plugin",
-            "Enable the selected plugin in the Plugin Manager.",
+            "Enable the selected plugin.",
         )
 
     def Activated(self):

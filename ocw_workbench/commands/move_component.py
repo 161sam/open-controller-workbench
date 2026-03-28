@@ -7,7 +7,7 @@ class MoveComponentCommand(BaseCommand):
     ICON_NAME = "move_component"
 
     def GetResources(self):
-        return self.resources("Move Component", "Open the layout task panel for position editing")
+        return self.resources("Move Component", "Open the move task panel.")
 
     def Activated(self):
         import FreeCAD as App

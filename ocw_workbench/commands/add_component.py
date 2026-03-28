@@ -11,7 +11,7 @@ class AddComponentCommand(BaseCommand):
     def GetResources(self):
         return self.resources(
             "Add Component",
-            "Add a component from the library to the current controller.",
+            "Add a component to the current controller.",
         )
 
     def Activated(self):

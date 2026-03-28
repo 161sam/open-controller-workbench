@@ -10,8 +10,8 @@ class ImportTemplateFromFCStdCommand(BaseCommand):
 
     def GetResources(self):
         return self.resources(
-            "Import Template From FCStd",
-            "Inspect an FCStd document and import either a YAML template or a custom FCStd-backed base geometry template.",
+            "Import Template from FCStd",
+            "Import a template from an FCStd file.",
         )
 
     def Activated(self):
@@ -42,7 +42,7 @@ class ImportTemplateFromFCStdCommand(BaseCommand):
                     return
 
             panel = ImportTemplateFromFCStdPanel(on_imported=handle_imported)
-            open_dialog("Import Template From FCStd", panel, width=860, height=520)
-            log_to_console("Import Template From FCStd dialog opened.")
+            open_dialog("Import Template from FCStd", panel, width=860, height=520)
+            log_to_console("Import Template from FCStd dialog opened.")
         except Exception as exc:
-            show_error("Import Template From FCStd", exc)
+            show_error("Import Template from FCStd", exc)

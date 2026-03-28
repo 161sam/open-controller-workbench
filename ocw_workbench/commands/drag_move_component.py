@@ -10,7 +10,7 @@ class DragMoveComponentCommand(BaseCommand):
     def GetResources(self):
         return self.resources(
             "Drag Move Component",
-            "Click a component in the 3D view and drag it to a new position.",
+            "Drag a component to a new position in the 3D view.",
         )
 
     def Activated(self):
@@ -25,6 +25,6 @@ class DragMoveComponentCommand(BaseCommand):
             ensure_workbench_ui(doc, focus="components")
             started = start_component_drag_mode(doc)
             if started:
-                show_info("Drag Move Component", "Drag mode active. Click component and drag, ESC to cancel.")
+                show_info("Drag Move Component", "Drag mode active. Drag a component or press ESC to cancel.")
         except Exception as exc:
             show_error("Drag Move Component", exc)

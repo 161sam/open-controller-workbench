@@ -10,7 +10,7 @@ class ToggleConstraintLabelsCommand(BaseCommand):
     def GetResources(self):
         return self.resources(
             "Issue Labels",
-            "Show or hide issue labels in the overlay.",
+            "Show or hide issue labels in the 3D view.",
         )
 
     def Activated(self):

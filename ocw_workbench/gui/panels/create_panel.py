@@ -195,12 +195,12 @@ class CreatePanel:
             state = self.controller_service.create_from_variant(self.doc, variant_id, overrides=runtime_overrides)
             recent_name = f"{self.userdata_service.resolve_template_name(template_id)} / {self.userdata_service.resolve_variant_name(variant_id)}"
             self.userdata_service.record_recent(template_id=template_id, variant_id=variant_id, name=recent_name)
-            self._publish_status(f"Created '{variant_id}'. Review geometry, then refine components if needed.")
+            self._publish_status(f"Created '{variant_id}'. Review geometry, then refine the layout.")
         else:
             state = self.controller_service.create_from_template(self.doc, template_id, overrides=runtime_overrides)
             recent_name = self.userdata_service.resolve_template_name(template_id)
             self.userdata_service.record_recent(template_id=template_id, variant_id=None, name=recent_name)
-            self._publish_status(f"Created '{template_id}'. Review geometry, then refine components if needed.")
+            self._publish_status(f"Created '{template_id}'. Review geometry, then refine the layout.")
         self.refresh()
         if self.on_created is not None:
             self.on_created(state)
@@ -226,9 +226,9 @@ class CreatePanel:
             raise ValueError("No template selected")
         template = self.template_service.get_template(template_id)["template"]
         favorites = self.userdata_service.toggle_favorite("template", template_id, name=str(template["name"]))
-        status = "favorite" if any(entry.reference_id == template_id and entry.type == "template" for entry in favorites) else "not favorite"
+        status = "saved to favorites" if any(entry.reference_id == template_id and entry.type == "template" for entry in favorites) else "removed from favorites"
         self.refresh()
-        self._publish_status(f"Template '{template_id}' is now {status}.")
+        self._publish_status(f"Template '{template_id}' {status}.")
 
     def toggle_variant_favorite(self) -> None:
         variant_id = self.selected_variant_id()
@@ -236,9 +236,9 @@ class CreatePanel:
             raise ValueError("No variant selected")
         variant = self.variant_service.get_variant(variant_id)["variant"]
         favorites = self.userdata_service.toggle_favorite("variant", variant_id, name=str(variant["name"]))
-        status = "favorite" if any(entry.reference_id == variant_id and entry.type == "variant" for entry in favorites) else "not favorite"
+        status = "saved to favorites" if any(entry.reference_id == variant_id and entry.type == "variant" for entry in favorites) else "removed from favorites"
         self.refresh()
-        self._publish_status(f"Variant '{variant_id}' is now {status}.")
+        self._publish_status(f"Variant '{variant_id}' {status}.")
 
     def load_selected_favorite(self) -> None:
         entry = self.form["favorites_widget"].selected()
@@ -309,7 +309,7 @@ class CreatePanel:
             raise ValueError("No marketplace template selected")
         details = self.template_marketplace_service.details_text(entry)
         set_text(self.form["marketplace_details"], details)
-        self._publish_status(f"Showing '{entry['name']}'.")
+        self._publish_status(f"Showing details for '{entry['name']}'.")
         return details
 
     def handle_template_changed(self, *_args: Any) -> None:
@@ -817,7 +817,7 @@ def _build_form() -> dict[str, Any]:
     favorite_variant_status = qtwidgets.QLabel()
     favorite_variant_status.setWordWrap(True)
     favorite_variant_button = qtwidgets.QPushButton("Favorite")
-    parameter_status = qtwidgets.QLabel("Choose a template to review its parameters.")
+    parameter_status = qtwidgets.QLabel("Select a template to review its parameters.")
     parameter_status.setWordWrap(True)
     preview = create_text_panel(qtwidgets, max_height=72)
     apply_parameters_button = qtwidgets.QPushButton("Apply")

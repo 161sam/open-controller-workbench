@@ -7,7 +7,7 @@ class AutoLayoutCommand(BaseCommand):
     ICON_NAME = "apply_layout"
 
     def GetResources(self):
-        return self.resources("Auto Layout", "Open the auto-layout task panel")
+        return self.resources("Auto Place", "Open the Auto Place task panel.")
 
     def Activated(self):
         import FreeCAD as App

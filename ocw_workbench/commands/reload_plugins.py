@@ -10,7 +10,7 @@ class ReloadPluginsCommand(BaseCommand):
     def GetResources(self):
         return self.resources(
             "Reload Plugins",
-            "Rescan plugin packs and refresh plugin status.",
+            "Reload plugin packs and refresh status.",
         )
 
     def Activated(self):

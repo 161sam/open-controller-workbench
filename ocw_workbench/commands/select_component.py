@@ -11,7 +11,7 @@ class SelectComponentCommand(BaseCommand):
     def GetResources(self):
         return self.resources(
             "Components",
-            "Review, edit, and move components in the current controller.",
+            "Review, edit, and move components.",
         )
 
     def Activated(self):

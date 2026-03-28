@@ -70,8 +70,8 @@ class ImportTemplateFromFCStdPanel:
         if not text_value(self.form["name"]).strip():
             set_text(self.form["name"], stem.replace("_", " ").replace("-", " ").title())
         self._publish_status(
-            f"Loaded {len(self._targets)} import targets from '{Path(fcstd_path).name}'. "
-            "Leave Stage B disabled for YAML-only import, or enable it to reference the source FCStd as base geometry."
+            f"Loaded {len(self._targets)} targets from '{Path(fcstd_path).name}'. "
+            "Leave Stage B off for YAML only, or enable it to reference the source FCStd as base geometry."
         )
 
     def import_template(self) -> Path:
@@ -95,7 +95,7 @@ class ImportTemplateFromFCStdPanel:
         if self.on_imported is not None:
             self.on_imported(output_path)
         mode_label = "Stage B" if self._use_source_as_base_geometry() else "Stage A"
-        self._publish_status(f"Imported template saved to '{output_path.name}' using {mode_label}.")
+        self._publish_status(f"Template saved as '{output_path.name}' using {mode_label}.")
         return output_path
 
     def handle_browse_clicked(self) -> None:
@@ -131,18 +131,18 @@ class ImportTemplateFromFCStdPanel:
             self.form["import_button"].clicked.connect(self.handle_import_clicked)
 
     def _configure_tooltips(self) -> None:
-        set_tooltip(self.form["file_path"], "FCStd file to inspect and convert into a YAML template.")
-        set_tooltip(self.form["target"], "Object or face used as the top-surface reference for width/depth extraction.")
-        set_tooltip(self.form["origin_vertex"], "Optional origin vertex used for metadata and mounting-hole offsets.")
+        set_tooltip(self.form["file_path"], "FCStd file to inspect and convert to a YAML template.")
+        set_tooltip(self.form["target"], "Object or face used as the top-surface reference.")
+        set_tooltip(self.form["origin_vertex"], "Optional origin vertex for metadata and mounting-hole offsets.")
         set_tooltip(self.form["offset_x"], "Manual X offset applied to imported reference points.")
         set_tooltip(self.form["offset_y"], "Manual Y offset applied to imported reference points.")
-        set_tooltip(self.form["rotation"], "Optional rotation applied to projected surface width/depth.")
-        set_tooltip(self.form["height"], "Optional controller height override. If disabled, uses document bounding height.")
+        set_tooltip(self.form["rotation"], "Optional rotation for the projected surface.")
+        set_tooltip(self.form["height"], "Optional height override. If disabled, the document height is used.")
         set_tooltip(self.form["template_id"], "Template id for the generated YAML file.")
-        set_tooltip(self.form["name"], "Template name shown in the Create panel.")
+        set_tooltip(self.form["name"], "Template name shown in the Create tab.")
         set_tooltip(
             self.form["use_source_as_base_geometry"],
-            "Enable Stage B to reference the source FCStd as custom base geometry for the top plate workflow.",
+            "Enable Stage B to reference the source FCStd as custom base geometry.",
         )
 
     def _publish_status(self, message: str) -> None:

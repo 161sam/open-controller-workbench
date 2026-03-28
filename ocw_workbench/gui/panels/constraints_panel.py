@@ -290,7 +290,7 @@ def _build_form() -> dict[str, Any]:
             "detail_message": FallbackLabel("No issue selected."),
             "detail_description": FallbackText(),
             "detail_hint": FallbackLabel("Run validation and select a finding to inspect it."),
-            "focus_button": FallbackButton("Focus Selected Issue"),
+            "focus_button": FallbackButton("Focus Issue"),
             "status": FallbackLabel(),
         }
 
@@ -299,7 +299,7 @@ def _build_form() -> dict[str, Any]:
     intro.setWordWrap(True)
     validate_button = qtwidgets.QPushButton("Validate Layout")
     set_tooltip(validate_button, "Run spacing, overlap and edge-distance checks for the current controller.")
-    focus_button = qtwidgets.QPushButton("Focus Selected Issue")
+    focus_button = qtwidgets.QPushButton("Focus Issue")
     set_enabled(focus_button, False)
     actions = create_button_row(qtwidgets, validate_button, focus_button, spacing=6)
 

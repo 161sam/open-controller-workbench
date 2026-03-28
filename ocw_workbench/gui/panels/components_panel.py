@@ -249,7 +249,7 @@ class ComponentsPanel:
             rotation=widget_value(self.form["add_rotation"]),
         )
         self.refresh_components()
-        self._publish_status(f"Added '{library_ref}'. Review its position below and adjust if needed.")
+        self._publish_status(f"Added '{library_ref}'. Review its position and adjust as needed.")
         if self.on_components_changed is not None:
             self.on_components_changed(state)
         return state
@@ -309,10 +309,10 @@ class ComponentsPanel:
         try:
             if len(self.controller_service.get_selected_component_ids(self.doc)) > 1:
                 self.load_bulk_selection(notify=False)
-                self._publish_status("Reset the bulk editor to the current selection state.")
+                self._publish_status("Bulk edit reset to the current selection.")
             else:
                 self.load_selected_component(notify=False)
-                self._publish_status("Reset the editor to the current component state.")
+                self._publish_status("Component editor reset to the current state.")
         except Exception as exc:
             self._publish_status(_friendly_component_error("Could not reset component properties", exc))
 
@@ -357,7 +357,7 @@ class ComponentsPanel:
             self.form["add_button"].clicked.connect(self.handle_add_clicked)
 
     def _configure_tooltips(self) -> None:
-        set_tooltip(self.form["component"], "Select the component you want to inspect or adjust.")
+        set_tooltip(self.form["component"], "Select the component to inspect or edit.")
         set_tooltip(self.form["x"], "Horizontal center position in millimeters.")
         set_tooltip(self.form["y"], "Vertical center position in millimeters.")
         set_tooltip(self.form["rotation"], "Rotation around the component center in degrees.")

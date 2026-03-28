@@ -51,7 +51,7 @@ class PluginManagerPanel:
             raise ValueError("No plugin selected")
         plugin = self.plugin_manager_service.set_enabled(plugin_id, True)
         self.refresh()
-        self._publish_status(f"Enabled plugin '{plugin_id}'.")
+        self._publish_status(f"Plugin '{plugin_id}' enabled.")
         self._notify_plugins_changed()
         return plugin
 
@@ -61,14 +61,14 @@ class PluginManagerPanel:
             raise ValueError("No plugin selected")
         plugin = self.plugin_manager_service.set_enabled(plugin_id, False)
         self.refresh()
-        self._publish_status(f"Disabled plugin '{plugin_id}'.")
+        self._publish_status(f"Plugin '{plugin_id}' disabled.")
         self._notify_plugins_changed()
         return plugin
 
     def reload_plugins(self) -> list[dict[str, Any]]:
         plugins = self.plugin_manager_service.reload_plugins()
         self.refresh()
-        self._publish_status(f"Refreshed plugins ({len(plugins)} discovered).")
+        self._publish_status(f"Plugin list refreshed. {len(plugins)} plugins available.")
         self._notify_plugins_changed()
         return plugins
 
@@ -80,7 +80,7 @@ class PluginManagerPanel:
         if not output_path:
             raise ValueError("Export path is required")
         result = self.plugin_pack_service.export_plugin_pack(plugin_id, output_path)
-        self._publish_status(f"Exported plugin '{plugin_id}' to {result['zip_path']}.")
+        self._publish_status(f"Plugin '{plugin_id}' exported to {result['zip_path']}.")
         return result
 
     def import_plugin_pack(self) -> dict[str, Any]:
@@ -89,7 +89,7 @@ class PluginManagerPanel:
             raise ValueError("Import ZIP path is required")
         result = self.plugin_pack_service.import_plugin_pack(zip_path)
         self.refresh()
-        self._publish_status(f"Imported plugin '{result['plugin_id']}'.")
+        self._publish_status(f"Plugin '{result['plugin_id']}' imported.")
         self._notify_plugins_changed()
         return result
 
@@ -107,7 +107,7 @@ class PluginManagerPanel:
         self.form["plugin_list"].set_remote_entries(result["entries"])
         source = result["source"]
         suffix = f" ({source})" if source else ""
-        self._publish_status(f"Loaded remote plugin registry from {result['url']}{suffix}.")
+        self._publish_status(f"Remote registry loaded from {result['url']}{suffix}.")
         return result
 
     def download_selected_remote_plugin(self) -> dict[str, Any]:
@@ -119,7 +119,7 @@ class PluginManagerPanel:
         if not output_path:
             raise ValueError("Download path is required")
         result = self.plugin_registry_service.download_plugin(url, str(selected["id"]), output_path)
-        self._publish_status(f"Downloaded remote plugin '{selected['id']}' to {result['output_path']}.")
+        self._publish_status(f"Remote plugin '{selected['id']}' downloaded to {result['output_path']}.")
         return result
 
     def handle_selection_changed(self, *_args: Any) -> None:

@@ -10,7 +10,7 @@ class ToggleConflictLinesCommand(BaseCommand):
     def GetResources(self):
         return self.resources(
             "Conflict Lines",
-            "Show or hide conflict connection lines in the overlay.",
+            "Show or hide conflict lines in the 3D view.",
         )
 
     def Activated(self):

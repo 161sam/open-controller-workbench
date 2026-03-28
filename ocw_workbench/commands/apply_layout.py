@@ -9,8 +9,8 @@ class ApplyLayoutCommand(BaseCommand):
 
     def GetResources(self):
         return self.resources(
-            "Auto Layout",
-            "Arrange the current components using the active layout preset.",
+            "Auto Place",
+            "Place the current components with the active layout preset.",
         )
 
     def Activated(self):
@@ -25,8 +25,8 @@ class ApplyLayoutCommand(BaseCommand):
             panel = ensure_workbench_ui(doc, focus="layout")
             result = panel.layout_panel.apply_auto_layout()
             show_info(
-                "Auto Layout",
+                "Auto Place",
                 f"Placed {len(result['placed_components'])} components, {len(result['unplaced_component_ids'])} unplaced.",
             )
         except Exception as exc:
-            show_error("Apply Auto Layout", exc)
+            show_error("Auto Place", exc)

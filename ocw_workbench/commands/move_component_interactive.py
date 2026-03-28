@@ -10,7 +10,7 @@ class MoveComponentInteractiveCommand(BaseCommand):
     def GetResources(self):
         return self.resources(
             "Move Component",
-            "Arm move mode for the currently selected component.",
+            "Prepare 3D move mode for the selected component.",
         )
 
     def Activated(self):
@@ -24,6 +24,6 @@ class MoveComponentInteractiveCommand(BaseCommand):
                 raise RuntimeError("No active FreeCAD document")
             panel = ensure_workbench_ui(doc, focus="components")
             settings = panel.arm_move_for_selection()
-            show_info("Move Component", f"Move mode armed for '{settings['move_component_id']}'.")
+            show_info("Move Component", f"3D move ready for '{settings['move_component_id']}'.")
         except Exception as exc:
             show_error("Move Component", exc)

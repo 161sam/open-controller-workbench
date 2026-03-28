@@ -11,7 +11,7 @@ class ValidateConstraintsCommand(BaseCommand):
     def GetResources(self):
         return self.resources(
             "Validate Layout",
-            "Validate spacing, edge distance, and placement constraints.",
+            "Check spacing, edge distance, and placement rules.",
         )
 
     def Activated(self):
@@ -26,7 +26,7 @@ class ValidateConstraintsCommand(BaseCommand):
             panel = ensure_workbench_ui(doc, focus="constraints")
             report = panel.constraints_panel.validate()
             panel.set_status(
-                f"Validated layout: {report['summary']['error_count']} errors, {report['summary']['warning_count']} warnings."
+                f"Validation finished: {report['summary']['error_count']} errors, {report['summary']['warning_count']} warnings."
             )
             log_to_console(
                 f"Constraint validation finished with {report['summary']['error_count']} errors and "

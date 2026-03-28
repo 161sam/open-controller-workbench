@@ -6,7 +6,7 @@ class CreateControllerCommand(BaseCommand):
     ICON_NAME = "create_controller"
 
     def GetResources(self):
-        return self.resources("Create Controller", "Create a new MIDI controller project")
+        return self.resources("Create Controller", "Create a new controller document.")
 
     def Activated(self):
         import FreeCAD as App

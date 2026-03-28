@@ -77,7 +77,7 @@ class _FavoriteComponentCommand:
         if component is None:
             return {
                 "MenuText": f"Favorite {self.slot_index + 1}",
-                "ToolTip": "Favorite component slot is empty.",
+                "ToolTip": "No favorite component assigned.",
                 "Pixmap": icon_path("default"),
             }
         ui = component.get("ui", {})
@@ -426,7 +426,7 @@ class ProductWorkbenchPanel:
             format_toggle_message(
                 "Overlay",
                 settings["overlay_enabled"],
-                "Use it to inspect helpers without changing model geometry.",
+                "Shows layout guides without changing the model.",
             )
         )
         return settings
@@ -438,9 +438,9 @@ class ProductWorkbenchPanel:
         self.constraints_panel.refresh()
         self.set_status(
             format_toggle_message(
-                "Constraint checks",
+                "Issue overlay",
                 settings["show_constraints"],
-                "Switch this on when you want issues highlighted directly in the 3D view.",
+                "Shows validation issues in the 3D view.",
             )
         )
         return settings
@@ -454,7 +454,7 @@ class ProductWorkbenchPanel:
             format_toggle_message(
                 "Measurement guides",
                 settings["measurements_enabled"],
-                "Helpful for checking spacing during placement refinement.",
+                "Helps check spacing while refining placement.",
             )
         )
         return settings
@@ -468,7 +468,7 @@ class ProductWorkbenchPanel:
             format_toggle_message(
                 "Conflict lines",
                 settings["conflict_lines_enabled"],
-                "These guides only visualize conflicts and do not change the model.",
+                "Shows visual conflict paths only.",
             )
         )
         return settings
@@ -482,7 +482,7 @@ class ProductWorkbenchPanel:
             format_toggle_message(
                 "Issue labels",
                 settings["constraint_labels_enabled"],
-                "Enable labels when you need readable issue names next to the overlay markers.",
+                "Shows issue names next to overlay markers.",
             )
         )
         return settings
@@ -678,7 +678,7 @@ class ProductWorkbenchPanel:
         title = qtwidgets.QLabel("Controller Workspace")
         if hasattr(title, "setObjectName"):
             title.setObjectName("OCWHeaderTitle")
-        subtitle = qtwidgets.QLabel("Build geometry, place components, and validate the panel from one dock.")
+        subtitle = qtwidgets.QLabel("Create the panel, place components, and review issues from one dock.")
         if hasattr(subtitle, "setObjectName"):
             subtitle.setObjectName("OCWHeaderSubtitle")
         subtitle.setWordWrap(True)
@@ -712,7 +712,7 @@ class ProductWorkbenchPanel:
         focus_hint = qtwidgets.QLabel("View")
         if hasattr(focus_hint, "setObjectName"):
             focus_hint.setObjectName("OCWMetaLabel")
-        focus_hint_value = qtwidgets.QLabel("Validate surfaces issues, Plugins manages extensions.")
+        focus_hint_value = qtwidgets.QLabel("Validate reviews issues. Plugins manages extensions.")
         if hasattr(focus_hint_value, "setObjectName"):
             focus_hint_value.setObjectName("OCWMetaValue")
         focus_hint_value.setWordWrap(True)
@@ -766,7 +766,7 @@ class ProductWorkbenchPanel:
         tabs_label = qtwidgets.QLabel("Workspace")
         if hasattr(tabs_label, "setObjectName"):
             tabs_label.setObjectName("OCWTabsTitle")
-        tabs_hint = qtwidgets.QLabel("Choose a section to continue the current controller.")
+        tabs_hint = qtwidgets.QLabel("Choose a section to continue.")
         if hasattr(tabs_hint, "setObjectName"):
             tabs_hint.setObjectName("OCWTabsHint")
         tabs_hint.setWordWrap(True)
@@ -861,7 +861,7 @@ class ProductWorkbenchPanel:
         self.refresh_context_panels(refresh_components=True)
         self.refresh_overlay()
         self.focus_panel("create")
-        self.set_status("Controller settings updated. Re-run validation if dimensions changed.")
+        self.set_status("Controller updated. Re-run validation if dimensions changed.")
 
     def _handle_selection_changed(self, _component_id: str | None) -> None:
         self.info_panel.refresh()

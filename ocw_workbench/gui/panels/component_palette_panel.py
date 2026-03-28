@@ -121,7 +121,7 @@ class ComponentPalettePanel:
             self._select_component_item(active_template_id or self._visible_components[0]["id"])
         self._update_details(active_template_id)
         self._update_favorite_button(active_template_id, favorite_ids)
-        self._publish_status(f"{len(self._visible_components)} components shown. Active: {active_template_id or 'none'}.")
+        self._publish_status(f"{len(self._visible_components)} components shown. Active template: {active_template_id or 'none'}.")
 
     def select_component_template(self, template_id: str) -> dict[str, Any]:
         settings = self.interaction_service.set_active_component_template(self.doc, template_id)
@@ -129,7 +129,7 @@ class ComponentPalettePanel:
         self._select_component_item(template_id)
         self._update_details(template_id)
         self._update_favorite_button(template_id, favorite_ids)
-        self._publish_status(f"Prepared '{template_id}'.")
+        self._publish_status(f"Template '{template_id}' ready.")
         return settings
 
     def toggle_favorite_for_selection(self) -> dict[str, Any]:
@@ -150,7 +150,7 @@ class ComponentPalettePanel:
         except Exception:
             pass
         state = "added to" if template_id in favorite_ids else "removed from"
-        self._publish_status(f"'{template_id}' {state} favorites.")
+        self._publish_status(f"Template '{template_id}' {state} favorites.")
         return self.interaction_service.get_settings(self.doc)
 
     def selected_component_template_id(self) -> str | None:
@@ -200,7 +200,7 @@ class ComponentPalettePanel:
 
         started = start_component_place_mode(self.doc, template_id)
         if started:
-            self._publish_status(f"Placing '{template_id}' in the 3D view. Click to place, ESC to cancel.")
+            self._publish_status(f"Placing '{template_id}' in the 3D view. Click to place or press ESC to cancel.")
         return started
 
     def handle_place_clicked(self, *_args: Any) -> None:

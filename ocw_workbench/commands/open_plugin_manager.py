@@ -11,7 +11,7 @@ class OpenPluginManagerCommand(BaseCommand):
     def GetResources(self):
         return self.resources(
             "Plugin Manager",
-            "View installed plugins and their current status.",
+            "Manage installed plugins.",
         )
 
     def Activated(self):
