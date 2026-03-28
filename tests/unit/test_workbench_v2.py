@@ -526,6 +526,7 @@ def test_components_panel_uses_contextual_summary_and_quick_add_visibility():
     assert "Start with Quick Add" in empty_panel.form["context_summary"].text
     assert empty_panel.form["empty_state_box"].visible is True
     assert "No components placed yet" in empty_panel.form["empty_state"].text
+    assert empty_panel.form["empty_state_cta"].text == "Add first component"
     assert empty_panel.form["quick_add_box"].visible is True
 
     service.add_component(doc, "omron_b3f_1000", component_id="btn1", x=10.0, y=10.0)
@@ -550,6 +551,8 @@ def test_components_panel_exposes_clear_work_sections_and_selected_state():
     assert panel.form["add_button"].text == "Add"
     assert panel.form["selected_empty_state"].visible is False
     assert panel.form["component_list_box"].visible is True
+    assert panel.form["update_button"].text == "Apply"
+    assert panel.form["arm_move_button"].text == "Pick In 3D"
 
 
 def test_components_panel_applies_bulk_changes_to_selected_components():

@@ -13,6 +13,7 @@ from ocw_workbench.gui.panels._common import (
     create_form_section_widget,
     create_hint_label,
     create_inline_status_widget,
+    create_row_widget,
     create_section_widget,
     create_status_label,
     create_text_panel,
@@ -647,6 +648,7 @@ def _build_form() -> dict[str, Any]:
             "add_y": FallbackValue(10.0),
             "add_rotation": FallbackValue(0.0),
             "add_button": FallbackButton("Add"),
+            "empty_state_cta": FallbackLabel("Add first component"),
             "details": FallbackText("No components yet. Use Quick Add to place the first one."),
             "status": FallbackLabel("Ready to add or edit components."),
         }
@@ -702,19 +704,25 @@ def _build_form() -> dict[str, Any]:
         set_size_policy(spinbox, horizontal="expanding", vertical="preferred")
     selector_summary = create_status_label(qtwidgets, "Edit only the selected component context.")
     selected_empty_state = create_hint_label(qtwidgets, "Select a component from the list to edit its placement and properties.")
+    position_section, position_layout = create_form_section_widget(qtwidgets, "Position", spacing=4)
+    meta_section, meta_layout = create_form_section_widget(qtwidgets, "Meta", spacing=4)
+    type_specific_section, type_specific_layout = create_form_section_widget(qtwidgets, "Type-Specific", spacing=4)
     primary_actions = create_button_row_layout(qtwidgets, update_button, arm_move_button, spacing=6)
     secondary_actions = create_button_row_layout(qtwidgets, snap_button, reset_button, spacing=6)
     selector_layout.addRow("", selector_details)
     selector_layout.addRow("", selector_summary)
     selector_layout.addRow("", selected_empty_state)
-    selector_layout.addRow("X (mm)", x)
-    selector_layout.addRow("Y (mm)", y)
-    selector_layout.addRow("Rotation", rotation)
-    selector_layout.addRow("Variant", library_ref)
-    selector_layout.addRow("Label", label)
-    selector_layout.addRow("Tags", tags)
-    selector_layout.addRow("Visible", visible)
-    selector_layout.addRow("Type-Specific", specific_editor.widget)
+    position_layout.addRow("X (mm)", x)
+    position_layout.addRow("Y (mm)", y)
+    position_layout.addRow("Rotation", rotation)
+    position_layout.addRow("Variant", library_ref)
+    meta_layout.addRow("Label", label)
+    meta_layout.addRow("Tags", tags)
+    meta_layout.addRow("Visible", visible)
+    type_specific_layout.addRow("", specific_editor.widget)
+    selector_layout.addRow("", position_section)
+    selector_layout.addRow("", meta_section)
+    selector_layout.addRow("", type_specific_section)
     selector_layout.addRow("", primary_actions)
     selector_layout.addRow("", secondary_actions)
     bulk_section, bulk_layout, _bulk_toggle = create_collapsible_section_widget(
@@ -796,17 +804,20 @@ def _build_form() -> dict[str, Any]:
     add_y.setValue(10.0)
     add_layout.addRow("Category", add_category)
     add_layout.addRow("Library", add_component)
-    add_layout.addRow("X (mm)", add_x)
-    add_layout.addRow("Y (mm)", add_y)
-    add_layout.addRow("Rotation", add_rotation)
+    placement_row = create_row_widget(qtwidgets, add_x, add_y, add_rotation, spacing=6)
+    add_layout.addRow("Placement", placement_row)
     add_layout.addRow("", add_button)
     quick_add_layout.addRow(quick_add_hint)
     quick_add_layout.addRow(add_box)
+    if hasattr(quick_add_section, "setObjectName"):
+        quick_add_section.setObjectName("OCWQuickAddSection")
     empty_state = create_hint_label(
         qtwidgets,
-        "No components placed yet. Use Quick Add to insert the first component, then pick it from the list to refine placement.",
+        "No components placed yet. Start with Quick Add and place the first component into the controller.",
     )
+    empty_state_cta = create_status_label(qtwidgets, "Add first component")
     empty_state_layout.addWidget(empty_state)
+    empty_state_layout.addWidget(empty_state_cta)
     component_list_layout.addRow("", context_summary)
     component_list_layout.addRow("", list_hint)
     component_list_layout.addRow("Selection", component)
@@ -889,6 +900,7 @@ def _build_form() -> dict[str, Any]:
         "add_rotation": add_rotation,
         "add_button": add_button,
         "empty_state": empty_state,
+        "empty_state_cta": empty_state_cta,
         "details": details,
         "status": status,
     }

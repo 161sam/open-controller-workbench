@@ -1370,6 +1370,15 @@ QGroupBox::title {
     padding: 0 0 3px 0;
     color: #8798ac;
 }
+QGroupBox#OCWQuickAddSection {
+    border: 1px solid #2b4b78;
+    border-radius: 8px;
+    background: rgba(24, 45, 76, 0.35);
+    padding-top: 8px;
+}
+QGroupBox#OCWQuickAddSection::title {
+    color: #d8e7ff;
+}
 QScrollArea {
     background: transparent;
     border: none;
