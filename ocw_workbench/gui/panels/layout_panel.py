@@ -8,15 +8,14 @@ from ocw_workbench.gui.panels._common import (
     build_panel_container,
     configure_combo_box,
     create_button_row_layout,
+    create_collapsible_section_widget,
     create_form_layout,
     create_form_section_widget,
     create_section_widget,
     create_status_label,
-    create_text_panel,
     FallbackButton,
     FallbackCombo,
     FallbackLabel,
-    FallbackText,
     FallbackValue,
     current_text,
     load_qt,
@@ -59,24 +58,14 @@ class LayoutPanel:
     def refresh(self) -> None:
         context = self.controller_service.get_ui_context(self.doc)
         settings = self.interaction_service.get_settings(self.doc)
-        set_text(
-            self.form["overlay_status"],
-            "\n".join(
-                [
-                    f"Overlay: {'on' if settings['overlay_enabled'] else 'off'}",
-                    f"Issue Overlay: {'on' if settings['show_constraints'] else 'off'}",
-                    f"Measurements: {'on' if settings['measurements_enabled'] else 'off'}",
-                    f"Conflict Lines: {'on' if settings['conflict_lines_enabled'] else 'off'}",
-                    f"Labels: {'on' if settings['constraint_labels_enabled'] else 'off'}",
-                    f"Snap: {'on' if settings['snap_enabled'] else 'off'}",
-                    f"Grid: {settings['grid_mm']} mm",
-                ]
-            ),
-        )
+        validation = context.get("validation") if isinstance(context.get("validation"), dict) else {}
+        validation_summary = validation.get("summary", {}) if isinstance(validation, dict) else {}
+        set_label_text(self.form["overlay_status"], _overlay_status_text(settings))
+        set_label_text(self.form["validation_status"], _validation_status_text(validation_summary))
         layout = context.get("layout") or {}
         self._sync_form_defaults(layout=layout, settings=settings)
         if not layout:
-            set_text(self.form["summary"], "No layout has been applied yet.")
+            set_label_text(self.form["summary"], "No layout yet. Run Auto Place when the controller structure is ready.")
             apply_status_message(
                 self.form["status"],
                 "Use Auto Place after creating a controller or when the layout needs a reset.",
@@ -85,16 +74,14 @@ class LayoutPanel:
             return
         summary = layout.get("result_summary", {})
         config = layout.get("config", {})
-        set_text(
+        set_label_text(
             self.form["summary"],
-            "\n".join(
-                [
-                    f"Strategy: {layout.get('strategy', '-')}",
-                    f"Placed: {summary.get('placed_count', 0)}",
-                    f"Unplaced: {summary.get('unplaced_count', 0)}",
-                    f"Warnings: {summary.get('warning_count', 0)}",
-                    f"Grid: {config.get('grid_mm', config.get('grid_size_mm', 1.0))} mm",
-                ]
+            (
+                f"Strategy {layout.get('strategy', '-')} | "
+                f"Placed {summary.get('placed_count', 0)} | "
+                f"Unplaced {summary.get('unplaced_count', 0)} | "
+                f"Warnings {summary.get('warning_count', 0)} | "
+                f"Grid {config.get('grid_mm', config.get('grid_size_mm', 1.0))} mm"
             ),
         )
 
@@ -317,13 +304,14 @@ def _build_form() -> dict[str, Any]:
             "measurements_button": FallbackButton("Guides"),
             "conflict_lines_button": FallbackButton("Conflict Lines"),
             "constraint_labels_button": FallbackButton("Issue Labels"),
-            "summary": FallbackText(),
-            "overlay_status": FallbackText(),
+            "summary": FallbackLabel(),
+            "overlay_status": FallbackLabel(),
+            "validation_status": FallbackLabel(),
             "status": FallbackLabel(),
         }
 
     content, layout = build_panel_container(qtwidgets)
-    intro = create_status_label(qtwidgets, "Run Auto Place, then review helpers and feedback.")
+    intro = create_status_label(qtwidgets, "Step 2 of 5. Apply layout, then hand off to Validate.")
     form = create_form_layout(qtwidgets, spacing=4)
     preset = qtwidgets.QComboBox()
     preset.addItems(["grid", "row", "column", "zone"])
@@ -374,22 +362,26 @@ def _build_form() -> dict[str, Any]:
     for index, button in enumerate(actions):
         row, column = divmod(index, 2)
         button_row.addWidget(button, row, column)
-    summary = create_text_panel(qtwidgets, max_height=72)
-    overlay_status = create_text_panel(qtwidgets, max_height=72)
+    summary = create_status_label(qtwidgets, "No layout yet. Run Auto Place when the controller structure is ready.")
+    overlay_status = create_status_label(qtwidgets)
+    validation_status = create_status_label(qtwidgets, "Validation has not been run yet.")
     status = create_status_label(qtwidgets)
     settings_box, settings_layout = create_form_section_widget(qtwidgets, "Placement Settings", spacing=4)
     settings_layout.addRow("Preset", preset)
     settings_layout.addRow("Grid (mm)", grid_mm)
     settings_layout.addRow("Spacing (mm)", spacing_mm)
     settings_layout.addRow("Padding (mm)", padding_mm)
-    overlay_box, overlay_layout = create_section_widget(qtwidgets, "View Helpers", spacing=6)
+    overlay_box, overlay_layout, _overlay_toggle = create_collapsible_section_widget(
+        qtwidgets,
+        "View Helpers",
+        expanded=False,
+        spacing=6,
+    )
     overlay_layout.addLayout(button_row)
-    diagnostics_box, diagnostics_layout = create_section_widget(qtwidgets, "Feedback", spacing=6)
-    diagnostics_row = qtwidgets.QHBoxLayout()
-    diagnostics_row.setSpacing(6)
-    diagnostics_row.addWidget(overlay_status, 1)
-    diagnostics_row.addWidget(summary, 1)
-    diagnostics_layout.addLayout(diagnostics_row)
+    diagnostics_box, diagnostics_layout = create_section_widget(qtwidgets, "Current State", spacing=6)
+    diagnostics_layout.addWidget(summary)
+    diagnostics_layout.addWidget(validation_status)
+    diagnostics_layout.addWidget(overlay_status)
     layout.addWidget(intro)
     layout.addWidget(settings_box)
     layout.addLayout(primary_actions)
@@ -413,6 +405,30 @@ def _build_form() -> dict[str, Any]:
         "conflict_lines_button": conflict_lines_button,
         "constraint_labels_button": constraint_labels_button,
         "overlay_status": overlay_status,
+        "validation_status": validation_status,
         "summary": summary,
         "status": status,
     }
+
+
+def _overlay_status_text(settings: dict[str, Any]) -> str:
+    return (
+        f"Overlay {'on' if settings['overlay_enabled'] else 'off'} | "
+        f"Issues {'on' if settings['show_constraints'] else 'off'} | "
+        f"Measurements {'on' if settings['measurements_enabled'] else 'off'} | "
+        f"Conflict lines {'on' if settings['conflict_lines_enabled'] else 'off'} | "
+        f"Labels {'on' if settings['constraint_labels_enabled'] else 'off'} | "
+        f"Snap {'on' if settings['snap_enabled'] else 'off'}"
+    )
+
+
+def _validation_status_text(summary: dict[str, Any]) -> str:
+    if not summary:
+        return "Validation has not been run yet."
+    errors = int(summary.get("error_count", 0))
+    warnings = int(summary.get("warning_count", 0))
+    if errors > 0:
+        return f"Validate reports {errors} errors and {warnings} warnings."
+    if warnings > 0:
+        return f"Validate reports {warnings} warnings and no blocking errors."
+    return "Validate is clear for the current layout."

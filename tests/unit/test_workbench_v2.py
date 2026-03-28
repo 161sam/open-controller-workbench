@@ -377,7 +377,7 @@ def test_components_panel_uses_clearer_action_labels_and_details():
 
     assert panel.form["update_button"].text == "Apply Changes"
     assert panel.form["arm_move_button"].text == "Pick In 3D"
-    assert "Groups: placement, generic metadata, and type-specific properties." in details
+    assert "Edit placement here. Re-run Validate after geometry changes." in details
 
 
 def test_components_panel_maps_selection_to_component_specific_editor():
@@ -459,6 +459,22 @@ def test_components_panel_enters_bulk_mode_for_multi_selection():
     assert panel.form["bulk_count"].text == "Selected: 2"
     assert panel.form["bulk_types"].text == "Types: fader"
     assert "Bulk edit" in panel.form["bulk_summary"].text
+
+
+def test_components_panel_uses_contextual_summary_and_quick_add_visibility():
+    doc = FakeDocument()
+    service = ControllerService()
+    service.create_controller(doc, {"id": "demo", "width": 160.0, "depth": 100.0, "height": 30.0})
+    empty_panel = ComponentsPanel(doc, controller_service=service)
+
+    assert "Start with Quick Add" in empty_panel.form["context_summary"].text
+    assert empty_panel.form["quick_add_box"].visible is True
+
+    service.add_component(doc, "omron_b3f_1000", component_id="btn1", x=10.0, y=10.0)
+    panel = ComponentsPanel(doc, controller_service=service)
+
+    assert "Single selection" in panel.form["context_summary"].text
+    assert panel.form["quick_add_box"].visible is False
 
 
 def test_components_panel_applies_bulk_changes_to_selected_components():
@@ -627,3 +643,30 @@ def test_panels_expose_tooltips_for_key_workflows():
     assert "3D view" in components_panel.form["arm_move_button"].tooltip
     assert "Overall controller width" in info_panel.form["width"].tooltip
     assert "spacing, overlap and edge-distance" in constraints_panel.form["validate_button"].tooltip
+
+
+def test_layout_panel_shows_compact_validation_and_overlay_state():
+    doc = FakeDocument()
+    service = ControllerService()
+    service.create_controller(doc, {"id": "demo", "width": 160.0, "depth": 100.0, "height": 30.0})
+    panel = LayoutPanel(doc, controller_service=service)
+
+    assert panel.form["validation_status"].text == "Validation has not been run yet."
+    assert "Overlay on" in panel.form["overlay_status"].text
+
+
+def test_constraints_panel_exposes_validate_step_state_and_release_hint():
+    doc = FakeDocument()
+    service = ControllerService()
+    service.create_controller(doc, {"id": "demo", "width": 200.0, "depth": 120.0})
+    service.add_component(doc, "alps_ec11e15204a3", component_id="enc1", x=20.0, y=20.0)
+    panel = ConstraintsPanel(doc, controller_service=service)
+
+    assert panel.form["review_value"].text == "Not run"
+    assert "Run Validate" in panel.form["next_step"].text
+    assert "Reviewing 1 component" in panel.form["validation_scope"].text
+
+    panel.validate()
+
+    assert panel.form["review_value"].text == "Ready for Plugins"
+    assert "Continue with Plugins" in panel.form["next_step"].text

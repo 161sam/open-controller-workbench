@@ -9,6 +9,7 @@ from ocw_workbench.gui.panels._common import (
     configure_combo_box,
     create_button_row_layout,
     create_collapsible_section_widget,
+    create_compact_header_widget,
     create_form_section_widget,
     create_inline_status_widget,
     create_section_widget,
@@ -90,29 +91,33 @@ class ComponentsPanel:
                 self._component_lookup[label] = component["id"]
         set_combo_items(self.form["component"], labels)
         selected_id = state["meta"].get("selection")
+        selected_ids = list(state["meta"].get("selected_ids", []))
+        self._set_context_summary(component_count=len(labels), selection_count=len(selected_ids))
         if selected_id is not None:
             self._set_selected_component(selected_id)
         if labels:
-            if len(state["meta"].get("selected_ids", [])) > 1:
+            if len(selected_ids) > 1:
                 self.load_bulk_selection(notify=False)
             else:
                 self.load_selected_component(notify=False)
             move_mode = self.interaction_service.get_settings(self.doc).get("move_component_id")
-            selection_count = len(state["meta"].get("selected_ids", []))
+            selection_count = len(selected_ids)
             suffix = f" 3D move active for {move_mode}." if move_mode else ""
             apply_status_message(
                 self.form["status"],
                 f"{len(labels)} components available. {selection_count} selected.{suffix}",
                 level="info",
             )
+            self._set_widget_visible(self.form["quick_add_box"], False)
         else:
             self._clear_component_details()
-            set_text(self.form["details"], "No components in this controller yet.")
+            set_text(self.form["details"], "No components yet. Use Quick Add to place the first one.")
             apply_status_message(
                 self.form["status"],
                 "Add a component to start building the controller.",
                 level="info",
             )
+            self._set_widget_visible(self.form["quick_add_box"], True)
 
     def refresh_add_library(self) -> None:
         categories = sorted({item["category"] for item in self.library_service.list_by_category()})
@@ -151,6 +156,7 @@ class ComponentsPanel:
         set_text(self.form["selected_id"], f"ID: {component['id']}")
         set_text(self.form["selected_type"], f"Type: {self._property_model['category']}")
         set_text(self.form["selected_library"], f"Library: {self._property_model['library_label']}")
+        self._set_widget_visible(self.form["selector_details"], True)
         self._populate_library_ref_options(self._property_model)
         self._set_specific_fields(self._property_model)
         set_text(self.form["details"], self._build_details_text(component, self._property_model))
@@ -168,6 +174,7 @@ class ComponentsPanel:
         self._set_bulk_mode(True)
         self._populate_bulk_fields(self._bulk_model)
         set_text(self.form["bulk_summary"], self._bulk_model["details"])
+        self._set_widget_visible(self.form["selector_details"], False)
         set_text(
             self.form["details"],
             "\n".join(
@@ -394,6 +401,17 @@ class ComponentsPanel:
         set_text(summary, "Type-specific properties are generated from the selected library component.")
         self._set_bulk_mode(False)
 
+    def _set_context_summary(self, *, component_count: int, selection_count: int) -> None:
+        if component_count <= 0:
+            message = "No selection yet. Start with Quick Add."
+        elif selection_count > 1:
+            message = f"{selection_count} selected. Bulk edit is active."
+        elif selection_count == 1:
+            message = "Single selection. Edit placement and the relevant component properties."
+        else:
+            message = "Pick a component to edit, or open Quick Add to insert another one."
+        set_text(self.form["context_summary"], message)
+
     def _set_bulk_mode(self, enabled: bool) -> None:
         self._set_widget_visible(self.form["selector_box"], not enabled)
         self._set_widget_visible(self.form["bulk_box"], enabled)
@@ -536,17 +554,14 @@ class ComponentsPanel:
             self.form["visible"].setChecked(True)
         self.form["specific_editor"].clear()
         self._set_bulk_mode(False)
+        self._set_widget_visible(self.form["selector_details"], False)
 
     def _build_details_text(self, component: dict[str, Any], model: dict[str, Any]) -> str:
         return "\n".join(
             [
-                f"Component: {component['id']}",
-                f"Type: {component['type']}",
-                f"Library: {component.get('library_ref', '-')}",
-                f"Rotation: {float(component.get('rotation', 0.0)):.2f} deg",
-                f"Zone: {component.get('zone_id') or '-'}",
-                "Groups: placement, generic metadata, and type-specific properties.",
-                "Normal workflow: adjust values here, apply changes, then validate if geometry changed.",
+                f"{component['id']} | {component['type']} | {component.get('library_ref', '-')}",
+                f"Rotation {float(component.get('rotation', 0.0)):.2f} deg | Zone {component.get('zone_id') or '-'}",
+                "Edit placement here. Re-run Validate after geometry changes.",
                 model["details"],
             ]
         )
@@ -568,7 +583,10 @@ def _build_form() -> dict[str, Any]:
         return {
             "widget": object(),
             "selector_box": FallbackLabel(),
+            "selector_details": FallbackLabel(),
+            "quick_add_box": FallbackLabel(),
             "bulk_box": FallbackLabel(),
+            "context_summary": FallbackText(),
             "component": FallbackCombo(),
             "selected_id": FallbackLabel("ID: -"),
             "selected_type": FallbackLabel("Type: -"),
@@ -623,11 +641,20 @@ def _build_form() -> dict[str, Any]:
 
     content, layout = build_panel_container(qtwidgets)
     selector_box, selector_layout = create_form_section_widget(qtwidgets, "Selected Component", spacing=4)
+    context_summary = create_status_label(qtwidgets, "No selection yet. Start with Quick Add.")
     component = qtwidgets.QComboBox()
     configure_combo_box(component)
     selected_id = qtwidgets.QLabel("ID: -")
     selected_type = qtwidgets.QLabel("Type: -")
     selected_library = qtwidgets.QLabel("Library: -")
+    selector_details = create_compact_header_widget(
+        qtwidgets,
+        selected_id,
+        secondary=create_status_label(qtwidgets, "Pick a component to inspect."),
+        trailing=create_inline_status_widget(qtwidgets, selected_type, selected_library, spacing=8, stretch_index=1),
+        spacing=8,
+        detail_spacing=2,
+    )
     x = qtwidgets.QDoubleSpinBox()
     y = qtwidgets.QDoubleSpinBox()
     rotation = qtwidgets.QDoubleSpinBox()
@@ -657,8 +684,7 @@ def _build_form() -> dict[str, Any]:
         spinbox.setRange(-1000.0, 1000.0)
         spinbox.setDecimals(2)
         set_size_policy(spinbox, horizontal="expanding", vertical="preferred")
-    selector_summary = create_status_label(qtwidgets, "Edit values or pick in 3D.")
-    meta_row = create_inline_status_widget(qtwidgets, selected_id, selected_type, selected_library, spacing=8, stretch_index=2)
+    selector_summary = create_status_label(qtwidgets, "Edit only the selected component context.")
     selector_actions = qtwidgets.QGridLayout()
     selector_actions.setContentsMargins(0, 0, 0, 0)
     selector_actions.setHorizontalSpacing(6)
@@ -668,7 +694,8 @@ def _build_form() -> dict[str, Any]:
     selector_actions.addWidget(snap_button, 1, 0)
     selector_actions.addWidget(reset_button, 1, 1)
     selector_layout.addRow("Component", component)
-    selector_layout.addRow("", meta_row)
+    selector_layout.addRow("", context_summary)
+    selector_layout.addRow("", selector_details)
     selector_layout.addRow("", selector_summary)
     selector_layout.addRow("X (mm)", x)
     selector_layout.addRow("Y (mm)", y)
@@ -734,7 +761,13 @@ def _build_form() -> dict[str, Any]:
     bulk_form.addRow(bulk_label_cap_width, _bulk_row_widget(qtwidgets, bulk_apply_cap_width, bulk_cap_width))
     bulk_form.addRow("", bulk_actions)
     bulk_layout.addWidget(bulk_box)
-    add_box, add_layout = create_form_section_widget(qtwidgets, "Quick Add", spacing=4)
+    quick_add_box, quick_add_layout, _quick_add_toggle = create_collapsible_section_widget(
+        qtwidgets,
+        "Quick Add",
+        expanded=False,
+        spacing=6,
+    )
+    add_box, add_layout = create_form_section_widget(qtwidgets, "Insert Component", spacing=4)
     add_category = qtwidgets.QComboBox()
     add_component = qtwidgets.QComboBox()
     configure_combo_box(add_category)
@@ -761,6 +794,7 @@ def _build_form() -> dict[str, Any]:
     add_layout.addRow("Y (mm)", add_y)
     add_layout.addRow("Rotation", add_rotation)
     add_layout.addRow("", add_button)
+    quick_add_layout.addWidget(add_box)
     details_box, details_layout = create_section_widget(qtwidgets, "Selection Details", spacing=6)
     details = create_text_panel(qtwidgets, max_height=72)
     details_layout.addWidget(details)
@@ -773,7 +807,7 @@ def _build_form() -> dict[str, Any]:
     top_row.setSpacing(6)
     side_column = qtwidgets.QVBoxLayout()
     side_column.setSpacing(6)
-    side_column.addWidget(add_box)
+    side_column.addWidget(quick_add_box)
     side_column.addWidget(details_box)
     side_column.addWidget(status_box)
     top_row.addWidget(selector_box, 3)
@@ -785,7 +819,10 @@ def _build_form() -> dict[str, Any]:
     return {
         "widget": widget,
         "selector_box": selector_box,
+        "selector_details": selector_details,
+        "quick_add_box": quick_add_box,
         "bulk_box": bulk_box,
+        "context_summary": context_summary,
         "component": component,
         "selected_id": selected_id,
         "selected_type": selected_type,

@@ -7,6 +7,7 @@ from ocw_workbench.gui.panels._common import (
     build_panel_container,
     create_button_row_layout,
     create_form_layout,
+    create_compact_header_widget,
     create_hint_label,
     create_inline_status_widget,
     create_section_widget,
@@ -51,14 +52,18 @@ class ConstraintsPanel:
     def refresh(self) -> None:
         context = self.controller_service.get_ui_context(self.doc)
         validation = context.get("validation")
+        component_count = int(context.get("component_count", 0))
+        self._set_validation_scope(component_count)
         if isinstance(validation, dict):
             self._render_report(validation)
         else:
             self._messages = []
             self._set_summary_counts(errors=0, warnings=0)
+            self._set_review_state("Not run", "info")
             self._set_result_overview("Run Validate Layout to check spacing, edge distance, and placement issues.")
             self._clear_results()
             self._clear_detail()
+            self._set_next_step_message("Run Validate after layout or component edits.")
             apply_status_message(self.form["status"], "No validation results yet.", level="info")
 
     def validate(self) -> dict[str, Any]:
@@ -166,9 +171,23 @@ class ConstraintsPanel:
         set_label_text(self.form["state_value"], state_text)
         if hasattr(self.form["state_value"], "setStyleSheet"):
             self.form["state_value"].setStyleSheet(_summary_value_style(state_level))
+        self._set_review_state(_review_state_text(errors, warnings), state_level)
+        self._set_next_step_message(_next_step_text(errors, warnings))
 
     def _set_result_overview(self, message: str) -> None:
         set_label_text(self.form["results_overview"], message)
+
+    def _set_review_state(self, message: str, level: str) -> None:
+        set_label_text(self.form["review_value"], message)
+        if hasattr(self.form["review_value"], "setStyleSheet"):
+            self.form["review_value"].setStyleSheet(_summary_value_style(level))
+
+    def _set_validation_scope(self, component_count: int) -> None:
+        label = "component" if component_count == 1 else "components"
+        set_label_text(self.form["validation_scope"], f"Reviewing {component_count} {label} before Plugins.")
+
+    def _set_next_step_message(self, message: str) -> None:
+        set_label_text(self.form["next_step"], message)
 
     def _clear_results(self) -> None:
         results = self.form["results"]
@@ -289,11 +308,14 @@ def _build_form() -> dict[str, Any]:
         return {
             "widget": object(),
             "validate_button": FallbackButton("Validate Layout"),
+            "validation_scope": FallbackLabel("Reviewing 0 components before Plugins."),
             "error_count": FallbackLabel("0"),
             "warning_count": FallbackLabel("0"),
             "state_value": FallbackLabel("Ready"),
+            "review_value": FallbackLabel("Not run"),
             "results_overview": FallbackLabel(),
             "results": FallbackText(),
+            "next_step": FallbackLabel("Run Validate after layout or component edits."),
             "detail_severity": FallbackLabel("No issue"),
             "detail_component": FallbackLabel("-"),
             "detail_rule": FallbackLabel("-"),
@@ -305,23 +327,27 @@ def _build_form() -> dict[str, Any]:
         }
 
     content, layout = build_panel_container(qtwidgets)
-    intro = create_status_label(qtwidgets, "Run validation and review issues.")
+    intro = create_status_label(qtwidgets, "Step 4 of 5. Validate before Plugins or export work.")
     validate_button = set_button_role(qtwidgets.QPushButton("Validate Layout"), "primary")
     set_tooltip(validate_button, "Run spacing, overlap and edge-distance checks for the current controller.")
     focus_button = set_button_role(qtwidgets.QPushButton("Focus Issue"), "secondary")
     set_enabled(focus_button, False)
     actions = create_button_row_layout(qtwidgets, validate_button, focus_button, spacing=6)
+    validation_scope = create_hint_label(qtwidgets, "Reviewing 0 components before Plugins.")
 
     summary_row = qtwidgets.QHBoxLayout()
     summary_row.setSpacing(6)
     error_count = _summary_card(qtwidgets, "Errors", "0", "error")
     warning_count = _summary_card(qtwidgets, "Warnings", "0", "warning")
     state_value = _summary_card(qtwidgets, "State", "Ready", "success")
+    review_value = _summary_card(qtwidgets, "Review", "Not run", "info")
     summary_row.addWidget(error_count["card"], 1)
     summary_row.addWidget(warning_count["card"], 1)
     summary_row.addWidget(state_value["card"], 1)
+    summary_row.addWidget(review_value["card"], 1)
 
     results_overview = create_status_label(qtwidgets, "Run validation to populate the issue list.")
+    next_step = create_hint_label(qtwidgets, "Run Validate after layout or component edits.")
 
     results = qtwidgets.QTreeWidget()
     results.setColumnCount(4)
@@ -359,7 +385,13 @@ def _build_form() -> dict[str, Any]:
     detail_severity.setStyleSheet(_detail_badge_style("info"))
     detail_component = qtwidgets.QLabel("-")
     detail_component.setStyleSheet("color: #e5e7eb; font-weight: 600;")
-    detail_header = create_inline_status_widget(qtwidgets, detail_severity, detail_component, spacing=6, stretch_index=1)
+    detail_header = create_compact_header_widget(
+        qtwidgets,
+        detail_component,
+        secondary=detail_severity,
+        spacing=6,
+        detail_spacing=2,
+    )
 
     detail_meta = create_form_layout(qtwidgets, spacing=4)
     detail_rule = create_status_label(qtwidgets, "-")
@@ -379,9 +411,11 @@ def _build_form() -> dict[str, Any]:
 
     status = create_status_label(qtwidgets)
     layout.addWidget(intro)
+    layout.addWidget(validation_scope)
     layout.addLayout(actions)
     layout.addLayout(summary_row)
     layout.addWidget(results_overview)
+    layout.addWidget(next_step)
     layout.addWidget(list_box, 1)
     layout.addWidget(detail_box)
     layout.addWidget(status)
@@ -391,11 +425,14 @@ def _build_form() -> dict[str, Any]:
         "widget": widget,
         "validate_button": validate_button,
         "focus_button": focus_button,
+        "validation_scope": validation_scope,
         "error_count": error_count["value"],
         "warning_count": warning_count["value"],
         "state_value": state_value["value"],
+        "review_value": review_value["value"],
         "results_overview": results_overview,
         "results": results,
+        "next_step": next_step,
         "detail_severity": detail_severity,
         "detail_component": detail_component,
         "detail_rule": detail_rule,
@@ -421,6 +458,22 @@ def _result_overview_text(summary: dict[str, Any]) -> str:
     if warnings:
         return f"{total} findings. Review warnings next."
     return "No findings. The layout is currently clear."
+
+
+def _review_state_text(errors: int, warnings: int) -> str:
+    if errors > 0:
+        return "Fix blockers"
+    if warnings > 0:
+        return "Review warnings"
+    return "Ready for Plugins"
+
+
+def _next_step_text(errors: int, warnings: int) -> str:
+    if errors > 0:
+        return "Return to Components, fix the blocking issues, then run Validate again."
+    if warnings > 0:
+        return "Warnings do not block release, but review them before moving on to Plugins."
+    return "Validate is clear. Continue with Plugins or export-related workflows."
 
 
 def _summary_card(qtwidgets: Any, title: str, value: str, level: str) -> dict[str, Any]:
