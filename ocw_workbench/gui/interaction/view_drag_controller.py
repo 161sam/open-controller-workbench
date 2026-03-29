@@ -5,6 +5,7 @@ from typing import Any
 
 from ocw_workbench.gui.interaction.hit_test import hit_test_components
 from ocw_workbench.gui.interaction.lifecycle import ViewEventCallbackRegistry
+from ocw_workbench.gui.interaction.snapping_engine import SnapContext, SnapResult, compute_snap
 from ocw_workbench.gui.interaction.view_event_helpers import (
     extract_position,
     get_active_view,
@@ -13,6 +14,7 @@ from ocw_workbench.gui.interaction.view_event_helpers import (
     is_left_click_down,
     is_left_click_up,
     is_mouse_move,
+    is_shift_pressed,
 )
 from ocw_workbench.gui.interaction.view_place_controller import map_view_point_to_controller_xy
 from ocw_workbench.gui.interaction.view_place_preview import load_preview_state
@@ -57,6 +59,7 @@ class ViewDragController:
         self._view_callbacks = view_callbacks or ViewEventCallbackRegistry()
         self._last_preview_status: str | None = None
         self._last_hover_component_id: str | None = None
+        self._axis_lock: dict[str, Any] | None = None
 
     def start(self, doc: Any) -> bool:
         view = self._active_view(doc)
@@ -69,6 +72,7 @@ class ViewDragController:
         self.armed = True
         self._last_preview_status = None
         self._last_hover_component_id = None
+        self._axis_lock = None
         self.interaction_service.begin_interaction(doc, "drag")
         selected_component_id = self.controller_service.get_ui_context(doc).get("selection")
         if isinstance(selected_component_id, str) and selected_component_id:
@@ -117,6 +121,7 @@ class ViewDragController:
         self.session = None
         self._last_preview_status = None
         self._last_hover_component_id = None
+        self._axis_lock = None
         self._notify_finished()
         clear_interaction_cursor(view)
         if publish_status:
@@ -133,6 +138,7 @@ class ViewDragController:
             if is_escape_event(event_type, payload):
                 self.cancel()
                 return
+            shift_pressed = is_shift_pressed(payload)
             position = extract_position(payload)
             if position is None:
                 return
@@ -144,12 +150,12 @@ class ViewDragController:
                 return
             if is_mouse_move(event_type, payload):
                 if self.session is not None and self.session.dragging:
-                    self.update_preview_from_screen(screen_x, screen_y)
+                    self.update_preview_from_screen(screen_x, screen_y, shift_pressed=shift_pressed)
                 else:
                     self.update_hover_from_screen(screen_x, screen_y)
                 return
             if self.session is not None and self.session.dragging and is_left_click_up(event_type, payload):
-                preview = self.update_preview_from_screen(screen_x, screen_y)
+                preview = self.update_preview_from_screen(screen_x, screen_y, shift_pressed=shift_pressed)
                 if preview is not None and self._preview_allows_commit(preview):
                     self.commit()
         except Exception as exc:
@@ -193,6 +199,7 @@ class ViewDragController:
             grab_offset_y=float(pointer_xy[1]) - float(component["y"]),
             dragging=True,
         )
+        self._axis_lock = None
         self._set_active_drag_component(component_id)
         self.interaction_service.move_component_preview(
             self.doc,
@@ -229,7 +236,13 @@ class ViewDragController:
         self._set_hover_component(component_id, announce=True)
         return component_id
 
-    def update_preview_from_screen(self, screen_x: float, screen_y: float) -> dict[str, Any] | None:
+    def update_preview_from_screen(
+        self,
+        screen_x: float,
+        screen_y: float,
+        *,
+        shift_pressed: bool = False,
+    ) -> dict[str, Any] | None:
         if self.doc is None or self.session is None:
             return None
         if not self._ensure_view_binding():
@@ -243,6 +256,10 @@ class ViewDragController:
         settings = self.interaction_service.get_settings(self.doc)
         x = float(pointer_xy[0]) - float(self.session.grab_offset_x)
         y = float(pointer_xy[1]) - float(self.session.grab_offset_y)
+        axis_lock = self._resolve_axis_lock((x, y), shift_pressed=shift_pressed)
+        x, y = axis_lock["position"]
+        snap = self._resolve_snap((x, y), ignore_component_id=self.session.component_id)
+        x, y = snap.snapped_position
         payload = self.interaction_service.move_component_preview(
             self.doc,
             component_id=self.session.component_id,
@@ -251,6 +268,8 @@ class ViewDragController:
             rotation=self.session.original_rotation,
             grid_mm=float(settings.get("grid_mm", 1.0)),
             snap_enabled=bool(settings.get("snap_enabled", True)),
+            snap=snap.to_payload() if snap.snap_type != "none" else None,
+            axis_lock=self._axis_lock_payload(axis_lock),
         )
         self.overlay_renderer.refresh(self.doc)
         self._publish_preview_status(payload)
@@ -385,6 +404,59 @@ class ViewDragController:
         if reason == "view_unavailable":
             return "Drag mode stopped because the 3D view is no longer available."
         return "Drag cancelled."
+
+    def _resolve_snap(self, position: tuple[float, float], *, ignore_component_id: str | None = None) -> SnapResult:
+        overlay = getattr(self.doc, "OCWOverlayState", None) if self.doc is not None else None
+        if not isinstance(overlay, dict):
+            overlay = self.overlay_renderer.refresh(self.doc)
+        items = []
+        for item in overlay.get("items", []) if isinstance(overlay.get("items"), list) else []:
+            if ignore_component_id is not None and item.get("source_component_id") == ignore_component_id:
+                continue
+            items.append(item)
+        return compute_snap(position, SnapContext(overlay_items=tuple(items)))
+
+    def _resolve_axis_lock(
+        self,
+        position: tuple[float, float],
+        *,
+        shift_pressed: bool,
+    ) -> dict[str, Any]:
+        if self.session is None:
+            return {"position": position, "axis": None, "anchor": position, "active": False}
+        if not shift_pressed:
+            self._axis_lock = None
+            return {"position": position, "axis": None, "anchor": (self.session.original_x, self.session.original_y), "active": False}
+        if self._axis_lock is None:
+            self._axis_lock = {
+                "anchor": (self.session.original_x, self.session.original_y),
+                "axis": None,
+            }
+        anchor = self._axis_lock["anchor"]
+        axis = self._axis_lock["axis"]
+        delta_x = abs(float(position[0]) - float(anchor[0]))
+        delta_y = abs(float(position[1]) - float(anchor[1]))
+        if axis is None and max(delta_x, delta_y) > 0.0:
+            axis = "x" if delta_x >= delta_y else "y"
+            self._axis_lock["axis"] = axis
+        if axis == "x":
+            return {"position": (float(position[0]), float(anchor[1])), "axis": axis, "anchor": anchor, "active": True}
+        if axis == "y":
+            return {"position": (float(anchor[0]), float(position[1])), "axis": axis, "anchor": anchor, "active": True}
+        return {"position": position, "axis": None, "anchor": anchor, "active": True}
+
+    def _axis_lock_payload(self, axis_lock: dict[str, Any]) -> dict[str, Any] | None:
+        if not axis_lock.get("active"):
+            return None
+        anchor = axis_lock.get("anchor")
+        if not isinstance(anchor, tuple) or len(anchor) < 2:
+            return None
+        return {
+            "active": True,
+            "axis": axis_lock.get("axis"),
+            "anchor_x": float(anchor[0]),
+            "anchor_y": float(anchor[1]),
+        }
 
     def _set_hover_component(self, component_id: str | None, *, announce: bool) -> None:
         if self.doc is None:

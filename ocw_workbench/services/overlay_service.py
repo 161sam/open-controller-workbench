@@ -9,7 +9,7 @@ from ocw_workbench.generator.controller_builder import ControllerBuilder
 from ocw_workbench.gui.interaction.view_place_preview import load_preview_state
 from ocw_workbench.gui.overlay.colors import overlay_style
 from ocw_workbench.gui.overlay.labels import component_label, issue_label, zone_label
-from ocw_workbench.gui.overlay.shapes import circle_item, rect_item, slot_item, text_item
+from ocw_workbench.gui.overlay.shapes import circle_item, line_item, rect_item, slot_item, text_item
 from ocw_workbench.services.constraint_overlay_service import ConstraintOverlayService
 from ocw_workbench.services.constraint_service import ConstraintService
 from ocw_workbench.services.controller_service import ControllerService
@@ -272,6 +272,7 @@ class OverlayService:
                 severity=severity,
             )
         )
+        items.extend(self._preview_snap_items(preview, template_id))
         return items
 
     def _preview_component_payload(self, doc: Any, preview: dict[str, Any], mode: str) -> tuple[dict[str, Any], str, str]:
@@ -373,12 +374,85 @@ class OverlayService:
         base = f"{label} @ {x:.1f}, {y:.1f} mm"
         if bool(preview.get("snap_enabled")) and float(preview.get("grid_mm") or 0.0) > 0.0:
             base = f"{base} | Snap {float(preview['grid_mm']):.1f} mm"
+        snap = preview.get("snap") if isinstance(preview.get("snap"), dict) else None
+        if snap is not None:
+            snap_type = str(snap.get("type") or "none")
+            if snap_type == "point":
+                base = f"{base} | Point snap"
+            elif snap_type == "edge":
+                base = f"{base} | Edge snap"
+        axis_lock = preview.get("axis_lock") if isinstance(preview.get("axis_lock"), dict) else None
+        if axis_lock is not None and axis_lock.get("active"):
+            axis = str(axis_lock.get("axis") or "?").upper()
+            base = f"{base} | Axis {axis} lock"
         status = validation.get("status")
         if isinstance(status, str) and status and status != "Valid placement":
             return f"{base} | {status}"
         if mode == "move":
             return f"{base} | Release to commit"
         return f"{base} | Click to place"
+
+    def _preview_snap_items(self, preview: dict[str, Any], item_id: str) -> list[dict[str, Any]]:
+        items: list[dict[str, Any]] = []
+        snap = preview.get("snap") if isinstance(preview.get("snap"), dict) else None
+        if snap is not None:
+            snap_x = float(snap.get("x", preview.get("x", 0.0)) or 0.0)
+            snap_y = float(snap.get("y", preview.get("y", 0.0)) or 0.0)
+            snap_type = str(snap.get("type") or "none")
+            marker_style = overlay_style("snap_point_marker" if snap_type == "point" else "snap_edge_marker")
+            guide_style = overlay_style("snap_guide")
+            items.append(
+                circle_item(
+                    item_id=f"preview_snap_marker:{item_id}",
+                    x=snap_x,
+                    y=snap_y,
+                    diameter=2.4,
+                    style=marker_style,
+                )
+            )
+            preview_x = float(preview.get("x", 0.0) or 0.0)
+            preview_y = float(preview.get("y", 0.0) or 0.0)
+            if abs(preview_x - snap_x) > 1e-6 or abs(preview_y - snap_y) > 1e-6:
+                items.append(
+                    line_item(
+                        item_id=f"preview_snap_guide:{item_id}",
+                        start_x=preview_x,
+                        start_y=preview_y,
+                        end_x=snap_x,
+                        end_y=snap_y,
+                        style=guide_style,
+                    )
+                )
+        axis_lock = preview.get("axis_lock") if isinstance(preview.get("axis_lock"), dict) else None
+        if axis_lock is not None and axis_lock.get("active"):
+            axis = str(axis_lock.get("axis") or "")
+            anchor_x = float(axis_lock.get("anchor_x", preview.get("x", 0.0)) or 0.0)
+            anchor_y = float(axis_lock.get("anchor_y", preview.get("y", 0.0)) or 0.0)
+            preview_x = float(preview.get("x", 0.0) or 0.0)
+            preview_y = float(preview.get("y", 0.0) or 0.0)
+            if axis == "x":
+                items.append(
+                    line_item(
+                        item_id=f"preview_axis_lock:{item_id}",
+                        start_x=anchor_x,
+                        start_y=anchor_y,
+                        end_x=preview_x,
+                        end_y=anchor_y,
+                        style=overlay_style("axis_lock"),
+                    )
+                )
+            elif axis == "y":
+                items.append(
+                    line_item(
+                        item_id=f"preview_axis_lock:{item_id}",
+                        start_x=anchor_x,
+                        start_y=anchor_y,
+                        end_x=anchor_x,
+                        end_y=preview_y,
+                        style=overlay_style("axis_lock"),
+                    )
+                )
+        return items
 
     def _shape_item(
         self,

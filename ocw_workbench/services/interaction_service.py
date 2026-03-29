@@ -116,6 +116,8 @@ class InteractionService:
         rotation: float = 0.0,
         grid_mm: float | None = None,
         snap_enabled: bool | None = None,
+        snap: dict[str, Any] | None = None,
+        axis_lock: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         self.controller_service.library_service.get(template_id)
         settings = self.get_settings(doc)
@@ -142,6 +144,8 @@ class InteractionService:
             snap_enabled=resolved_snap,
             grid_mm=resolved_grid,
             validation=validation,
+            snap=snap,
+            axis_lock=axis_lock,
         )
         self.controller_service.refresh_document_visuals(doc, recompute=False)
         return payload
@@ -155,6 +159,8 @@ class InteractionService:
         rotation: float | None = None,
         grid_mm: float | None = None,
         snap_enabled: bool | None = None,
+        snap: dict[str, Any] | None = None,
+        axis_lock: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         component = self.controller_service.get_component(doc, component_id)
         settings = self.get_settings(doc)
@@ -182,6 +188,8 @@ class InteractionService:
             snap_enabled=resolved_snap,
             grid_mm=resolved_grid,
             validation=validation,
+            snap=snap,
+            axis_lock=axis_lock,
         )
         self.controller_service.refresh_document_visuals(doc, recompute=False)
         return payload

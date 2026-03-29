@@ -113,6 +113,8 @@ def test_view_drag_controller_preview_is_visual_only_until_commit():
             "findings": [],
             "summary": {"error_count": 0, "warning_count": 0, "total_count": 0},
         },
+        "snap": None,
+        "axis_lock": None,
     }
     assert during_state["components"] == before_state["components"]
     assert during_state["controller"] == before_state["controller"]
@@ -318,6 +320,8 @@ def test_view_drag_controller_clamps_and_snaps_to_bounds():
             "findings": preview["validation"]["findings"],
             "summary": preview["validation"]["summary"],
         },
+        "snap": None,
+        "axis_lock": None,
     }
 
 
@@ -358,6 +362,81 @@ def test_view_drag_controller_commit_keeps_dragged_component_selected():
     assert context["selection"] == "btn2"
     assert settings["active_interaction"] is None
     assert settings["move_component_id"] is None
+
+
+def test_view_drag_controller_snaps_to_other_component_edge() -> None:
+    doc = FakeDocument()
+    controller_service = ControllerService()
+    interaction_service = InteractionService(controller_service)
+    controller_service.create_controller(doc, {"id": "demo", "width": 100.0, "depth": 80.0, "height": 30.0})
+    controller_service.add_component(doc, "omron_b3f_1000", component_id="btn1", x=20.0, y=20.0)
+    controller_service.add_component(doc, "omron_b3f_1000", component_id="btn2", x=50.0, y=20.0)
+    controller_service.select_component(doc, "btn1")
+    overlay = RecordingOverlayRenderer(
+        items=[
+            {
+                "id": "component:btn1",
+                "type": "rect",
+                "geometry": {"x": 20.0, "y": 20.0, "width": 14.0, "height": 14.0, "rotation": 0.0},
+                "source_component_id": "btn1",
+            },
+            {
+                "id": "component:btn2",
+                "type": "rect",
+                "geometry": {"x": 50.0, "y": 20.0, "width": 14.0, "height": 14.0, "rotation": 0.0},
+                "source_component_id": "btn2",
+            },
+        ]
+    )
+    controller = ViewDragController(
+        controller_service=controller_service,
+        interaction_service=interaction_service,
+        overlay_renderer=overlay,
+    )
+    controller.doc = doc
+    controller.view = FakeView()
+    controller.armed = True
+
+    controller.handle_view_event({"Type": "SoMouseButtonEvent", "State": "DOWN", "Button": "BUTTON1", "Position": (20, 20)})
+    preview = controller.update_preview_from_screen(43.0, 20.0)
+
+    assert preview is not None
+    assert preview["snap"]["type"] == "edge"
+    assert preview["x"] == 43.0
+    assert preview["y"] == 20.0
+
+
+def test_view_drag_controller_shift_locks_primary_axis() -> None:
+    doc = FakeDocument()
+    controller_service = ControllerService()
+    interaction_service = InteractionService(controller_service)
+    controller_service.create_controller(doc, {"id": "demo", "width": 100.0, "depth": 80.0, "height": 30.0})
+    controller_service.add_component(doc, "omron_b3f_1000", component_id="btn1", x=20.0, y=20.0)
+    overlay = RecordingOverlayRenderer(
+        items=[
+            {
+                "id": "component:btn1",
+                "type": "rect",
+                "geometry": {"x": 20.0, "y": 20.0, "width": 14.0, "height": 14.0, "rotation": 0.0},
+                "source_component_id": "btn1",
+            }
+        ]
+    )
+    controller = ViewDragController(
+        controller_service=controller_service,
+        interaction_service=interaction_service,
+        overlay_renderer=overlay,
+    )
+    controller.doc = doc
+    controller.view = FakeView()
+    controller.armed = True
+
+    controller.handle_view_event({"Type": "SoMouseButtonEvent", "State": "DOWN", "Button": "BUTTON1", "Position": (20, 20)})
+    preview = controller.update_preview_from_screen(34.0, 29.0, shift_pressed=True)
+
+    assert preview is not None
+    assert preview["y"] == 20.0
+    assert preview["axis_lock"] == {"active": True, "axis": "x", "anchor_x": 20.0, "anchor_y": 20.0}
 
 
 def test_view_drag_controller_start_marks_selected_component_as_active():

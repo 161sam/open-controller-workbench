@@ -17,6 +17,8 @@ def serialize_preview_state(
     template_id: str | None = None,
     component_id: str | None = None,
     validation: dict[str, Any] | None = None,
+    snap: dict[str, Any] | None = None,
+    axis_lock: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     payload = {
         "version": PREVIEW_SCHEMA_VERSION,
@@ -27,6 +29,8 @@ def serialize_preview_state(
         "snap_enabled": None,
         "grid_mm": None,
         "validation": None,
+        "snap": None,
+        "axis_lock": None,
     }
     if template_id is not None:
         payload["template_id"] = str(template_id)
@@ -34,6 +38,10 @@ def serialize_preview_state(
         payload["component_id"] = str(component_id)
     if isinstance(validation, dict):
         payload["validation"] = dict(validation)
+    if isinstance(snap, dict):
+        payload["snap"] = dict(snap)
+    if isinstance(axis_lock, dict):
+        payload["axis_lock"] = dict(axis_lock)
     return payload
 
 
@@ -54,6 +62,8 @@ def load_preview_state(doc: Any) -> dict[str, Any] | None:
             template_id=template_id if isinstance(template_id, str) and template_id else None,
             component_id=component_id if isinstance(component_id, str) and component_id else None,
             validation=payload.get("validation") if isinstance(payload.get("validation"), dict) else None,
+            snap=payload.get("snap") if isinstance(payload.get("snap"), dict) else None,
+            axis_lock=payload.get("axis_lock") if isinstance(payload.get("axis_lock"), dict) else None,
         )
         preview["version"] = int(payload.get("version", PREVIEW_SCHEMA_VERSION) or PREVIEW_SCHEMA_VERSION)
         preview["snap_enabled"] = (
@@ -77,6 +87,8 @@ def store_preview_state(
     snap_enabled: bool | None = None,
     grid_mm: float | None = None,
     validation: dict[str, Any] | None = None,
+    snap: dict[str, Any] | None = None,
+    axis_lock: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     payload = serialize_preview_state(
         x=x,
@@ -86,6 +98,8 @@ def store_preview_state(
         template_id=template_id,
         component_id=component_id,
         validation=validation,
+        snap=snap,
+        axis_lock=axis_lock,
     )
     payload["snap_enabled"] = None if snap_enabled is None else bool(snap_enabled)
     payload["grid_mm"] = None if grid_mm is None else float(grid_mm)

@@ -83,3 +83,20 @@ def is_escape_event(event_type: str, payload: dict[str, Any]) -> bool:
     key = str(payload.get("Key") or payload.get("key") or payload.get("Printable") or "").upper()
     state = str(payload.get("State") or payload.get("state") or "").upper()
     return key in {"ESCAPE", "ESC"} and state in {"DOWN", ""}
+
+
+def is_shift_pressed(payload: dict[str, Any]) -> bool:
+    candidates = (
+        payload.get("ShiftDown"),
+        payload.get("shift_down"),
+        payload.get("shift"),
+    )
+    for value in candidates:
+        if isinstance(value, bool):
+            return value
+    modifiers = payload.get("Modifiers") or payload.get("modifiers")
+    if isinstance(modifiers, (list, tuple, set)):
+        return any(str(item).upper() == "SHIFT" for item in modifiers)
+    if isinstance(modifiers, str):
+        return "SHIFT" in modifiers.upper()
+    return False

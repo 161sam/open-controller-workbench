@@ -85,6 +85,8 @@ def test_preview_metadata_roundtrip():
         "snap_enabled": None,
         "grid_mm": None,
         "validation": None,
+        "snap": None,
+        "axis_lock": None,
     }
     assert getattr(doc, PREVIEW_METADATA_KEY, None) is None
 
@@ -126,6 +128,8 @@ def test_view_place_controller_preview_updates_metadata_only():
             "findings": [],
             "summary": {"error_count": 0, "warning_count": 0, "total_count": 0},
         },
+        "snap": None,
+        "axis_lock": None,
     }
     assert load_preview_state(doc) == payload
     assert after_state == before_state
@@ -307,6 +311,54 @@ def test_overlay_service_valid_preview_label_includes_coordinates_and_action_hin
     assert "@ 12.0, 19.0 mm" in preview_label["label"]
     assert "Snap 1.0 mm" in preview_label["label"]
     assert preview_label["label"].endswith("Click to place")
+
+
+def test_overlay_service_includes_snap_marker_and_axis_lock_guide():
+    doc = FakeDocument()
+    controller_service = ControllerService()
+    controller_service.create_controller(doc, {"id": "demo", "width": 100.0, "depth": 80.0, "height": 30.0, "top_thickness": 3.0})
+    store_preview_state(
+        doc,
+        "omron_b3f_1000",
+        x=30.0,
+        y=20.0,
+        snap={"type": "point", "x": 30.0, "y": 20.0, "target_reference": "component:btn1", "distance": 0.0},
+        axis_lock={"active": True, "axis": "x", "anchor_x": 10.0, "anchor_y": 20.0},
+    )
+
+    from ocw_workbench.services.overlay_service import OverlayService
+
+    overlay = OverlayService(controller_service=controller_service).build_overlay(doc)
+    item_ids = {item["id"] for item in overlay["items"]}
+    preview_label = next(item for item in overlay["items"] if item["id"] == "preview_label:omron_b3f_1000")
+
+    assert "preview_snap_marker:omron_b3f_1000" in item_ids
+    assert "preview_axis_lock:omron_b3f_1000" in item_ids
+    assert "Point snap" in preview_label["label"]
+    assert "Axis X lock" in preview_label["label"]
+
+
+def test_view_place_controller_shift_locks_primary_axis():
+    doc = FakeDocument()
+    controller_service = ControllerService()
+    interaction_service = InteractionService(controller_service)
+    controller_service.create_controller(doc, {"id": "demo", "width": 100.0, "depth": 80.0, "height": 30.0})
+    controller = ViewPlaceController(
+        controller_service=controller_service,
+        interaction_service=interaction_service,
+    )
+    controller.doc = doc
+    controller.view = FakeView()
+    controller.active_template_id = "omron_b3f_1000"
+    controller.preview_active = True
+
+    first = controller.update_preview_from_screen(10.0, 10.0, shift_pressed=True)
+    second = controller.update_preview_from_screen(25.0, 14.0, shift_pressed=True)
+
+    assert first is not None
+    assert second is not None
+    assert second["y"] == 10.0
+    assert second["axis_lock"] == {"active": True, "axis": "x", "anchor_x": 10.0, "anchor_y": 10.0}
 
 
 def test_view_place_controller_on_committed_fires_after_each_click():
