@@ -40,8 +40,6 @@ if repo_root is None:
 if repo_root not in sys.path:
     sys.path.insert(0, repo_root)
 
-print("OCW InitGui loaded:", repo_root)
-
 try:
     import FreeCADGui
     from ocw_workbench.gui.panels._common import qt_self_check
@@ -49,7 +47,6 @@ try:
 
     qt_self_check()
     FreeCADGui.addWorkbench(OpenControllerWorkbench())
-    print("OCW workbench registered")
 except Exception as exc:
     print("OCW InitGui error:", exc)
     traceback.print_exc()

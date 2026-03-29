@@ -10,11 +10,14 @@ RUNTIME_TREE_PATHS = [
     "ocw_kicad",
     "ocw_workbench",
     "resources",
+    "examples",
+    "screenshots",
 ]
 RELEASE_DOC_PATHS = [
     "README.md",
     "CHANGELOG.md",
     "RELEASE_NOTES_v0.1.md",
+    "docs/README.md",
     "docs/plugin-installation.md",
     "docs/release-process.md",
     "docs/release-checklist.md",
@@ -23,7 +26,9 @@ RELEASE_DOC_PATHS = [
 ROOT_RUNTIME_FILES = [
     "Init.py",
     "InitGui.py",
+    "LICENSE",
     "ocw_kicad_plugin.py",
+    "VERSION",
 ]
 
 

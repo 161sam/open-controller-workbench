@@ -1,61 +1,43 @@
 # Release Notes v0.1.0
 
-## Summary
+Open Controller Workbench is a FreeCAD workbench for designing custom MIDI controller hardware mechanically and structurally.
 
-`v0.1.0` is the first release-preparation milestone for Open Controller Workbench.
+`v0.1.0` is the first public-facing release candidate for the core OCW workflow:
 
-This release packages the current FreeCAD workbench architecture into a coherent alpha feature set for:
+- create a controller from a template
+- inspect real 3D components in the tree
+- place and drag components in the 3D view
+- model PCB reference and mounting
+- export board-oriented data toward KiCad
 
-- template-driven controller creation
-- component placement and refinement
-- parameterized controller regeneration
-- FCStd-assisted template import
-- constraint and overlay-assisted layout iteration
+## Highlights
 
-## Included in v0.1.0
+- Template-based controller creation
+- Real component objects and component groups in the FreeCAD document tree
+- PCB reference plane with mounting bosses and simple screws
+- Selection-driven placement and drag workflow
+- Constraint and overlay feedback for layout work
+- KiCad bridge through `ocw_kicad`
 
-- FreeCAD workbench bootstrap through `InitGui.py`
-- Create flow from templates and variants
-- Template parameters, presets, and project-scoped parameter persistence
-- Re-parameterization of reopened projects when source metadata is available
-- FCStd import:
-  - Stage A YAML template generation
-  - Stage B FCStd-backed base geometry references
-- Template inspector and validated save flow
-- Interactive placement and drag with preview validation and cleanup hardening
-- Undo-safe transaction boundaries for interactive commit actions
-- Component property editing
-- Multi-selection and conservative bulk edit
-- Layout productivity operations:
-  - align and distribute
-  - rotate and mirror
-  - duplicate and array placement
+## Who This Is For
 
-## Installation
+- makers building custom MIDI controllers
+- hardware developers shaping enclosures before PCB completion
+- FreeCAD users who want a controller-focused workbench instead of a generic CAD flow
 
-Use the repository root as the FreeCAD module directory. See:
+## Install
+
+- Download the FreeCAD module zip or source
+- Put `OpenControllerWorkbench` into your FreeCAD `Mod` directory
+- Start FreeCAD and switch to `Open Controller Workbench`
+
+See:
 
 - [README](README.md)
 - [Installation guide](docs/plugin-installation.md)
 
-## Recommended validation before tagging
+## Current Status
 
-- Run the unit test suite
-- Run `tests/unit/test_release_metadata.py`
-- Verify FreeCAD loads the workbench from a clean symlinked module root
-- Verify icons, template YAML files, variants, and component libraries are available at runtime
+Early but functional.
 
-## Known limitations
-
-- Alpha-quality release with active architectural evolution
-- No final public license selection yet
-- Mirror is modeled through component rotation semantics
-- Duplicate and array placement do not perform smart constraint-aware packing
-- No release publishing automation is included in this repository yet
-
-## Explicit non-goals for v0.1.0
-
-- No full constraint solver
-- No advanced interactive layout gizmos
-- No complete PartDesign-native parametric rebuild model
-- No release publishing from CI in this task
+Core workflow is ready for evaluation and demos, but the project is still evolving and advanced ECAD roundtrip remains a later step.

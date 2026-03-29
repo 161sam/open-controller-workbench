@@ -1,0 +1,23 @@
+# Documentation
+
+Start here if you want the shortest path into OCW.
+
+## First Steps
+
+- [Installation](plugin-installation.md)
+- [User Guide](user-guide.md)
+- [Workflows](workflows.md)
+
+## Architecture
+
+- [Architecture Overview](architecture.md)
+- [Component Model](architecture/COMPONENT_MODEL.md)
+- [Template Model](architecture/TEMPLATE_MODEL.md)
+- [PCB Integration Model](architecture/PCB_INTEGRATION_MODEL.md)
+
+## Release
+
+- [Changelog](../CHANGELOG.md)
+- [Release Notes v0.1](../RELEASE_NOTES_v0.1.md)
+- [Release Checklist](release-checklist.md)
+- [Release Process](release-process.md)

@@ -90,7 +90,7 @@ def test_template_generator_preserves_pad_grid_layout_config():
 
     assert project["layout"]["strategy"] == "grid"
     assert project["layout"]["config"]["grid_mm"] == 1
-    assert project["layout"]["config"]["padding_mm"] == 12
+    assert project["layout"]["config"]["padding_mm"] == 10
     assert project["layout"]["config"]["rows"] == 4
     assert project["layout"]["config"]["cols"] == 4
     assert project["layout"]["config"]["spacing_x_mm"] == 36

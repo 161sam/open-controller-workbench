@@ -25,9 +25,13 @@ def test_build_workbench_archive_contains_runtime_paths_and_no_test_tree(tmp_pat
         names = set(archive.namelist())
 
     assert f"{MODULE_ROOT_NAME}/InitGui.py" in names
+    assert f"{MODULE_ROOT_NAME}/LICENSE" in names
+    assert f"{MODULE_ROOT_NAME}/VERSION" in names
     assert f"{MODULE_ROOT_NAME}/ocw_workbench/workbench.py" in names
     assert f"{MODULE_ROOT_NAME}/resources/icons/workbench.svg" in names
     assert f"{MODULE_ROOT_NAME}/ocw_workbench/templates/library/encoder_module.yaml" in names
+    assert f"{MODULE_ROOT_NAME}/examples/projects/pad_grid_demo.yaml" in names
+    assert f"{MODULE_ROOT_NAME}/examples/README.md" in names
     assert f"{MODULE_ROOT_NAME}/docs/plugin-installation.md" in names
     assert not any(name.startswith(f"{MODULE_ROOT_NAME}/tests/") for name in names)
     assert not any("/__pycache__/" in name for name in names)

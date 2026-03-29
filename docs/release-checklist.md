@@ -7,6 +7,7 @@ This checklist is for preparing `v0.1.0` and later early OCW releases.
 ## Metadata
 
 - Confirm `pyproject.toml` version matches `ocw_workbench/version.py`
+- Confirm `VERSION` matches the package version
 - Confirm `ocw_workbench/__init__.py` exposes `__version__`
 - Confirm README references the same release version
 
@@ -22,7 +23,10 @@ This checklist is for preparing `v0.1.0` and later early OCW releases.
 - Update `CHANGELOG.md`
 - Update `RELEASE_NOTES_v0.1.md` or the current release-notes document
 - Update `docs/release-process.md` if the workflow or artifact set changes
+- Verify `docs/README.md` points new users to installation and quick-start material
 - Verify README installation and first-run sections
+- Verify `examples/README.md` matches the current demo templates
+- Verify `screenshots/` contains real FreeCAD captures before publishing the public release
 - Verify docs links:
   - user guide
   - workflows
