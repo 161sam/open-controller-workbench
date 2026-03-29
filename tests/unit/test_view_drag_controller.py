@@ -485,3 +485,128 @@ def test_view_drag_controller_second_click_during_active_drag_is_ignored():
     controller.handle_view_event({"Type": "SoMouseButtonEvent", "State": "DOWN", "Button": "BUTTON1", "Position": (25, 25)})
 
     assert controller.session is first_session
+
+
+def test_view_drag_controller_can_reenter_after_cancel():
+    doc = FakeDocument()
+    controller_service = ControllerService()
+    interaction_service = InteractionService(controller_service)
+    controller_service.create_controller(doc, {"id": "demo", "width": 100.0, "depth": 80.0, "height": 30.0})
+    controller_service.add_component(doc, "omron_b3f_1000", component_id="btn1", x=20.0, y=20.0)
+    overlay = RecordingOverlayRenderer(
+        items=[
+            {
+                "id": "component:btn1",
+                "type": "rect",
+                "geometry": {"x": 20.0, "y": 20.0, "width": 14.0, "height": 14.0, "rotation": 0.0},
+                "source_component_id": "btn1",
+            }
+        ]
+    )
+    controller = ViewDragController(
+        controller_service=controller_service,
+        interaction_service=interaction_service,
+        overlay_renderer=overlay,
+    )
+    controller.doc = doc
+    controller.view = FakeView()
+    controller.armed = True
+
+    controller.handle_view_event({"Type": "SoMouseButtonEvent", "State": "DOWN", "Button": "BUTTON1", "Position": (20, 20)})
+    controller.handle_view_event({"Type": "SoLocation2Event", "Position": (30, 30)})
+    controller.handle_view_event({"Type": "SoKeyboardEvent", "State": "DOWN", "Key": "ESCAPE"})
+
+    assert controller.session is None
+    assert load_preview_state(doc) is None
+    assert interaction_service.get_settings(doc)["move_component_id"] is None
+
+    controller.doc = doc
+    controller.view = FakeView()
+    controller.armed = True
+    controller.handle_view_event({"Type": "SoMouseButtonEvent", "State": "DOWN", "Button": "BUTTON1", "Position": (20, 20)})
+    controller.handle_view_event({"Type": "SoLocation2Event", "Position": (34, 32)})
+    controller.handle_view_event({"Type": "SoMouseButtonEvent", "State": "UP", "Button": "BUTTON1", "Position": (34, 32)})
+
+    moved = controller_service.get_component(doc, "btn1")
+    settings = interaction_service.get_settings(doc)
+    assert moved["x"] == 34.0
+    assert moved["y"] == 32.0
+    assert settings["move_component_id"] is None
+    assert settings["hovered_component_id"] is None
+
+
+def test_view_drag_controller_remains_operable_after_full_sync():
+    doc = FakeDocument()
+    controller_service = ControllerService()
+    interaction_service = InteractionService(controller_service)
+    controller_service.create_controller(doc, {"id": "demo", "width": 100.0, "depth": 80.0, "height": 30.0})
+    controller_service.add_component(doc, "omron_b3f_1000", component_id="btn1", x=20.0, y=20.0)
+    overlay = RecordingOverlayRenderer(
+        items=[
+            {
+                "id": "component:btn1",
+                "type": "rect",
+                "geometry": {"x": 20.0, "y": 20.0, "width": 14.0, "height": 14.0, "rotation": 0.0},
+                "source_component_id": "btn1",
+            }
+        ]
+    )
+    controller = ViewDragController(
+        controller_service=controller_service,
+        interaction_service=interaction_service,
+        overlay_renderer=overlay,
+    )
+    controller.doc = doc
+    controller.view = FakeView()
+    controller.armed = True
+
+    controller_service.sync_document(doc)
+
+    controller.handle_view_event({"Type": "SoMouseButtonEvent", "State": "DOWN", "Button": "BUTTON1", "Position": (20, 20)})
+    controller.handle_view_event({"Type": "SoLocation2Event", "Position": (36, 27)})
+    controller.handle_view_event({"Type": "SoMouseButtonEvent", "State": "UP", "Button": "BUTTON1", "Position": (36, 27)})
+
+    moved = controller_service.get_component(doc, "btn1")
+    assert moved["x"] == 36.0
+    assert moved["y"] == 27.0
+
+
+def test_view_drag_controller_uses_primary_selection_with_multi_select():
+    doc = FakeDocument()
+    controller_service = ControllerService()
+    interaction_service = InteractionService(controller_service)
+    controller_service.create_controller(doc, {"id": "demo", "width": 100.0, "depth": 80.0, "height": 30.0})
+    controller_service.add_component(doc, "omron_b3f_1000", component_id="btn1", x=20.0, y=20.0)
+    controller_service.add_component(doc, "omron_b3f_1000", component_id="btn2", x=50.0, y=20.0)
+    controller_service.set_selected_component_ids(doc, ["btn1", "btn2"], primary_id="btn2")
+    overlay = RecordingOverlayRenderer(
+        items=[
+            {
+                "id": "component:btn2",
+                "type": "rect",
+                "geometry": {"x": 50.0, "y": 20.0, "width": 14.0, "height": 14.0, "rotation": 0.0},
+                "source_component_id": "btn2",
+            }
+        ]
+    )
+    controller = ViewDragController(
+        controller_service=controller_service,
+        interaction_service=interaction_service,
+        overlay_renderer=overlay,
+    )
+    controller.doc = doc
+    controller.view = FakeView()
+    controller.armed = True
+
+    controller.handle_view_event({"Type": "SoMouseButtonEvent", "State": "DOWN", "Button": "BUTTON1", "Position": (50, 20)})
+    controller.handle_view_event({"Type": "SoLocation2Event", "Position": (62, 24)})
+    controller.handle_view_event({"Type": "SoMouseButtonEvent", "State": "UP", "Button": "BUTTON1", "Position": (62, 24)})
+
+    btn1 = controller_service.get_component(doc, "btn1")
+    btn2 = controller_service.get_component(doc, "btn2")
+    context = controller_service.get_ui_context(doc)
+    assert btn1["x"] == 20.0
+    assert btn1["y"] == 20.0
+    assert btn2["x"] == 62.0
+    assert btn2["y"] == 24.0
+    assert context["selection"] == "btn2"

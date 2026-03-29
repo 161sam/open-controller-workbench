@@ -35,7 +35,7 @@ layout:
   strategy: "grid"
   config:
     grid_mm: 1
-    padding_mm: 12
+    padding_mm: 10
     rows: "${parameters.pad_count_y}"
     cols: "${parameters.pad_count_x}"
     spacing_x_mm: 36
