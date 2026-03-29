@@ -748,7 +748,7 @@ def test_constraints_panel_exposes_validate_step_state_and_release_hint():
     panel = ConstraintsPanel(doc, controller_service=service)
 
     assert panel.form["review_value"].text == "Not run"
-    assert "Run Validate" in panel.form["next_step"].text
+    assert "next_step" not in panel.form
     assert "Reviewing 1 component" in panel.form["validation_scope"].text
     assert panel.form["empty_state_box"].visible is True
     assert panel.form["empty_state_title"].text == "No validation results yet"
@@ -756,7 +756,6 @@ def test_constraints_panel_exposes_validate_step_state_and_release_hint():
     panel.validate()
 
     assert panel.form["review_value"].text == "Ready for Plugins"
-    assert "Continue with Plugins" in panel.form["next_step"].text
     assert panel.form["success_box"].visible is True
     assert panel.form["success_title"].text == "Layout valid - ready for export"
 

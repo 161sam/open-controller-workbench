@@ -207,7 +207,7 @@ class ComponentsPanel:
         values = self._read_form_values(model)
         updates = self._changed_updates(model, values)
         if not updates:
-            self._publish_status(f"No changes to apply for '{component_id}'.")
+            self._publish_status(f"No changes to apply for '{component_id}'.", level="info")
             return self.controller_service.get_state(self.doc)
         target_x = float(values["x"])
         target_y = float(values["y"])
@@ -231,7 +231,7 @@ class ComponentsPanel:
         if state is None:
             return self.controller_service.get_state(self.doc)
         self.refresh_components()
-        self._publish_status(f"Changes applied to '{component_id}'.")
+        self._publish_status(f"Changes applied to '{component_id}'.", level="success")
         if self.on_components_changed is not None:
             self.on_components_changed(state)
         return state
@@ -247,11 +247,11 @@ class ComponentsPanel:
         values = self._bulk_values()
         updates_by_component = service.build_updates(model, values, apply_fields)
         if not updates_by_component:
-            self._publish_status("No bulk changes selected. Enable at least one bulk field to apply.")
+            self._publish_status("No bulk changes selected. Enable at least one bulk field to apply.", level="warning")
             return self.controller_service.get_state(self.doc)
         state = self.controller_service.bulk_update_components(self.doc, updates_by_component)
         self.refresh_components()
-        self._publish_status(f"Applied bulk changes to {len(component_ids)} components.")
+        self._publish_status(f"Applied bulk changes to {len(component_ids)} components.", level="success")
         if self.on_components_changed is not None:
             self.on_components_changed(state)
         return state
@@ -268,7 +268,7 @@ class ComponentsPanel:
             rotation=widget_value(self.form["add_rotation"]),
         )
         self.refresh_components()
-        self._publish_status(f"Added '{library_ref}'. Review its position and adjust as needed.")
+        self._publish_status(f"Added '{library_ref}'. Review its position and adjust as needed.", level="success")
         if self.on_components_changed is not None:
             self.on_components_changed(state)
         return state
@@ -279,14 +279,15 @@ class ComponentsPanel:
             raise ValueError("No component selected")
         settings = self.interaction_service.arm_move(self.doc, component_id)
         self._publish_status(
-            f"3D move is active for '{component_id}'. Click in the view to choose a new position, or edit X/Y here."
+            f"3D move is active for '{component_id}'. Click in the view to choose a new position, or edit X/Y here.",
+            level="info",
         )
         return settings
 
     def snap_selected_component(self) -> dict[str, Any]:
         result = self.interaction_service.snap_selected_component(self.doc)
         self.refresh_components()
-        self._publish_status(f"Snapped '{result['component_id']}' to the current grid.")
+        self._publish_status(f"Snapped '{result['component_id']}' to the current grid.", level="success")
         if self.on_components_changed is not None:
             self.on_components_changed(result["state"])
         return result
@@ -295,7 +296,7 @@ class ComponentsPanel:
         try:
             self.load_selected_component()
         except Exception as exc:
-            self._publish_status(_friendly_component_error("Could not load component details", exc))
+            self._publish_status(_friendly_component_error("Could not load component details", exc), level="error")
 
     def handle_category_changed(self, *_args: Any) -> None:
         self.populate_add_library_components()
@@ -304,19 +305,19 @@ class ComponentsPanel:
         try:
             self.update_selected_component()
         except Exception as exc:
-            self._publish_status(_friendly_component_error("Could not apply component changes", exc))
+            self._publish_status(_friendly_component_error("Could not apply component changes", exc), level="error")
 
     def handle_add_clicked(self) -> None:
         try:
             self.add_component()
         except Exception as exc:
-            self._publish_status(_friendly_component_error("Could not add component", exc))
+            self._publish_status(_friendly_component_error("Could not add component", exc), level="error")
 
     def handle_empty_state_cta_clicked(self) -> None:
         target = self.form.get("add_component") or self.form.get("add_button")
         if target is not None and hasattr(target, "setFocus"):
             target.setFocus()
-        self._publish_status("Quick Add is ready. Choose a component and add the first placement.")
+        self._publish_status("Quick Add is ready. Choose a component and add the first placement.", level="info")
 
     def handle_arm_move_clicked(self) -> None:
         try:
@@ -325,24 +326,24 @@ class ComponentsPanel:
             else:
                 self.arm_move_for_selected()
         except Exception as exc:
-            self._publish_status(_friendly_component_error("Could not start 3D move", exc))
+            self._publish_status(_friendly_component_error("Could not start 3D move", exc), level="error")
 
     def handle_snap_clicked(self) -> None:
         try:
             self.snap_selected_component()
         except Exception as exc:
-            self._publish_status(_friendly_component_error("Could not snap component", exc))
+            self._publish_status(_friendly_component_error("Could not snap component", exc), level="error")
 
     def handle_reset_clicked(self) -> None:
         try:
             if len(self.controller_service.get_selected_component_ids(self.doc)) > 1:
                 self.load_bulk_selection(notify=False)
-                self._publish_status("Bulk edit reset to the current selection.")
+                self._publish_status("Bulk edit reset to the current selection.", level="info")
             else:
                 self.load_selected_component(notify=False)
-                self._publish_status("Component editor reset to the current state.")
+                self._publish_status("Component editor reset to the current state.", level="info")
         except Exception as exc:
-            self._publish_status(_friendly_component_error("Could not reset component properties", exc))
+            self._publish_status(_friendly_component_error("Could not reset component properties", exc), level="error")
 
     def accept(self) -> bool:
         self.update_selected_component()
@@ -358,11 +359,10 @@ class ComponentsPanel:
                 combo.setCurrentIndex(index)
                 return
 
-    def _publish_status(self, message: str) -> None:
-        level = "error" if message.lower().startswith("could not") else "info"
+    def _publish_status(self, message: str, level: str = "info") -> None:
         apply_status_message(self.form["status"], message, level=level)
         if self.on_status is not None:
-            self.on_status(message)
+            self.on_status(message, level)
 
     def _connect_events(self) -> None:
         if hasattr(self.form["component"], "currentIndexChanged"):

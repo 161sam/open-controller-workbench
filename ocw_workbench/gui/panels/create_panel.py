@@ -190,7 +190,7 @@ class CreatePanel:
             set_text(self.form["marketplace_registry_url"], result["remote_url"])
         self._sync_marketplace_selection()
         if result["warnings"]:
-            self._publish_status(result["warnings"][0])
+            self._publish_status(result["warnings"][0], level="warning")
         return result["entries"]
 
     def create_controller(self) -> dict[str, Any]:
@@ -203,12 +203,12 @@ class CreatePanel:
             state = self.controller_service.create_from_variant(self.doc, variant_id, overrides=runtime_overrides)
             recent_name = f"{self.userdata_service.resolve_template_name(template_id)} / {self.userdata_service.resolve_variant_name(variant_id)}"
             self.userdata_service.record_recent(template_id=template_id, variant_id=variant_id, name=recent_name)
-            self._publish_status(f"Created '{variant_id}'. Review geometry, then refine the layout.")
+            self._publish_status(f"Created '{variant_id}'. Review geometry, then refine the layout.", level="success")
         else:
             state = self.controller_service.create_from_template(self.doc, template_id, overrides=runtime_overrides)
             recent_name = self.userdata_service.resolve_template_name(template_id)
             self.userdata_service.record_recent(template_id=template_id, variant_id=None, name=recent_name)
-            self._publish_status(f"Created '{template_id}'. Review geometry, then refine the layout.")
+            self._publish_status(f"Created '{template_id}'. Review geometry, then refine the layout.", level="success")
         self.refresh()
         if self.on_created is not None:
             self.on_created(state)
@@ -225,7 +225,7 @@ class CreatePanel:
             overrides=self._runtime_overrides(),
         )
         self.refresh()
-        self._publish_status("Parameters applied.")
+        self._publish_status("Parameters applied.", level="success")
         return state
 
     def toggle_template_favorite(self) -> None:
@@ -236,7 +236,7 @@ class CreatePanel:
         favorites = self.userdata_service.toggle_favorite("template", template_id, name=str(template["name"]))
         status = "saved to favorites" if any(entry.reference_id == template_id and entry.type == "template" for entry in favorites) else "removed from favorites"
         self.refresh()
-        self._publish_status(f"Template '{template_id}' {status}.")
+        self._publish_status(f"Template '{template_id}' {status}.", level="success")
 
     def toggle_variant_favorite(self) -> None:
         variant_id = self.selected_variant_id()
@@ -246,21 +246,21 @@ class CreatePanel:
         favorites = self.userdata_service.toggle_favorite("variant", variant_id, name=str(variant["name"]))
         status = "saved to favorites" if any(entry.reference_id == variant_id and entry.type == "variant" for entry in favorites) else "removed from favorites"
         self.refresh()
-        self._publish_status(f"Variant '{variant_id}' {status}.")
+        self._publish_status(f"Variant '{variant_id}' {status}.", level="success")
 
     def load_selected_favorite(self) -> None:
         entry = self.form["favorites_widget"].selected()
         if entry is None:
             raise ValueError("No favorite selected")
         self._apply_selection(template_id=entry["template_id"], variant_id=entry.get("variant_id"))
-        self._publish_status("Favorite loaded.")
+        self._publish_status("Favorite loaded.", level="success")
 
     def load_selected_recent(self) -> None:
         entry = self.form["recents_widget"].selected()
         if entry is None:
             raise ValueError("No recent entry selected")
         self._apply_selection(template_id=entry["template_id"], variant_id=entry.get("variant_id"))
-        self._publish_status("Recent item loaded.")
+        self._publish_status("Recent item loaded.", level="success")
 
     def load_selected_preset(self) -> None:
         entry = self.form["presets_widget"].selected()
@@ -272,7 +272,7 @@ class CreatePanel:
         self._parameter_values = deepcopy(overrides.get("parameters", {})) if isinstance(overrides.get("parameters"), dict) else {}
         self._parameter_preset_id = str(overrides.get("parameter_preset_id")) if overrides.get("parameter_preset_id") else None
         self.refresh_parameters()
-        self._publish_status(f"Preset '{preset.name}' loaded.")
+        self._publish_status(f"Preset '{preset.name}' loaded.", level="success")
 
     def save_current_preset(self) -> None:
         template_id = self.selected_template_id()
@@ -297,7 +297,7 @@ class CreatePanel:
             overrides=self._runtime_overrides(),
         )
         self.refresh()
-        self._publish_status(f"Preset '{preset.name}' saved.")
+        self._publish_status(f"Preset '{preset.name}' saved.", level="success")
 
     def selected_marketplace_entry(self) -> dict[str, Any] | None:
         return self._marketplace_lookup.get(current_text(self.form["marketplace_list"]))
@@ -308,7 +308,7 @@ class CreatePanel:
             raise ValueError("No marketplace template selected")
         result = self.template_marketplace_service.apply_entry(entry)
         self._apply_selection(template_id=result["template_id"], variant_id=None)
-        self._publish_status(f"Template '{result['template_id']}' applied.")
+        self._publish_status(f"Template '{result['template_id']}' applied.", level="success")
         return result
 
     def show_selected_marketplace_details(self) -> str:
@@ -317,7 +317,7 @@ class CreatePanel:
             raise ValueError("No marketplace template selected")
         details = self.template_marketplace_service.details_text(entry)
         set_text(self.form["marketplace_details"], details)
-        self._publish_status(f"Showing details for '{entry['name']}'.")
+        self._publish_status(f"Showing details for '{entry['name']}'.", level="info")
         return details
 
     def handle_template_changed(self, *_args: Any) -> None:
@@ -337,49 +337,49 @@ class CreatePanel:
         try:
             self.create_controller()
         except Exception as exc:
-            self._publish_status(_friendly_create_error("Could not create controller", exc))
+            self._publish_status(_friendly_create_error("Could not create controller", exc), level="error")
 
     def handle_toggle_template_favorite(self) -> None:
         try:
             self.toggle_template_favorite()
         except Exception as exc:
-            self._publish_status(str(exc))
+            self._publish_status(str(exc), level="error")
 
     def handle_toggle_variant_favorite(self) -> None:
         try:
             self.toggle_variant_favorite()
         except Exception as exc:
-            self._publish_status(str(exc))
+            self._publish_status(str(exc), level="error")
 
     def handle_load_favorite(self) -> None:
         try:
             self.load_selected_favorite()
         except Exception as exc:
-            self._publish_status(str(exc))
+            self._publish_status(str(exc), level="error")
 
     def handle_load_recent(self) -> None:
         try:
             self.load_selected_recent()
         except Exception as exc:
-            self._publish_status(str(exc))
+            self._publish_status(str(exc), level="error")
 
     def handle_load_preset(self) -> None:
         try:
             self.load_selected_preset()
         except Exception as exc:
-            self._publish_status(str(exc))
+            self._publish_status(str(exc), level="error")
 
     def handle_save_preset(self) -> None:
         try:
             self.save_current_preset()
         except Exception as exc:
-            self._publish_status(str(exc))
+            self._publish_status(str(exc), level="error")
 
     def handle_apply_parameters_clicked(self) -> None:
         try:
             self.apply_parameters()
         except Exception as exc:
-            self._publish_status(_friendly_create_error("Could not apply parameters", exc))
+            self._publish_status(_friendly_create_error("Could not apply parameters", exc), level="error")
 
     def handle_parameter_widget_changed(self, *_args: Any) -> None:
         self._parameter_values = self.form["parameter_editor"].values()
@@ -398,7 +398,7 @@ class CreatePanel:
         }
         self.refresh_preview()
         self._update_actions()
-        self._publish_status("Preset applied.")
+        self._publish_status("Preset applied.", level="success")
 
     def handle_marketplace_search_changed(self, *_args: Any) -> None:
         self.refresh_marketplace()
@@ -413,19 +413,19 @@ class CreatePanel:
         try:
             self.refresh_marketplace(refresh_remote=True)
         except Exception as exc:
-            self._publish_status(_friendly_create_error("Could not refresh marketplace", exc))
+            self._publish_status(_friendly_create_error("Could not refresh marketplace", exc), level="error")
 
     def handle_marketplace_apply(self) -> None:
         try:
             self.apply_selected_marketplace_template()
         except Exception as exc:
-            self._publish_status(_friendly_create_error("Could not apply marketplace template", exc))
+            self._publish_status(_friendly_create_error("Could not apply marketplace template", exc), level="error")
 
     def handle_marketplace_details(self) -> None:
         try:
             self.show_selected_marketplace_details()
         except Exception as exc:
-            self._publish_status(_friendly_create_error("Could not load marketplace details", exc))
+            self._publish_status(_friendly_create_error("Could not load marketplace details", exc), level="error")
 
     def accept(self) -> bool:
         self.create_controller()
@@ -543,16 +543,10 @@ class CreatePanel:
         template = next((item["template"] for item in self._templates if item["template"]["id"] == template_id), None)
         if template is None:
             set_label_text(self.form["template_summary"], "Choose a template to load its default controller setup.")
-            set_label_text(self.form["favorite_template_status"], "Favorite: no template selected")
             return
         description = template.get("description") or "No template description available."
-        is_favorite = self.userdata_service.is_favorite("template", template_id)
         summary = description if len(description) <= 88 else f"{description[:85].rstrip()}..."
         set_label_text(self.form["template_summary"], summary)
-        set_label_text(
-            self.form["favorite_template_status"],
-            f"Favorite: {'yes' if is_favorite else 'no'}",
-        )
 
     def _sync_active_project(self, context: dict[str, Any]) -> None:
         project_parameter_model = self.project_parameter_service.inspect_project_parameters(context)
@@ -583,21 +577,14 @@ class CreatePanel:
         variant_id = self.selected_variant_id()
         if not variant_id:
             set_label_text(self.form["variant_summary"], "Use the base template defaults.")
-            set_label_text(self.form["favorite_variant_status"], "Favorite: n/a")
             return
         variant = next((item["variant"] for item in self._variants if item["variant"]["id"] == variant_id), None)
         if variant is None:
             set_label_text(self.form["variant_summary"], "The selected variant is not available.")
-            set_label_text(self.form["favorite_variant_status"], "Favorite: unavailable")
             return
         description = variant.get("description") or "No variant description available."
-        is_favorite = self.userdata_service.is_favorite("variant", variant_id)
         summary = description if len(description) <= 76 else f"{description[:73].rstrip()}..."
         set_label_text(self.form["variant_summary"], summary)
-        set_label_text(
-            self.form["favorite_variant_status"],
-            f"Favorite: {'yes' if is_favorite else 'no'}",
-        )
 
     def _sync_geometry_summary(self) -> None:
         label = self.form.get("geometry_summary")
@@ -718,10 +705,10 @@ class CreatePanel:
         set_label_text(self.form["create_button"], "Create Controller")
         set_label_text(self.form["apply_parameters_button"], "Apply Geometry")
 
-    def _publish_status(self, message: str) -> None:
+    def _publish_status(self, message: str, level: str = "info") -> None:
         set_label_text(self.form["status"], message)
         if self.on_status is not None:
-            self.on_status(message)
+            self.on_status(message, level)
 
     def _connect_events(self) -> None:
         template = self.form["template"]
@@ -797,11 +784,9 @@ def _build_form() -> dict[str, Any]:
             "marketplace_details_button": FallbackButton("Details"),
             "template": FallbackCombo(),
             "template_summary": FallbackLabel("Choose a template to load its default controller setup."),
-            "favorite_template_status": FallbackLabel(),
             "favorite_template_button": FallbackButton("Favorite"),
             "variant": FallbackCombo(["Template Default"]),
             "variant_summary": FallbackLabel("Use the base template defaults."),
-            "favorite_variant_status": FallbackLabel(),
             "favorite_variant_button": FallbackButton("Favorite"),
             "geometry_summary": FallbackLabel("Geometry follows the selected template. Width, depth, height, and construction settings appear here after selection."),
             "parameter_status": FallbackLabel("Choose a template to unlock geometry controls."),
@@ -859,11 +844,9 @@ def _build_form() -> dict[str, Any]:
     selection_form = create_form_layout(qtwidgets, spacing=4)
     template = qtwidgets.QComboBox()
     template_summary = create_status_label(qtwidgets)
-    favorite_template_status = create_status_label(qtwidgets)
     favorite_template_button = set_button_role(qtwidgets.QPushButton("Favorite"), "ghost")
     variant = qtwidgets.QComboBox()
     variant_summary = create_status_label(qtwidgets)
-    favorite_variant_status = create_status_label(qtwidgets)
     favorite_variant_button = set_button_role(qtwidgets.QPushButton("Favorite"), "ghost")
     geometry_summary = create_status_label(
         qtwidgets,
@@ -984,11 +967,9 @@ def _build_form() -> dict[str, Any]:
         "marketplace_details_button": marketplace_details_button,
         "template": template,
         "template_summary": template_summary,
-        "favorite_template_status": favorite_template_status,
         "favorite_template_button": favorite_template_button,
         "variant": variant,
         "variant_summary": variant_summary,
-        "favorite_variant_status": favorite_variant_status,
         "favorite_variant_button": favorite_variant_button,
         "geometry_summary": geometry_summary,
         "parameter_status": parameter_status,

@@ -150,7 +150,7 @@ class InfoPanel:
     def _publish_status(self, message: str, level: str = "info") -> None:
         apply_status_message(self.form["status"], message, level=level)
         if self.on_status is not None:
-            self.on_status(message)
+            self.on_status(message, level)
 
     def _connect_events(self) -> None:
         if hasattr(self.form["surface_shape"], "currentIndexChanged"):

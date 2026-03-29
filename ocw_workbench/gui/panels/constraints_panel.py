@@ -66,7 +66,6 @@ class ConstraintsPanel:
             self._set_widget_visible(self.form["empty_state_box"], True)
             self._clear_results()
             self._clear_detail()
-            self._set_next_step_message("Run Validate after layout or component edits.")
             apply_status_message(self.form["status"], "No validation results yet.", level="info")
 
     def validate(self) -> dict[str, Any]:
@@ -145,7 +144,7 @@ class ConstraintsPanel:
     def _publish_status(self, message: str, level: str = "info") -> None:
         apply_status_message(self.form["status"], message, level=level)
         if self.on_status is not None:
-            self.on_status(message)
+            self.on_status(message, level)
 
     def _connect_events(self) -> None:
         button = self.form["validate_button"]
@@ -181,7 +180,6 @@ class ConstraintsPanel:
         if hasattr(self.form["state_value"], "setStyleSheet"):
             self.form["state_value"].setStyleSheet(_summary_value_style(state_level))
         self._set_review_state(_review_state_text(errors, warnings), state_level)
-        self._set_next_step_message(_next_step_text(errors, warnings))
 
     def _set_review_state(self, message: str, level: str) -> None:
         set_label_text(self.form["review_value"], message)
@@ -191,9 +189,6 @@ class ConstraintsPanel:
     def _set_validation_scope(self, component_count: int) -> None:
         label = "component" if component_count == 1 else "components"
         set_label_text(self.form["validation_scope"], f"Reviewing {component_count} {label} before Plugins.")
-
-    def _set_next_step_message(self, message: str) -> None:
-        set_label_text(self.form["next_step"], message)
 
     def _set_widget_visible(self, widget: Any, visible: bool) -> None:
         if hasattr(widget, "setVisible"):
@@ -336,7 +331,6 @@ def _build_form() -> dict[str, Any]:
             "list_box": FallbackLabel(),
             "detail_box": FallbackLabel(),
             "results": FallbackText(),
-            "next_step": FallbackLabel("Run Validate after layout or component edits."),
             "detail_severity": FallbackLabel("No issue"),
             "detail_component": FallbackLabel("-"),
             "detail_rule": FallbackLabel("-"),
@@ -367,7 +361,6 @@ def _build_form() -> dict[str, Any]:
     summary_row.addWidget(state_value["card"], 1)
     summary_row.addWidget(review_value["card"], 1)
 
-    next_step = create_hint_label(qtwidgets, "Run Validate after layout or component edits.")
     success_box, success_layout = create_section_widget(qtwidgets, "Validation Result", spacing=6)
     if hasattr(success_box, "setObjectName"):
         success_box.setObjectName("OCWValidationSuccessCard")
@@ -454,7 +447,6 @@ def _build_form() -> dict[str, Any]:
     layout.addWidget(validation_scope)
     layout.addLayout(actions)
     layout.addLayout(summary_row)
-    layout.addWidget(next_step)
     layout.addWidget(success_box)
     layout.addWidget(empty_state_box)
     layout.addWidget(list_box, 1)
@@ -485,7 +477,6 @@ def _build_form() -> dict[str, Any]:
         "list_box": list_box,
         "detail_box": detail_box,
         "results": results,
-        "next_step": next_step,
         "detail_severity": detail_severity,
         "detail_component": detail_component,
         "detail_rule": detail_rule,
@@ -508,14 +499,6 @@ def _review_state_text(errors: int, warnings: int) -> str:
     if warnings > 0:
         return "Review warnings"
     return "Ready for Plugins"
-
-
-def _next_step_text(errors: int, warnings: int) -> str:
-    if errors > 0:
-        return "Return to Components, fix the blocking issues, then run Validate again."
-    if warnings > 0:
-        return "Warnings do not block release, but review them before moving on to Plugins."
-    return "Validate is clear. Continue with Plugins or export-related workflows."
 
 
 def _summary_card(qtwidgets: Any, title: str, value: str, level: str) -> dict[str, Any]:

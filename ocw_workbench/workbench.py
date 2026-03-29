@@ -473,17 +473,7 @@ class ProductWorkbenchPanel:
             widget.setFocus()
         self._update_context_summary(active_panel=normalized_panel)
 
-    def set_status(self, message: str, level: str | None = None) -> None:
-        if level is None:
-            lower = message.lower()
-            if lower.startswith("could not") or lower.startswith("validation found"):
-                level = "error"
-            elif "created" in lower or "updated controller geometry" in lower or "validation passed" in lower:
-                level = "success"
-            elif "warning" in lower:
-                level = "warning"
-            else:
-                level = "info"
+    def set_status(self, message: str, level: str = "info") -> None:
         apply_status_message(self.form["status"], message, level=level)
         set_label_text(self.form["overlay_status"], self._overlay_status_text())
         self._update_context_summary()
@@ -511,7 +501,8 @@ class ProductWorkbenchPanel:
                 "Overlay",
                 settings["overlay_enabled"],
                 "Shows layout guides without changing model geometry.",
-            )
+            ),
+            level="info",
         )
         return settings
 
@@ -525,7 +516,8 @@ class ProductWorkbenchPanel:
                 "Issue overlay",
                 settings["show_constraints"],
                 "Shows validation issues in the 3D view.",
-            )
+            ),
+            level="info",
         )
         return settings
 
@@ -539,7 +531,8 @@ class ProductWorkbenchPanel:
                 "Measurement guides",
                 settings["measurements_enabled"],
                 "Helps check spacing while refining placement.",
-            )
+            ),
+            level="info",
         )
         return settings
 
@@ -553,7 +546,8 @@ class ProductWorkbenchPanel:
                 "Conflict lines",
                 settings["conflict_lines_enabled"],
                 "Shows visual conflict paths only.",
-            )
+            ),
+            level="info",
         )
         return settings
 
@@ -567,7 +561,8 @@ class ProductWorkbenchPanel:
                 "Issue labels",
                 settings["constraint_labels_enabled"],
                 "Shows issue names next to overlay markers.",
-            )
+            ),
+            level="info",
         )
         return settings
 
@@ -576,7 +571,7 @@ class ProductWorkbenchPanel:
         self.refresh_context_panels(refresh_components=True)
         self.refresh_overlay()
         self.focus_panel("components")
-        self.set_status(f"Snapped '{result['component_id']}' to the current grid.")
+        self.set_status(f"Snapped '{result['component_id']}' to the current grid.", level="success")
         return result
 
     def apply_selection_arrangement(self, operation: str) -> dict[str, Any]:
@@ -596,9 +591,15 @@ class ProductWorkbenchPanel:
         count = len(selected_components)
         moved_count = int(plan.get("moved_count", 0))
         if moved_count <= 0:
-            self.set_status(f"{self._arrangement_label(operation)} left {count} selected components unchanged.")
+            self.set_status(
+                f"{self._arrangement_label(operation)} left {count} selected components unchanged.",
+                level="info",
+            )
         else:
-            self.set_status(f"{self._arrangement_label(operation)} applied to {count} selected components.")
+            self.set_status(
+                f"{self._arrangement_label(operation)} applied to {count} selected components.",
+                level="success",
+            )
         return {
             "operation": operation,
             "selected_count": count,
@@ -623,9 +624,15 @@ class ProductWorkbenchPanel:
         count = len(selected_components)
         moved_count = int(plan.get("moved_count", 0))
         if moved_count <= 0:
-            self.set_status(f"{self._transform_label(operation)} left {count} selected components unchanged.")
+            self.set_status(
+                f"{self._transform_label(operation)} left {count} selected components unchanged.",
+                level="info",
+            )
         else:
-            self.set_status(f"{self._transform_label(operation)} applied to {count} selected components.")
+            self.set_status(
+                f"{self._transform_label(operation)} applied to {count} selected components.",
+                level="success",
+            )
         return {
             "operation": operation,
             "selected_count": count,
@@ -889,7 +896,7 @@ class ProductWorkbenchPanel:
         self.refresh_context_panels(refresh_components=True)
         self.refresh_overlay()
         self.focus_panel("create")
-        self.set_status("Controller created. Next use Components or Auto Place to refine the layout.")
+        self.set_status("Controller created. Next use Components or Auto Place to refine the layout.", level="success")
 
     def _handle_layout_applied(self, _result: dict[str, Any]) -> None:
         self.refresh_context_panels(refresh_components=True)
@@ -911,7 +918,7 @@ class ProductWorkbenchPanel:
         self.refresh_context_panels(refresh_components=True)
         self.refresh_overlay()
         self.focus_panel("create")
-        self.set_status("Controller updated. Re-run validation if dimensions changed.")
+        self.set_status("Controller updated. Re-run validation if dimensions changed.", level="success")
 
     def _handle_selection_changed(self, _component_id: str | None) -> None:
         self.info_panel.refresh()
@@ -919,10 +926,10 @@ class ProductWorkbenchPanel:
         context = self.controller_service.get_ui_context(self.doc)
         selection_count = int(context.get("selection_count", 0))
         if selection_count <= 0:
-            self.set_status("Selection cleared.")
+            self.set_status("Selection cleared.", level="info")
             return
         label = "component" if selection_count == 1 else "components"
-        self.set_status(f"{selection_count} {label} selected.")
+        self.set_status(f"{selection_count} {label} selected.", level="info")
 
     def _handle_validated(self, _report: dict[str, Any]) -> None:
         self.info_panel.refresh()
@@ -948,7 +955,7 @@ class ProductWorkbenchPanel:
             _emit_runtime_traceback("Plugin manager panel failed to initialize", exc)
             log_exception("Plugin manager panel failed to initialize", exc)
             error_message = "Plugins panel unavailable. Check the report view for details."
-            self.set_status(error_message)
+            self.set_status(error_message, level="error")
             return _UnavailablePluginManagerPanel(
                 _build_unavailable_panel_widget(
                     "Plugins unavailable",
@@ -1000,7 +1007,7 @@ class ProductWorkbenchPanel:
         self.refresh_overlay()
         self.focus_panel("components")
         created_count = len(plan["new_ids"])
-        self.set_status(f"{self._pattern_label(plan['kind'])} created {created_count} components.")
+        self.set_status(f"{self._pattern_label(plan['kind'])} created {created_count} components.", level="success")
         return {
             "kind": plan["kind"],
             "created_count": created_count,

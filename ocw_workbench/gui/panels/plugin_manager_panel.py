@@ -51,7 +51,7 @@ class PluginManagerPanel:
             raise ValueError("No plugin selected")
         plugin = self.plugin_manager_service.set_enabled(plugin_id, True)
         self.refresh()
-        self._publish_status(f"Plugin '{plugin_id}' enabled.")
+        self._publish_status(f"Plugin '{plugin_id}' enabled.", level="success")
         self._notify_plugins_changed()
         return plugin
 
@@ -61,14 +61,14 @@ class PluginManagerPanel:
             raise ValueError("No plugin selected")
         plugin = self.plugin_manager_service.set_enabled(plugin_id, False)
         self.refresh()
-        self._publish_status(f"Plugin '{plugin_id}' disabled.")
+        self._publish_status(f"Plugin '{plugin_id}' disabled.", level="success")
         self._notify_plugins_changed()
         return plugin
 
     def reload_plugins(self) -> list[dict[str, Any]]:
         plugins = self.plugin_manager_service.reload_plugins()
         self.refresh()
-        self._publish_status(f"Plugin list refreshed. {len(plugins)} plugins available.")
+        self._publish_status(f"Plugin list refreshed. {len(plugins)} plugins available.", level="success")
         self._notify_plugins_changed()
         return plugins
 
@@ -80,7 +80,7 @@ class PluginManagerPanel:
         if not output_path:
             raise ValueError("Export path is required")
         result = self.plugin_pack_service.export_plugin_pack(plugin_id, output_path)
-        self._publish_status(f"Plugin '{plugin_id}' exported to {result['zip_path']}.")
+        self._publish_status(f"Plugin '{plugin_id}' exported to {result['zip_path']}.", level="success")
         return result
 
     def import_plugin_pack(self) -> dict[str, Any]:
@@ -89,7 +89,7 @@ class PluginManagerPanel:
             raise ValueError("Import ZIP path is required")
         result = self.plugin_pack_service.import_plugin_pack(zip_path)
         self.refresh()
-        self._publish_status(f"Plugin '{result['plugin_id']}' imported.")
+        self._publish_status(f"Plugin '{result['plugin_id']}' imported.", level="success")
         self._notify_plugins_changed()
         return result
 
@@ -107,7 +107,7 @@ class PluginManagerPanel:
         self.form["plugin_list"].set_remote_entries(result["entries"])
         source = result["source"]
         suffix = f" ({source})" if source else ""
-        self._publish_status(f"Remote registry loaded from {result['url']}{suffix}.")
+        self._publish_status(f"Remote registry loaded from {result['url']}{suffix}.", level="success")
         return result
 
     def download_selected_remote_plugin(self) -> dict[str, Any]:
@@ -119,7 +119,7 @@ class PluginManagerPanel:
         if not output_path:
             raise ValueError("Download path is required")
         result = self.plugin_registry_service.download_plugin(url, str(selected["id"]), output_path)
-        self._publish_status(f"Remote plugin '{selected['id']}' downloaded to {result['output_path']}.")
+        self._publish_status(f"Remote plugin '{selected['id']}' downloaded to {result['output_path']}.", level="success")
         return result
 
     def handle_selection_changed(self, *_args: Any) -> None:
@@ -133,31 +133,31 @@ class PluginManagerPanel:
         try:
             self.enable_selected_plugin()
         except Exception as exc:
-            self._publish_status(str(exc))
+            self._publish_status(str(exc), level="error")
 
     def handle_disable_clicked(self) -> None:
         try:
             self.disable_selected_plugin()
         except Exception as exc:
-            self._publish_status(str(exc))
+            self._publish_status(str(exc), level="error")
 
     def handle_refresh_clicked(self) -> None:
         try:
             self.reload_plugins()
         except Exception as exc:
-            self._publish_status(str(exc))
+            self._publish_status(str(exc), level="error")
 
     def handle_export_clicked(self) -> None:
         try:
             self.export_selected_plugin_pack()
         except Exception as exc:
-            self._publish_status(str(exc))
+            self._publish_status(str(exc), level="error")
 
     def handle_import_clicked(self) -> None:
         try:
             self.import_plugin_pack()
         except Exception as exc:
-            self._publish_status(str(exc))
+            self._publish_status(str(exc), level="error")
 
     def handle_remote_selection_changed(self, *_args: Any) -> None:
         self.form["plugin_list"].sync_remote_selection_state()
@@ -166,13 +166,13 @@ class PluginManagerPanel:
         try:
             self.refresh_remote_registry()
         except Exception as exc:
-            self._publish_status(str(exc))
+            self._publish_status(str(exc), level="error")
 
     def handle_download_clicked(self) -> None:
         try:
             self.download_selected_remote_plugin()
         except Exception as exc:
-            self._publish_status(str(exc))
+            self._publish_status(str(exc), level="error")
 
     def _connect_events(self) -> None:
         parts = self.form["plugin_list"].parts
@@ -187,9 +187,9 @@ class PluginManagerPanel:
         parts["remote_refresh_button"].clicked.connect(self.handle_remote_refresh_clicked)
         parts["download_button"].clicked.connect(self.handle_download_clicked)
 
-    def _publish_status(self, message: str) -> None:
+    def _publish_status(self, message: str, level: str = "info") -> None:
         if self.on_status is not None:
-            self.on_status(message)
+            self.on_status(message, level)
 
     def _notify_plugins_changed(self) -> None:
         if self.on_plugins_changed is not None:

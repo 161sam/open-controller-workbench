@@ -72,18 +72,7 @@ class LayoutPanel:
                 level="info",
             )
             return
-        summary = layout.get("result_summary", {})
-        config = layout.get("config", {})
-        set_label_text(
-            self.form["summary"],
-            (
-                f"Strategy {layout.get('strategy', '-')} | "
-                f"Placed {summary.get('placed_count', 0)} | "
-                f"Unplaced {summary.get('unplaced_count', 0)} | "
-                f"Warnings {summary.get('warning_count', 0)} | "
-                f"Grid {config.get('grid_mm', config.get('grid_size_mm', 1.0))} mm"
-            ),
-        )
+        set_label_text(self.form["summary"], _layout_summary_text(layout))
 
     def apply_auto_layout(self) -> dict[str, Any]:
         context = self.controller_service.get_ui_context(self.doc)
@@ -108,18 +97,18 @@ class LayoutPanel:
         result = self.controller_service.auto_layout(self.doc, strategy=strategy, config=config)
         status_message, status_level = format_layout_message(result, strategy)
         apply_status_message(self.form["status"], status_message, level=status_level)
-        set_text(
-            self.form["summary"],
-            "\n".join(
-                [
-                    f"Placed: {len(result['placed_components'])}",
-                    f"Unplaced: {len(result['unplaced_component_ids'])}",
-                    f"Warnings: {len(result['warnings'])}",
-                ]
-            ),
-        )
+        result_summary = {
+            "strategy": strategy,
+            "config": config,
+            "result_summary": {
+                "placed_count": len(result["placed_components"]),
+                "unplaced_count": len(result["unplaced_component_ids"]),
+                "warning_count": len(result["warnings"]),
+            },
+        }
+        set_label_text(self.form["summary"], _layout_summary_text(result_summary))
         if self.on_status is not None:
-            self.on_status(status_message)
+            self.on_status(status_message, status_level)
         if self.on_applied is not None:
             self.on_applied(result)
         return result
@@ -257,7 +246,7 @@ class LayoutPanel:
     def _publish_status(self, message: str, level: str = "info") -> None:
         apply_status_message(self.form["status"], message, level=level)
         if self.on_status is not None:
-            self.on_status(message)
+            self.on_status(message, level)
         if self.on_overlay_changed is not None:
             self.on_overlay_changed()
 
@@ -438,3 +427,15 @@ def _validation_status_text(summary: dict[str, Any]) -> str:
     if warnings > 0:
         return f"Validate reports {warnings} warnings and no blocking errors."
     return "Validate is clear for the current layout."
+
+
+def _layout_summary_text(layout: dict[str, Any]) -> str:
+    summary = layout.get("result_summary", {}) if isinstance(layout.get("result_summary"), dict) else {}
+    config = layout.get("config", {}) if isinstance(layout.get("config"), dict) else {}
+    return (
+        f"Strategy {layout.get('strategy', '-')} | "
+        f"Placed {summary.get('placed_count', 0)} | "
+        f"Unplaced {summary.get('unplaced_count', 0)} | "
+        f"Warnings {summary.get('warning_count', 0)} | "
+        f"Grid {config.get('grid_mm', config.get('grid_size_mm', 1.0))} mm"
+    )
