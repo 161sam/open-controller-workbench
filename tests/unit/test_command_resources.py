@@ -13,6 +13,7 @@ from ocw_workbench.commands.enable_plugin import EnablePluginCommand
 from ocw_workbench.commands.import_template_from_fcstd import ImportTemplateFromFCStdCommand
 from ocw_workbench.commands.open_component_palette import OpenComponentPaletteCommand
 from ocw_workbench.commands.open_plugin_manager import OpenPluginManagerCommand
+from ocw_workbench.commands.place_component_type import PlaceComponentTypeCommand
 from ocw_workbench.commands.reload_plugins import ReloadPluginsCommand
 from ocw_workbench.commands.select_component import SelectComponentCommand
 from ocw_workbench.commands.selection_transform import SelectionTransformCommand
@@ -62,6 +63,15 @@ def test_registered_command_resources_include_existing_pixmaps() -> None:
         assert resources["ToolTip"]
         assert Path(resources["Pixmap"]).exists(), resources["Pixmap"]
         assert Path(resources["Pixmap"]).name != "default.svg", resources["Pixmap"]
+
+
+def test_place_component_type_command_resources_are_valid() -> None:
+    for ctype in ("button", "encoder", "fader", "pad", "display", "rgb_button"):
+        cmd = PlaceComponentTypeCommand(ctype)
+        resources = cmd.GetResources()
+        assert resources["MenuText"]
+        assert resources["ToolTip"]
+        assert Path(resources["Pixmap"]).exists(), f"{ctype}: {resources['Pixmap']}"
 
 
 def test_workbench_icon_exists() -> None:

@@ -223,6 +223,7 @@ class OpenControllerWorkbench((Gui.Workbench if Gui is not None else object)):
         from ocw_workbench.commands.toggle_measurements import ToggleMeasurementsCommand
         from ocw_workbench.commands.toggle_overlay import ToggleOverlayCommand
         from ocw_workbench.commands.validate_constraints import ValidateConstraintsCommand
+        from ocw_workbench.commands.place_component_type import PlaceComponentTypeCommand
 
         Gui.addCommand("OCW_CreateController", _LoggedCommand("OCW_CreateController", CreateFromTemplateCommand()))
         Gui.addCommand("OCW_AddComponent", _LoggedCommand("OCW_AddComponent", AddComponentCommand()))
@@ -265,6 +266,9 @@ class OpenControllerWorkbench((Gui.Workbench if Gui is not None else object)):
         Gui.addCommand("OCW_EnablePlugin", _LoggedCommand("OCW_EnablePlugin", EnablePluginCommand()))
         Gui.addCommand("OCW_DisablePlugin", _LoggedCommand("OCW_DisablePlugin", DisablePluginCommand()))
         Gui.addCommand("OCW_ReloadPlugins", _LoggedCommand("OCW_ReloadPlugins", ReloadPluginsCommand()))
+        for _ctype in ("button", "encoder", "fader", "pad", "display", "rgb_button"):
+            _cmd_id = f"OCW_Place{_ctype.replace('_', ' ').title().replace(' ', '')}"
+            Gui.addCommand(_cmd_id, _LoggedCommand(_cmd_id, PlaceComponentTypeCommand(_ctype)))
         refresh_favorite_component_commands()
         Gui.addCommand(
             _FAVORITE_MORE_COMMAND_ID,
@@ -272,6 +276,15 @@ class OpenControllerWorkbench((Gui.Workbench if Gui is not None else object)):
         )
 
         project_commands = ["OCW_CreateController", "OCW_ImportTemplateFromFCStd"]
+        place_type_commands = [
+            "OCW_PlaceButton",
+            "OCW_PlaceEncoder",
+            "OCW_PlaceFader",
+            "OCW_PlacePad",
+            "OCW_PlaceDisplay",
+            "OCW_PlaceRgbButton",
+            "OCW_OpenComponentPalette",
+        ]
         component_commands = [
             "OCW_AddComponent",
             "OCW_OpenComponentPalette",
@@ -321,7 +334,7 @@ class OpenControllerWorkbench((Gui.Workbench if Gui is not None else object)):
             "OCW_ReloadPlugins",
         ]
         self.appendToolbar("OCW Project", project_commands)
-        self.appendToolbar("OCW Components", component_commands)
+        self.appendToolbar("OCW Components", place_type_commands)
         self.appendToolbar("OCW Favorites", _FAVORITE_COMMAND_IDS + [_FAVORITE_MORE_COMMAND_ID])
         self.appendToolbar("OCW Layout", layout_commands)
         self.appendToolbar("OCW Validate", [validate_commands[0], validate_commands[2]])
@@ -329,10 +342,10 @@ class OpenControllerWorkbench((Gui.Workbench if Gui is not None else object)):
         self.appendToolbar("OCW Plugins", plugin_commands)
         self.appendMenu(
             "OCW",
-            project_commands + component_commands + layout_commands + validate_commands[:1] + plugin_commands,
+            project_commands + place_type_commands + layout_commands + validate_commands[:1] + plugin_commands,
         )
         self.appendMenu("OCW/Create", project_commands)
-        self.appendMenu("OCW/Components", component_commands)
+        self.appendMenu("OCW/Components", place_type_commands)
         self.appendMenu("OCW/Layout", layout_commands)
         self.appendMenu("OCW/View", validate_commands[1:])
         self.appendMenu("OCW/Validate", validate_commands[:1] + validate_commands[2:])
@@ -1323,6 +1336,60 @@ def start_component_place_mode(doc: Any | None, template_id: str) -> bool:
         return False
     workbench = ensure_workbench_ui(doc, focus="components")
     return workbench.start_place_mode(template_id)
+
+
+def start_place_mode_direct(doc: Any, template_id: str) -> bool:
+    """Start placement mode without requiring the dock to be open.
+
+    If the workbench dock is already open for this document, delegates to it
+    so the interaction manager and controllers are shared. Otherwise creates a
+    lightweight placement session using a standalone set of controllers and
+    refreshes the dock (if open) after each commit.
+    """
+    if _ACTIVE_WORKBENCH is not None and _ACTIVE_WORKBENCH.doc is doc:
+        return _ACTIVE_WORKBENCH.start_place_mode(template_id)
+
+    # Dock not open: create a minimal placement session without dock.
+    try:
+        from ocw_workbench.gui.interaction.view_place_controller import ViewPlaceController
+        from ocw_workbench.gui.overlay.renderer import OverlayRenderer
+        from ocw_workbench.services.controller_service import ControllerService
+        from ocw_workbench.services.interaction_service import InteractionService
+        from ocw_workbench.services.overlay_service import OverlayService
+
+        cs = ControllerService()
+        interactions = InteractionService(cs)
+        overlay = OverlayRenderer(OverlayService(cs))
+
+        def _on_committed(state: Any) -> None:
+            _refresh_active_workbench_if_open(doc)
+
+        def _on_finished(controller: Any) -> None:
+            _refresh_active_workbench_if_open(doc)
+
+        controller = ViewPlaceController(
+            controller_service=cs,
+            interaction_service=interactions,
+            overlay_renderer=overlay,
+            on_committed=_on_committed,
+            on_finished=_on_finished,
+        )
+        started = controller.start(doc, template_id)
+        if started:
+            log_to_console(f"Direct placement mode started for '{template_id}'.")
+        return started
+    except Exception as exc:
+        log_exception("Failed to start direct placement mode", exc)
+        return False
+
+
+def _refresh_active_workbench_if_open(doc: Any) -> None:
+    """Refresh the workbench dock if it is currently open for this document."""
+    if _ACTIVE_WORKBENCH is not None and _ACTIVE_WORKBENCH.doc is doc:
+        try:
+            _ACTIVE_WORKBENCH.refresh_context_panels(refresh_components=True)
+        except Exception as exc:
+            log_exception("Failed to refresh workbench after direct placement", exc)
 
 
 def start_component_drag_mode(doc: Any | None) -> bool:
