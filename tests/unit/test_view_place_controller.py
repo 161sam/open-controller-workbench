@@ -261,7 +261,25 @@ def test_overlay_service_styles_invalid_preview_as_error():
     assert preview_item["severity"] == "error"
     assert preview_item["style"]["kind"] == "component_preview_error"
     assert preview_label["style"]["kind"] == "preview_label_error"
+    assert "@ 2.0, 2.0 mm" in preview_label["label"]
     assert "Out of bounds" in preview_label["label"]
+
+
+def test_overlay_service_valid_preview_label_includes_coordinates_and_action_hint():
+    doc = FakeDocument()
+    controller_service = ControllerService()
+    interaction_service = InteractionService(controller_service)
+    controller_service.create_controller(doc, {"id": "demo", "width": 100.0, "depth": 80.0, "height": 30.0, "top_thickness": 3.0})
+    interaction_service.add_component_preview(doc, "omron_b3f_1000", target_x=12.0, target_y=19.0)
+
+    from ocw_workbench.services.overlay_service import OverlayService
+
+    overlay = OverlayService(controller_service=controller_service).build_overlay(doc)
+    preview_label = next(item for item in overlay["items"] if item["id"] == "preview_label:omron_b3f_1000")
+
+    assert "@ 12.0, 19.0 mm" in preview_label["label"]
+    assert "Snap 1.0 mm" in preview_label["label"]
+    assert preview_label["label"].endswith("Click to place")
 
 
 def test_view_place_controller_on_committed_fires_after_each_click():

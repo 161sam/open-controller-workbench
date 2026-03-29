@@ -181,7 +181,7 @@ def test_view_drag_controller_hover_highlights_hit_target_before_drag():
 
     settings = interaction_service.get_settings(doc)
     assert settings["hovered_component_id"] == "btn1"
-    assert statuses[-1] == "Ready to drag 'btn1'. Press and hold the left mouse button to move it."
+    assert statuses[-1] == "Ready to drag 'btn1'. Press and hold the left mouse button, then release to commit."
 
 
 def test_view_drag_controller_clamps_and_snaps_to_bounds():

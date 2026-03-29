@@ -226,7 +226,7 @@ class OverlayService:
                 rotation=float(preview_component["rotation"]),
                 shape=shape.to_dict(),
                 style=overlay_style(self._preview_style_kind("component_preview", severity)),
-                label=self._preview_label_text(label, validation),
+                label=self._preview_label_text(label, preview, validation),
                 source_component_id=str(preview_component.get("id") or template_id),
                 severity=severity,
             )
@@ -266,7 +266,7 @@ class OverlayService:
                 item_id=f"preview_label:{template_id}",
                 x=float(preview_component["x"]),
                 y=float(preview_component["y"]),
-                text=self._preview_label_text(label, validation),
+                text=self._preview_label_text(label, preview, validation),
                 style=overlay_style(self._preview_style_kind("preview_label", severity)),
                 source_component_id=str(preview_component.get("id") or template_id),
                 severity=severity,
@@ -366,11 +366,19 @@ class OverlayService:
             return f"{base_kind}_warning"
         return base_kind
 
-    def _preview_label_text(self, label: str, validation: dict[str, Any]) -> str:
+    def _preview_label_text(self, label: str, preview: dict[str, Any], validation: dict[str, Any]) -> str:
+        x = float(preview.get("x", 0.0) or 0.0)
+        y = float(preview.get("y", 0.0) or 0.0)
+        mode = str(preview.get("mode") or "place")
+        base = f"{label} @ {x:.1f}, {y:.1f} mm"
+        if bool(preview.get("snap_enabled")) and float(preview.get("grid_mm") or 0.0) > 0.0:
+            base = f"{base} | Snap {float(preview['grid_mm']):.1f} mm"
         status = validation.get("status")
         if isinstance(status, str) and status and status != "Valid placement":
-            return f"{label} | {status}"
-        return label
+            return f"{base} | {status}"
+        if mode == "move":
+            return f"{base} | Release to commit"
+        return f"{base} | Click to place"
 
     def _shape_item(
         self,

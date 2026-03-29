@@ -105,7 +105,7 @@ class ViewPickController:
             return None
         component = self.controller_service.get_component(self.doc, component_id)
         label = component.get("label") or component_id
-        self._publish_status(f"Selected '{label}'.")
+        self._publish_status(f"Selected '{label}'. Direct actions now target this component.")
         self._notify_selected(component_id)
         return component_id
 

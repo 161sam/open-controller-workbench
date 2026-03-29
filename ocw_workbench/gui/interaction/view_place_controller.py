@@ -81,7 +81,7 @@ class ViewPlaceController:
             self.cancel(reason="error", publish_status=False)
             self._publish_status("Interaction error")
             return False
-        self._publish_status(f"Click to place '{template_id}'. ESC cancels.")
+        self._publish_status(f"Move the pointer in 3D, then click to place '{template_id}'. ESC cancels.")
         return self._view_callbacks.is_registered
 
     def cancel(self, reason: str = "cancel", publish_status: bool = True) -> None:

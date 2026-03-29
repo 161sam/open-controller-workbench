@@ -71,7 +71,7 @@ class ViewDragController:
             self.cancel(reason="error", publish_status=False)
             self._publish_status("Interaction error")
             return False
-        self._publish_status("Drag in 3D. Hover a component, drag to move, ESC to cancel.")
+        self._publish_status("Drag in 3D. Hover to highlight, press and hold to move, release to commit, ESC to cancel.")
         return self._view_callbacks.is_registered
 
     def cancel(self, reason: str = "cancel", publish_status: bool = True) -> None:
@@ -176,7 +176,7 @@ class ViewDragController:
             snap_enabled=bool(self.interaction_service.get_settings(self.doc).get("snap_enabled", True)),
         )
         self.overlay_renderer.refresh(self.doc)
-        self._publish_status(f"Dragging '{component_id}'. Release to commit, ESC to cancel.")
+        self._publish_status(f"Dragging '{component_id}'. Move the pointer, release to commit, ESC to cancel.")
         return True
 
     def update_hover_from_screen(self, screen_x: float, screen_y: float) -> str | None:
@@ -317,8 +317,8 @@ class ViewDragController:
         if not announce:
             return
         if component_id is None:
-            self._publish_status("Drag in 3D. Hover a component, drag to move, ESC to cancel.")
+            self._publish_status("Drag in 3D. Hover to highlight, press and hold to move, release to commit, ESC to cancel.")
             return
         component = self.controller_service.get_component(self.doc, component_id)
         label = component.get("label") or component_id
-        self._publish_status(f"Ready to drag '{label}'. Press and hold the left mouse button to move it.")
+        self._publish_status(f"Ready to drag '{label}'. Press and hold the left mouse button, then release to commit.")
