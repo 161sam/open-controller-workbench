@@ -8,6 +8,7 @@ from ocw_workbench.gui.interaction.view_place_controller import ViewPlaceControl
 from ocw_workbench.gui.interaction.view_place_preview import load_preview_state
 from ocw_workbench.services.controller_service import ControllerService
 from ocw_workbench.services.interaction_service import InteractionService
+from ocw_workbench import workbench as workbench_module
 from ocw_workbench.workbench import ProductWorkbenchPanel
 
 
@@ -283,3 +284,77 @@ def test_workbench_start_modes_update_compact_interaction_context():
 
     assert workbench.start_drag_mode() is True
     assert "drag active" in workbench.form["context_summary"].text
+
+
+def test_direct_mode_switch_cancels_previous_standalone_preview(monkeypatch):
+    doc = FakeDocument("Direct")
+    service = ControllerService()
+    service.create_controller(doc, {"id": "demo", "width": 100.0, "depth": 80.0, "height": 30.0})
+    service.add_component(doc, "omron_b3f_1000", component_id="btn1", x=20.0, y=20.0)
+    place_view = FakeView()
+    drag_view = FakeView()
+
+    monkeypatch.setattr(
+        "ocw_workbench.gui.interaction.view_place_controller.get_active_view",
+        lambda current_doc: place_view if current_doc is doc else None,
+    )
+    monkeypatch.setattr(
+        "ocw_workbench.gui.interaction.view_drag_controller.get_active_view",
+        lambda current_doc: drag_view if current_doc is doc else None,
+    )
+    monkeypatch.setattr(workbench_module, "_ACTIVE_WORKBENCH", None)
+    monkeypatch.setattr(workbench_module, "_STANDALONE_PLACE_CONTROLLER", None)
+    monkeypatch.setattr(workbench_module, "_STANDALONE_DRAG_CONTROLLER", None)
+
+    assert workbench_module.start_place_mode_direct(doc, "omron_b3f_1000") is True
+    assert workbench_module._STANDALONE_PLACE_CONTROLLER is not None
+    workbench_module._STANDALONE_PLACE_CONTROLLER.update_preview_from_screen(12.0, 18.0)
+    assert load_preview_state(doc) is not None
+
+    assert workbench_module.start_component_drag_mode_direct(doc) is True
+
+    settings = InteractionService(ControllerService()).get_settings(doc)
+    assert workbench_module._STANDALONE_PLACE_CONTROLLER is None
+    assert workbench_module._STANDALONE_DRAG_CONTROLLER is not None
+    assert load_preview_state(doc) is None
+    assert settings["active_interaction"] == "drag"
+    assert len(place_view.callbacks) == 0
+    assert len(drag_view.callbacks) == 3
+
+    workbench_module._cancel_standalone_direct_interactions(reason="cancel", publish_status=False)
+
+
+def test_workbench_start_mode_cancels_matching_standalone_direct_interaction(monkeypatch):
+    doc = FakeDocument("Docked")
+    service = ControllerService()
+    service.create_controller(doc, {"id": "demo", "width": 100.0, "depth": 80.0, "height": 30.0})
+    direct_view = FakeView()
+    place_view = FakeView()
+    drag_view = FakeView()
+
+    monkeypatch.setattr(workbench_module, "_ACTIVE_WORKBENCH", None)
+    monkeypatch.setattr(workbench_module, "_STANDALONE_PLACE_CONTROLLER", None)
+    monkeypatch.setattr(workbench_module, "_STANDALONE_DRAG_CONTROLLER", None)
+    monkeypatch.setattr(
+        "ocw_workbench.gui.interaction.view_place_controller.get_active_view",
+        lambda current_doc: direct_view if current_doc is doc else None,
+    )
+
+    assert workbench_module.start_place_mode_direct(doc, "omron_b3f_1000") is True
+    workbench_module._STANDALONE_PLACE_CONTROLLER.update_preview_from_screen(10.0, 10.0)
+    assert load_preview_state(doc) is not None
+
+    workbench = ProductWorkbenchPanel(doc, controller_service=service)
+    workbench.place_controller._active_view = lambda current_doc: place_view if current_doc is doc else None
+    workbench.drag_controller._active_view = lambda current_doc: drag_view if current_doc is doc else None
+    monkeypatch.setattr(workbench_module, "_ACTIVE_WORKBENCH", workbench)
+
+    assert workbench.start_drag_mode() is True
+
+    settings = workbench.interaction_service.get_settings(doc)
+    assert workbench_module._STANDALONE_PLACE_CONTROLLER is None
+    assert load_preview_state(doc) is None
+    assert settings["active_interaction"] == "drag"
+    assert len(direct_view.callbacks) == 0
+
+    workbench_module._cancel_standalone_direct_interactions(reason="cancel", publish_status=False)

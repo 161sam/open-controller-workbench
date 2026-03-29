@@ -164,3 +164,39 @@ def test_view_pick_controller_mouse_move_does_not_select():
     controller.handle_view_event({"Type": "SoLocation2Event", "Position": (20, 20)})
 
     assert selected == []
+
+
+def test_view_pick_controller_rebinds_when_view_is_recreated():
+    doc = FakeDocument()
+    controller_service = ControllerService()
+    controller_service.create_controller(doc, {"id": "demo", "width": 100.0, "depth": 80.0, "height": 30.0})
+    controller_service.add_component(doc, "omron_b3f_1000", component_id="btn1", x=20.0, y=20.0)
+    overlay = RecordingOverlayRenderer(
+        items=[
+            {
+                "id": "component:btn1",
+                "type": "rect",
+                "geometry": {"x": 20.0, "y": 20.0, "width": 14.0, "height": 14.0, "rotation": 0.0},
+                "source_component_id": "btn1",
+            }
+        ]
+    )
+    selected: list[str] = []
+    controller = ViewPickController(
+        controller_service=controller_service,
+        overlay_renderer=overlay,
+        on_selected=selected.append,
+    )
+    view_a = FakeView()
+    view_b = FakeView()
+    current_view = [view_a]
+    controller._active_view = lambda _doc: current_view[0]
+
+    assert controller.start(doc) is True
+    current_view[0] = view_b
+
+    controller.handle_view_event({"Type": "SoMouseButtonEvent", "State": "DOWN", "Button": "BUTTON1", "Position": (20, 20)})
+
+    assert len(view_a.callbacks) == 0
+    assert len(view_b.callbacks) == 3
+    assert selected == ["btn1"]

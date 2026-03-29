@@ -64,6 +64,8 @@ class ViewPickController:
         if self.doc is None:
             return
         try:
+            if not self._ensure_view_binding():
+                return
             payload = info if isinstance(info, dict) else {}
             event_type = str(payload.get("Type") or payload.get("type") or "")
             if is_escape_event(event_type, payload):
@@ -109,6 +111,21 @@ class ViewPickController:
 
     def _active_view(self, doc: Any) -> Any | None:
         return get_active_view(doc)
+
+    def _ensure_view_binding(self) -> bool:
+        if self.doc is None:
+            return False
+        view = self._active_view(self.doc)
+        if view is None and self.view is not None:
+            view = self.view
+        if view is None:
+            self.cancel(publish_status=False)
+            return False
+        self.view = view
+        if not self._view_callbacks.attach(view, self.handle_view_event):
+            self.cancel(publish_status=False)
+            return False
+        return True
 
     def _publish_status(self, message: str) -> None:
         log_to_console(message)

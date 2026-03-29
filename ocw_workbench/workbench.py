@@ -699,11 +699,13 @@ class ProductWorkbenchPanel:
 
     def reject(self) -> bool:
         self.interaction_manager.cancel_active(reason="cancel", publish_status=False)
+        _cancel_standalone_direct_interactions(self.doc, reason="cancel", publish_status=False)
         return True
 
     def start_place_mode(self, template_id: str) -> bool:
         self.pick_controller.cancel(publish_status=False)
         self.interaction_manager.cancel_active(reason="switch", publish_status=False)
+        _cancel_standalone_direct_interactions(self.doc, reason="switch", publish_status=False)
         started = self.place_controller.start(self.doc, template_id)
         if started:
             self.interaction_manager.activate("place", self.doc, self.place_controller.cancel)
@@ -712,6 +714,7 @@ class ProductWorkbenchPanel:
     def start_drag_mode(self) -> bool:
         self.pick_controller.cancel(publish_status=False)
         self.interaction_manager.cancel_active(reason="switch", publish_status=False)
+        _cancel_standalone_direct_interactions(self.doc, reason="switch", publish_status=False)
         started = self.drag_controller.start(self.doc)
         if started:
             self.interaction_manager.activate("drag", self.doc, self.drag_controller.cancel)
@@ -719,9 +722,12 @@ class ProductWorkbenchPanel:
 
     def handle_document_context_changed(self, doc: Any | None) -> None:
         self.interaction_manager.handle_document_changed(doc)
+        if doc is not self.doc:
+            _cancel_standalone_direct_interactions(self.doc, reason="document_changed", publish_status=False)
 
     def handle_document_closed(self) -> None:
         self.interaction_manager.handle_document_closed(self.doc)
+        _cancel_standalone_direct_interactions(self.doc, reason="document_closed", publish_status=False)
 
     def _build_shell(self) -> dict[str, Any]:
         _qtcore, _qtgui, qtwidgets = load_qt()
@@ -1360,6 +1366,8 @@ def start_place_mode_direct(doc: Any, template_id: str) -> bool:
 
     global _STANDALONE_PLACE_CONTROLLER
 
+    _cancel_standalone_direct_interactions(reason="switch", publish_status=False)
+
     # Dock not open: create a minimal placement session without dock.
     try:
         cs = ControllerService()
@@ -1370,6 +1378,7 @@ def start_place_mode_direct(doc: Any, template_id: str) -> bool:
             _sync_active_workbench_if_open(doc, refresh_components=True, refresh_overlay=True)
 
         def _on_finished(controller: Any) -> None:
+            _clear_standalone_place_controller(controller)
             _sync_active_workbench_if_open(doc, refresh_components=True, refresh_overlay=True)
 
         controller = ViewPlaceController(
@@ -1379,9 +1388,9 @@ def start_place_mode_direct(doc: Any, template_id: str) -> bool:
             on_committed=_on_committed,
             on_finished=_on_finished,
         )
-        _STANDALONE_PLACE_CONTROLLER = controller
         started = controller.start(doc, template_id)
         if started:
+            _STANDALONE_PLACE_CONTROLLER = controller
             log_to_console(f"Direct placement mode started for '{template_id}'.")
         return started
     except Exception as exc:
@@ -1424,12 +1433,14 @@ def start_component_drag_mode_direct(doc: Any) -> bool:
 
     if _ACTIVE_WORKBENCH is not None and _ACTIVE_WORKBENCH.doc is doc:
         return _ACTIVE_WORKBENCH.start_drag_mode()
+    _cancel_standalone_direct_interactions(reason="switch", publish_status=False)
     try:
         cs = ControllerService()
         interactions = InteractionService(cs)
         overlay = OverlayRenderer(OverlayService(cs))
 
         def _on_finished(controller: Any) -> None:
+            _clear_standalone_drag_controller(controller)
             _sync_active_workbench_if_open(doc, refresh_components=True, refresh_overlay=True)
 
         controller = ViewDragController(
@@ -1438,14 +1449,47 @@ def start_component_drag_mode_direct(doc: Any) -> bool:
             overlay_renderer=overlay,
             on_finished=_on_finished,
         )
-        _STANDALONE_DRAG_CONTROLLER = controller
         started = controller.start(doc)
         if started:
+            _STANDALONE_DRAG_CONTROLLER = controller
             log_to_console("Direct drag mode started.")
         return started
     except Exception as exc:
         log_exception("Failed to start direct drag mode", exc)
         return False
+
+
+def _clear_standalone_place_controller(controller: Any) -> None:
+    global _STANDALONE_PLACE_CONTROLLER
+    if _STANDALONE_PLACE_CONTROLLER is controller:
+        _STANDALONE_PLACE_CONTROLLER = None
+
+
+def _clear_standalone_drag_controller(controller: Any) -> None:
+    global _STANDALONE_DRAG_CONTROLLER
+    if _STANDALONE_DRAG_CONTROLLER is controller:
+        _STANDALONE_DRAG_CONTROLLER = None
+
+
+def _cancel_standalone_direct_interactions(
+    doc: Any | None = None,
+    *,
+    reason: str = "cancel",
+    publish_status: bool = False,
+) -> None:
+    controllers = (
+        (_STANDALONE_PLACE_CONTROLLER, _clear_standalone_place_controller),
+        (_STANDALONE_DRAG_CONTROLLER, _clear_standalone_drag_controller),
+    )
+    for controller, clear in controllers:
+        if controller is None:
+            continue
+        if doc is not None and getattr(controller, "doc", None) is not doc:
+            continue
+        try:
+            controller.cancel(reason=reason, publish_status=publish_status)
+        finally:
+            clear(controller)
 
 
 def toggle_overlay_direct(doc: Any) -> dict[str, Any]:
