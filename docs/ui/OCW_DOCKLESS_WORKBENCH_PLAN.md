@@ -5,6 +5,14 @@
 **Date:** 2026-03-29
 **Goal:** Remove dependency on the permanent dock/sidebar as the primary workflow. Make OCW feel like FastenersWB — toolbar-first, selection-driven, direct-action.
 
+## Progress Update — 2026-03-29
+
+- Package A is implemented: per-type component placement commands are registered and grouped in the primary `OCW Components` toolbar.
+- Package B is mostly implemented for the high-value direct actions: layout, validation, drag, placement, transforms, arrangement, overlays, patterns, and plugin reload no longer require `ensure_workbench_ui(...)` as a prerequisite.
+- Package C is implemented in the current direct-action form: `OCW_AddComponent` starts placement directly when a template is already active, otherwise it falls back to the palette without forcing the workbench dock.
+- Toolbar cleanup has progressed toward the target model: the `OCW Favorites` toolbar has been removed from the primary toolbar surface, while favorites remain available as a secondary menu path.
+- Remaining dock-reduced cleanup is concentrated in navigation-oriented commands and plugin-selection commands rather than the main direct-action workflow.
+
 ---
 
 ## 1. What Is Already FreeCAD-Workbench-Tauglich

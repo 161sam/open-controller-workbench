@@ -5,6 +5,15 @@
 **Date:** 2026-03-28
 **Scope:** Command quality, toolbar registration, selection-driven behavior, dock role — compared against the Fasteners Workbench UX model.
 
+## Progress Update — 2026-03-29
+
+- `OCW_MoveComponentInteractive` is no longer part of the registered command surface.
+- The `IsActive()` guard gap described below is largely closed via `_has_controller()` / `_has_selection()` based command activation.
+- Direct-action commands for placement, drag, layout, validation, overlays, transforms, arrangement, patterns, and reload now run without opening the workbench dock first.
+- Per-type placement commands (`OCW_PlaceButton`, `OCW_PlaceEncoder`, `OCW_PlaceFader`, `OCW_PlacePad`, `OCW_PlaceDisplay`, `OCW_PlaceRgbButton`) are now the primary component toolbar surface.
+- The former `OCW Favorites` toolbar has been demoted from the primary toolbar surface to a secondary menu path.
+- `OCW_CreateController` remains available, but no longer occupies the primary project toolbar.
+
 ---
 
 ## 1. Reference Model: Fasteners Workbench

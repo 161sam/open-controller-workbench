@@ -283,7 +283,8 @@ class OpenControllerWorkbench((Gui.Workbench if Gui is not None else object)):
             _LoggedCommand(_FAVORITE_MORE_COMMAND_ID, OpenComponentPaletteCommand()),
         )
 
-        project_commands = ["OCW_CreateController", "OCW_ImportTemplateFromFCStd"]
+        project_toolbar_commands = ["OCW_ImportTemplateFromFCStd"]
+        project_menu_commands = ["OCW_CreateController", "OCW_ImportTemplateFromFCStd"]
         place_type_commands = component_toolbar_command_ids() + ["OCW_OpenComponentPalette"]
         component_commands = [
             "OCW_AddComponent",
@@ -333,19 +334,19 @@ class OpenControllerWorkbench((Gui.Workbench if Gui is not None else object)):
             "OCW_DisablePlugin",
             "OCW_ReloadPlugins",
         ]
-        self.appendToolbar("OCW Project", project_commands)
+        self.appendToolbar("OCW Project", project_toolbar_commands)
         self.appendToolbar("OCW Components", place_type_commands)
-        self.appendToolbar("OCW Favorites", _FAVORITE_COMMAND_IDS + [_FAVORITE_MORE_COMMAND_ID])
         self.appendToolbar("OCW Layout", layout_commands)
         self.appendToolbar("OCW Validate", [validate_commands[0], validate_commands[2]])
         self.appendToolbar("OCW View", view_commands)
         self.appendToolbar("OCW Plugins", plugin_commands)
         self.appendMenu(
             "OCW",
-            project_commands + place_type_commands + layout_commands + validate_commands[:1] + plugin_commands,
+            project_toolbar_commands + place_type_commands + layout_commands + validate_commands[:1] + plugin_commands,
         )
-        self.appendMenu("OCW/Create", project_commands)
+        self.appendMenu("OCW/Create", project_menu_commands)
         self.appendMenu("OCW/Components", place_type_commands)
+        self.appendMenu("OCW/Components/Favorites", _FAVORITE_COMMAND_IDS + [_FAVORITE_MORE_COMMAND_ID])
         self.appendMenu("OCW/Layout", layout_commands)
         self.appendMenu("OCW/View", validate_commands[1:])
         self.appendMenu("OCW/Validate", validate_commands[:1] + validate_commands[2:])
