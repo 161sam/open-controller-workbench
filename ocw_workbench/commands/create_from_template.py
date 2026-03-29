@@ -11,17 +11,17 @@ class CreateFromTemplateCommand(BaseCommand):
     def GetResources(self):
         return self.resources(
             "Create Controller",
-            "Create a controller from a template or variant.",
+            "Open the Create step in the OCW dock to choose a template or variant.",
         )
 
     def Activated(self):
         try:
             import FreeCAD as App
 
-            from ocw_workbench.workbench import ensure_workbench_ui
+            from ocw_workbench.workbench import open_workbench_dock
 
             doc = App.ActiveDocument or App.newDocument("Controller")
-            ensure_workbench_ui(doc, focus="create")
+            open_workbench_dock(doc, focus="create")
             log_to_console("Create Controller command focused the Create panel.")
         except Exception as exc:
             show_error("Create Controller", exc)

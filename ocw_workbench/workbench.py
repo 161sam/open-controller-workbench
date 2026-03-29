@@ -1170,6 +1170,44 @@ def ensure_workbench_ui(doc: Any | None = None, focus: str = "create") -> Produc
         raise RuntimeError(f"Open Controller Workbench UI setup failed: {exc}") from exc
 
 
+def open_workbench_dock(doc: Any | None = None, focus: str = "create") -> ProductWorkbenchPanel:
+    """Explicit UI/navigation entry point for opening or focusing the workbench dock."""
+    return ensure_workbench_ui(doc, focus=focus)
+
+
+def has_selected_plugin_in_open_manager(doc: Any | None = None) -> bool:
+    if doc is not None and _ACTIVE_WORKBENCH is not None and _ACTIVE_WORKBENCH.doc is not doc:
+        return False
+    if _ACTIVE_WORKBENCH is None:
+        return False
+    try:
+        return _ACTIVE_WORKBENCH.plugin_manager_panel.selected_plugin_id() is not None
+    except Exception:
+        return False
+
+
+def enable_selected_plugin_direct(doc: Any | None = None) -> dict[str, Any]:
+    if doc is not None and _ACTIVE_WORKBENCH is not None and _ACTIVE_WORKBENCH.doc is not doc:
+        raise RuntimeError("Plugin Manager is not open for the active document")
+    if _ACTIVE_WORKBENCH is None:
+        raise RuntimeError("Plugin Manager is not open. Open it and select a plugin first.")
+    plugin_id = _ACTIVE_WORKBENCH.plugin_manager_panel.selected_plugin_id()
+    if plugin_id is None:
+        raise ValueError("No plugin selected. Select a plugin in Plugin Manager first.")
+    return _ACTIVE_WORKBENCH.enable_selected_plugin()
+
+
+def disable_selected_plugin_direct(doc: Any | None = None) -> dict[str, Any]:
+    if doc is not None and _ACTIVE_WORKBENCH is not None and _ACTIVE_WORKBENCH.doc is not doc:
+        raise RuntimeError("Plugin Manager is not open for the active document")
+    if _ACTIVE_WORKBENCH is None:
+        raise RuntimeError("Plugin Manager is not open. Open it and select a plugin first.")
+    plugin_id = _ACTIVE_WORKBENCH.plugin_manager_panel.selected_plugin_id()
+    if plugin_id is None:
+        raise ValueError("No plugin selected. Select a plugin in Plugin Manager first.")
+    return _ACTIVE_WORKBENCH.disable_selected_plugin()
+
+
 def _show_in_dock(panel: ProductWorkbenchPanel) -> Any | None:
     dock = create_or_reuse_dock(_WORKBENCH_TITLE, panel.widget)
     if dock is None:

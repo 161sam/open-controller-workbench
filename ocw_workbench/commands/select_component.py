@@ -10,8 +10,8 @@ class SelectComponentCommand(BaseCommand):
 
     def GetResources(self):
         return self.resources(
-            "Components",
-            "Review, edit, and move components.",
+            "Open Components",
+            "Open the Components step in the OCW dock.",
         )
 
     def IsActive(self):
@@ -21,12 +21,12 @@ class SelectComponentCommand(BaseCommand):
         try:
             import FreeCAD as App
 
-            from ocw_workbench.workbench import ensure_workbench_ui
+            from ocw_workbench.workbench import open_workbench_dock
 
             doc = App.ActiveDocument
             if doc is None:
                 raise RuntimeError("No active FreeCAD document")
-            ensure_workbench_ui(doc, focus="components")
+            open_workbench_dock(doc, focus="components")
             log_to_console("Components command focused the Components panel.")
         except Exception as exc:
             show_error("Components", exc)

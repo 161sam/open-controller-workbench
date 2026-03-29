@@ -11,17 +11,17 @@ class OpenPluginManagerCommand(BaseCommand):
     def GetResources(self):
         return self.resources(
             "Plugin Manager",
-            "Manage installed plugins.",
+            "Open the Plugins step in the OCW dock.",
         )
 
     def Activated(self):
         try:
             import FreeCAD as App
 
-            from ocw_workbench.workbench import ensure_workbench_ui
+            from ocw_workbench.workbench import open_workbench_dock
 
             doc = App.ActiveDocument or App.newDocument("Controller")
-            ensure_workbench_ui(doc, focus="plugins")
+            open_workbench_dock(doc, focus="plugins")
             log_to_console("Plugin Manager command focused the Plugins panel.")
         except Exception as exc:
             show_error("Plugin Manager", exc)

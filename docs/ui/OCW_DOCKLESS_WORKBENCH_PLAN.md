@@ -12,6 +12,8 @@
 - Package C is implemented in the current direct-action form: `OCW_AddComponent` starts placement directly when a template is already active, otherwise it falls back to the palette without forcing the workbench dock.
 - Toolbar cleanup has progressed toward the target model: the `OCW Favorites` toolbar has been removed from the primary toolbar surface, while favorites remain available as a secondary menu path.
 - Remaining dock-reduced cleanup is concentrated in navigation-oriented commands and plugin-selection commands rather than the main direct-action workflow.
+- Plugin enable/disable is now constrained to the already-open Plugin Manager selection state instead of opening the dock implicitly; this keeps the commands action-oriented but no longer dock-opening.
+- The remaining dock-coupled commands are now intentionally explicit UI/navigation entry points rather than mixed-semantics tool commands.
 
 ---
 
