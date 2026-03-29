@@ -51,6 +51,8 @@ def env():
         "transform": [],
         "toggle_overlay": [],
         "pattern_duplicate": [],
+        "pattern_linear": [],
+        "pattern_grid": [],
     }
 
     fake_app = _make_fake_freecad(doc)
@@ -69,6 +71,12 @@ def env():
     fake_wb.toggle_overlay_direct = lambda d: calls["toggle_overlay"].append(d) or {"overlay_enabled": True}
     fake_wb.duplicate_selection_once_direct = (
         lambda d, offset_x, offset_y: calls["pattern_duplicate"].append((d, offset_x, offset_y)) or {"created_count": 2}
+    )
+    fake_wb.array_selection_linear_direct = (
+        lambda d, axis, count, spacing: calls["pattern_linear"].append((d, axis, count, spacing)) or {"created_count": 3}
+    )
+    fake_wb.array_selection_grid_direct = (
+        lambda d, rows, cols, spacing_x, spacing_y: calls["pattern_grid"].append((d, rows, cols, spacing_x, spacing_y)) or {"created_count": 3}
     )
 
     orig_app, orig_wb = _install_mocks(fake_app, fake_wb)
@@ -134,14 +142,26 @@ def test_toggle_overlay_and_duplicate_use_direct_helpers_without_workbench(monke
     from ocw_workbench.commands.component_patterns import DuplicateSelectionCommand
     from ocw_workbench.commands.toggle_overlay import ToggleOverlayCommand
 
-    monkeypatch.setattr(
-        "ocw_workbench.commands.component_patterns._collect_duplicate_values",
-        lambda: {"offset_x": 10.0, "offset_y": 12.0},
-    )
+    monkeypatch.setattr("ocw_workbench.commands.component_patterns._default_duplicate_values", lambda _doc: {"offset_x": 10.0, "offset_y": 0.0})
 
     ToggleOverlayCommand().Activated()
     DuplicateSelectionCommand().Activated()
 
     assert not ensure_called
     assert calls["toggle_overlay"] == [doc]
-    assert calls["pattern_duplicate"] == [(doc, 10.0, 12.0)]
+    assert calls["pattern_duplicate"] == [(doc, 10.0, 0.0)]
+
+
+def test_linear_and_grid_array_use_direct_defaults_without_workbench(monkeypatch, env) -> None:
+    doc, ensure_called, calls = env
+    from ocw_workbench.commands.component_patterns import GridArrayCommand, LinearArrayCommand
+
+    monkeypatch.setattr("ocw_workbench.commands.component_patterns._default_linear_array_values", lambda _doc, axis: {"count": 3, "spacing": 24.0 if axis == "x" else 18.0})
+    monkeypatch.setattr("ocw_workbench.commands.component_patterns._default_grid_array_values", lambda _doc: {"rows": 2, "cols": 2, "spacing_x": 24.0, "spacing_y": 18.0})
+
+    LinearArrayCommand("x").Activated()
+    GridArrayCommand().Activated()
+
+    assert not ensure_called
+    assert calls["pattern_linear"] == [(doc, "x", 3, 24.0)]
+    assert calls["pattern_grid"] == [(doc, 2, 2, 24.0, 18.0)]

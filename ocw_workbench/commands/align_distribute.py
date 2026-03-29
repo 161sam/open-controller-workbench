@@ -18,7 +18,8 @@ class SelectionArrangeCommand(BaseCommand):
         return self.resources(menu_text, tooltip)
 
     def IsActive(self):
-        return self._has_selection()
+        required_selection = 3 if self.operation.startswith("distribute_") else 2
+        return self._has_selection(required_selection)
 
     def Activated(self):
         menu_text, _tooltip = _command_text(self.operation)

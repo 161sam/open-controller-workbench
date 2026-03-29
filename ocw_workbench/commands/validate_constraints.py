@@ -21,7 +21,7 @@ class ValidateConstraintsCommand(BaseCommand):
         try:
             import FreeCAD as App
             from ocw_workbench.services.controller_service import ControllerService
-            from ocw_workbench.workbench import _refresh_active_workbench_if_open
+            from ocw_workbench.workbench import _refresh_active_workbench_if_open, ensure_constraint_overlay_visible_direct
 
             doc = App.ActiveDocument
             if doc is None:
@@ -29,6 +29,7 @@ class ValidateConstraintsCommand(BaseCommand):
 
             cs = ControllerService()
             report = cs.validate_layout(doc)
+            ensure_constraint_overlay_visible_direct(doc, True)
             _refresh_active_workbench_if_open(doc)
 
             summary = report.get("summary", {})
@@ -38,11 +39,11 @@ class ValidateConstraintsCommand(BaseCommand):
                 f"Constraint validation finished with {error_count} errors and {warning_count} warnings."
             )
             if error_count == 0 and warning_count == 0:
-                show_info("Validate Layout", "No issues found.")
+                show_info("Validate Layout", "No issues found. Constraint overlay remains visible for direct inspection.")
             else:
                 show_info(
                     "Validate Layout",
-                    f"{error_count} error(s), {warning_count} warning(s). See Constraints panel for details.",
+                    f"{error_count} error(s), {warning_count} warning(s). Issues are visible directly in the 3D overlay.",
                 )
         except Exception as exc:
             show_error("Validate Constraints", exc)

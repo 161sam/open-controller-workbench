@@ -1561,6 +1561,17 @@ def toggle_constraint_overlay_direct(doc: Any) -> dict[str, Any]:
     return settings
 
 
+def ensure_constraint_overlay_visible_direct(doc: Any, visible: bool = True) -> dict[str, Any]:
+    interaction_service = InteractionService(ControllerService())
+    settings = interaction_service.get_settings(doc)
+    if bool(settings.get("show_constraints", True)) == bool(visible):
+        _sync_active_workbench_if_open(doc, refresh_overlay=True)
+        return settings
+    settings = interaction_service.update_settings(doc, {"show_constraints": bool(visible)})
+    _sync_active_workbench_if_open(doc, refresh_overlay=True)
+    return settings
+
+
 def toggle_measurements_direct(doc: Any) -> dict[str, Any]:
     settings = InteractionService(ControllerService()).toggle_measurements(doc)
     _sync_active_workbench_if_open(doc, refresh_overlay=True)
