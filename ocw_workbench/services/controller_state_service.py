@@ -26,6 +26,7 @@ DEFAULT_CONTROLLER = {
     "pcb_thickness": 1.6,
     "pcb_inset": 8.0,
     "pcb_standoff_height": 8.0,
+    "mounting": {},
     "surface": None,
     "mounting_holes": [],
     "reserved_zones": [],

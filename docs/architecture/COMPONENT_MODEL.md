@@ -28,7 +28,7 @@
 - `OCW_Components`: generated component group
 - `OCW_Group_<group_id>`: optional subgroup inside `OCW_Components` for grouped component sets
 - `OCW_Component_<id>`: one visible document object per component instance
-- `OCW_Mounting`: generated mounting support group for PCB bosses / standoffs
+- `OCW_Mounting`: generated mounting support group for PCB bosses / standoffs / simplified screws
 
 Component groups do not create geometry. They exist only as tree structure so grouped template output such as pad matrices remains visible and navigable in the FreeCAD document.
 

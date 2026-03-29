@@ -365,7 +365,8 @@ class DocumentSyncService:
             return 0
         mounting_group = get_mounting_group(doc, create=True)
         for support in supports:
-            self._style_document_object(support, role="mounting")
+            role = "fastener" if str(getattr(support, "Name", "")).startswith("OCW_Screw_") else "mounting"
+            self._style_document_object(support, role=role)
             self._group_component_object(mounting_group, support)
         return len(supports)
 
@@ -518,6 +519,12 @@ class DocumentSyncService:
                 view.ShapeColor = (0.78, 0.7, 0.52)
             if hasattr(view, "LineColor"):
                 view.LineColor = (0.38, 0.3, 0.14)
+            return
+        if role == "fastener":
+            if hasattr(view, "ShapeColor"):
+                view.ShapeColor = (0.72, 0.74, 0.78)
+            if hasattr(view, "LineColor"):
+                view.LineColor = (0.28, 0.3, 0.36)
             return
         if role == "component":
             component_type = str((component or {}).get("type") or "component")

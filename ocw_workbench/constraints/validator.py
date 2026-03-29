@@ -4,7 +4,7 @@ from copy import deepcopy
 from typing import Any
 
 from ocw_workbench.constraints.ergonomics import ergonomic_proximity_warning, ergonomic_type_warning
-from ocw_workbench.constraints.models import ComponentArea
+from ocw_workbench.constraints.models import ComponentArea, ConstraintFinding
 from ocw_workbench.constraints.report import ConstraintReport
 from ocw_workbench.constraints.rules import (
     merge_constraint_config,
@@ -33,6 +33,7 @@ class ConstraintValidator:
         resolved_components = self.controller_builder.resolve_components(components)
         keepouts = self.controller_builder.build_keepouts(components)
         cutouts = self.controller_builder.build_cutout_primitives(components)
+        pcb_reference = self.controller_builder.describe_pcb_reference(controller_data)
 
         component_areas = [
             self._area_from_shape(
@@ -53,6 +54,11 @@ class ConstraintValidator:
             self._area_from_feature(feature, component_lookup=resolved_components)
             for feature in cutouts
         ]
+        bottom_keepout_areas = [
+            self._area_from_feature(feature, component_lookup=resolved_components)
+            for feature in keepouts
+            if str(feature.get("feature")) == "keepout_bottom"
+        ]
 
         for area in component_areas:
             finding = validate_inside_surface(surface, area, "inside_surface_component", "component")
@@ -72,6 +78,24 @@ class ConstraintValidator:
             finding = validate_inside_surface(surface, area, "inside_surface_cutout", "cutout")
             if finding is not None:
                 report.add(finding)
+
+        pcb_surface = self._surface_from_mapping(pcb_reference.get("surface"))
+        if pcb_surface is not None:
+            for area in bottom_keepout_areas:
+                finding = validate_inside_surface(pcb_surface, area, "component_pcb_clearance", "pcb support area")
+                if finding is not None:
+                    report.add(
+                        ConstraintFinding(
+                            severity="warning",
+                            rule_id="component_pcb_clearance",
+                            message=f"Component '{area.component_id}' extends beyond the current PCB support area",
+                            source_component=area.component_id,
+                            details=finding.details,
+                        )
+                    )
+
+        for finding in self._validate_pcb_stack(controller_data, pcb_reference):
+            report.add(finding)
 
         self._validate_pairwise_spacing(component_areas, cfg["min_component_spacing_mm"], "component_spacing", "Component spacing", report)
         self._validate_pairwise_spacing(keepout_areas, cfg["min_keepout_spacing_mm"], "keepout_spacing", "Keepout spacing", report)
@@ -193,6 +217,41 @@ class ConstraintValidator:
             "y": float(hole["y"]),
             "diameter": float(hole["diameter"]),
         }
+
+    def _surface_from_mapping(self, payload: Any) -> Any | None:
+        if not isinstance(payload, dict):
+            return None
+        shape = str(payload.get("shape") or "")
+        if shape == "rectangle":
+            return self.controller_builder.resolve_surface({"width": payload["width"], "depth": payload["height"], "surface": payload})
+        if shape == "rounded_rect":
+            return self.controller_builder.resolve_surface({"width": payload["width"], "depth": payload["height"], "surface": payload})
+        return None
+
+    def _validate_pcb_stack(self, controller_data: dict[str, Any], pcb_reference: dict[str, Any]) -> list[Any]:
+        findings: list[ConstraintFinding] = []
+        body_height = self.controller_builder.plan_body_build(controller_data).body_height
+        pcb_z = float(pcb_reference.get("z", 0.0) or 0.0)
+        pcb_top_z = float(pcb_reference.get("top_z", 0.0) or 0.0)
+        if pcb_z < float(controller_data.get("bottom_thickness", 0.0) or 0.0):
+            findings.append(
+                ConstraintFinding(
+                    severity="error",
+                    rule_id="pcb_body_clearance",
+                    message="PCB plane intersects the controller floor",
+                    details={"pcb_z": round(pcb_z, 3), "bottom_thickness": float(controller_data.get("bottom_thickness", 0.0) or 0.0)},
+                )
+            )
+        if pcb_top_z >= body_height:
+            findings.append(
+                ConstraintFinding(
+                    severity="error",
+                    rule_id="pcb_body_clearance",
+                    message="PCB stack is too tall for the controller body cavity",
+                    details={"pcb_top_z": round(pcb_top_z, 3), "body_height": round(body_height, 3)},
+                )
+            )
+        return findings
 
     def _as_dict(self, value: dict[str, Any] | Any) -> dict[str, Any]:
         if isinstance(value, dict):

@@ -199,23 +199,30 @@ def test_mounting_supports_create_hollow_bosses():
         3,
         bottom_thickness=3,
         pcb_standoff_height=8.0,
-        mounting_holes=[{"id": "mh1", "x": 15.0, "y": 12.0, "diameter": 3.2}],
+        mounting_holes=[{"id": "mh1", "x": 15.0, "y": 12.0, "diameter": 3.2, "counterbore_depth": 1.5}],
     )
     import ocw_workbench.generator.controller_builder as builder_module
 
     original_make_cylinder_shape = builder_module.shapes.make_cylinder_shape
     original_translate_shape = builder_module.shapes.translate_shape
+    original_fuse_shapes = builder_module.shapes.fuse_shapes
     builder_module.shapes.make_cylinder_shape = lambda radius, height: FakeShape("cylinder", radius=radius, height=height)
     builder_module.shapes.translate_shape = lambda shape, x=0, y=0, z=0: FakeShape("translated", source=shape, x=x, y=y, z=z)
+    builder_module.shapes.fuse_shapes = lambda parts: FakeShape("fuse_many", parts=[part for part in parts if part is not None])
     try:
         supports = builder.build_mounting_support_features(controller)
     finally:
         builder_module.shapes.make_cylinder_shape = original_make_cylinder_shape
         builder_module.shapes.translate_shape = original_translate_shape
+        builder_module.shapes.fuse_shapes = original_fuse_shapes
 
-    assert len(supports) == 1
-    assert supports[0].Name == "OCW_Boss_mh1"
-    assert supports[0].Shape.kind == "cut"
+    assert len(supports) == 2
+    boss = next(item for item in supports if item.Name == "OCW_Boss_mh1")
+    screw = next(item for item in supports if item.Name == "OCW_Screw_mh1")
+    assert boss.Shape.kind == "cut"
+    assert boss.Shape.data["base"].kind == "cut"
+    assert screw.Shape.kind == "fuse_many"
+    assert len(screw.Shape.data["parts"]) == 2
 
 
 def test_component_mount_core_spans_from_pcb_to_top_plate(monkeypatch):

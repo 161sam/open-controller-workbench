@@ -35,3 +35,16 @@ def import_layout(path: str, pcbnew_module: Any = None, board: Any = None) -> An
         f"and {rendered_keepouts} keepout(s) from {path}"
     )
     return active_board
+
+
+def build_roundtrip_import_descriptor(path: str | Path) -> dict[str, Any]:
+    layout = load_layout(Path(path))
+    roundtrip = layout.get("roundtrip", {})
+    stackup = layout.get("mechanical_stackup", {})
+    return {
+        "layout_path": str(path),
+        "import_strategy": roundtrip.get("import_strategy", "kicad_stepup_board_import"),
+        "component_reference_key": roundtrip.get("component_reference_key", "component_id"),
+        "coordinate_system": roundtrip.get("coordinate_system", "ocw_top_left_mm"),
+        "pcb_reference": stackup.get("pcb", {}).get("reference", {}),
+    }

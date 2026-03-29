@@ -81,6 +81,7 @@ class TemplateGenerator:
             "pcb_thickness": float(controller_data.get("pcb_thickness", 1.6)),
             "pcb_inset": float(controller_data.get("pcb_inset", 8.0)),
             "pcb_standoff_height": float(controller_data.get("pcb_standoff_height", 8.0)),
+            "mounting": deepcopy(controller_data.get("mounting", {})),
             "mounting_holes": deepcopy(controller_data.get("mounting_holes", [])),
             "reserved_zones": deepcopy(controller_data.get("reserved_zones", [])),
             "layout_zones": deepcopy(template.get("zones", [])),

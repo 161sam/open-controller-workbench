@@ -261,6 +261,8 @@ class PipelineRunner:
             }
             for index, hole in enumerate(controller.get("mounting_holes", []))
         ]
+        pcb_reference = self.controller_builder.describe_pcb_reference(controller)
+        mounting_hardware = self.controller_builder.describe_mounting_hardware(controller)
 
         keepouts = []
         for feature in self.controller_builder.build_keepouts(components):
@@ -288,9 +290,25 @@ class PipelineRunner:
                 "unit": "mm",
                 "origin": "top_left",
             },
+            "mechanical_stackup": {
+                "pcb": {
+                    "thickness_mm": float(controller.get("pcb_thickness", 1.6)),
+                    "inset_mm": float(controller.get("pcb_inset", 8.0)),
+                    "standoff_height_mm": float(controller.get("pcb_standoff_height", 8.0)),
+                    "reference": pcb_reference,
+                }
+            },
             "footprints": footprints,
             "mounting_holes": mounting_holes,
+            "mounting": {
+                "fasteners": mounting_hardware,
+            },
             "keepouts": keepouts,
+            "roundtrip": {
+                "import_strategy": "kicad_stepup_board_import",
+                "component_reference_key": "component_id",
+                "coordinate_system": "ocw_top_left_mm",
+            },
             "warnings": warnings,
         }
 

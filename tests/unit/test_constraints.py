@@ -82,3 +82,33 @@ def test_rotated_rect_component_uses_rotated_inside_surface_check():
     report = service.validate(controller, components)
 
     assert not any(error["rule_id"] == "inside_surface_component" for error in report["errors"])
+
+
+def test_component_bottom_keepout_outside_pcb_produces_warning():
+    service = ConstraintService()
+    controller = Controller("c1", 120, 80, 30, 3, pcb_inset=20.0)
+    components = [
+        Component("btn1", "button", 18, 40, library_ref="omron_b3f_1000"),
+    ]
+
+    report = service.validate(controller, components)
+
+    assert any(warning["rule_id"] == "component_pcb_clearance" for warning in report["warnings"])
+
+
+def test_pcb_stack_too_tall_for_body_produces_error():
+    service = ConstraintService()
+    controller = Controller(
+        "c1",
+        120,
+        80,
+        18,
+        3,
+        bottom_thickness=4.0,
+        pcb_standoff_height=10.0,
+        pcb_thickness=3.0,
+    )
+
+    report = service.validate(controller, [])
+
+    assert any(error["rule_id"] == "pcb_body_clearance" for error in report["errors"])

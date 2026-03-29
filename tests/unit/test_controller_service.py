@@ -852,6 +852,8 @@ def test_sync_document_materializes_pcb_and_mounting_supports(monkeypatch):
             return [
                 self.doc.addObject("Part::Feature", "OCW_Boss_mh1"),
                 self.doc.addObject("Part::Feature", "OCW_Boss_mh2"),
+                self.doc.addObject("Part::Feature", "OCW_Screw_mh1"),
+                self.doc.addObject("Part::Feature", "OCW_Screw_mh2"),
             ]
 
         def apply_cutout_plan(self, top, _plan):
@@ -887,9 +889,9 @@ def test_sync_document_materializes_pcb_and_mounting_supports(monkeypatch):
     assert pcb is not None
     assert pcb.Label == "OCW_PCB"
     assert mounting_group in generated.Group
-    assert [obj.Name for obj in mounting_group.Group] == ["OCW_Boss_mh1", "OCW_Boss_mh2"]
+    assert [obj.Name for obj in mounting_group.Group] == ["OCW_Boss_mh1", "OCW_Boss_mh2", "OCW_Screw_mh1", "OCW_Screw_mh2"]
     assert doc.OCWLastSync["pcb_object"] == "PCB"
-    assert doc.OCWLastSync["mounting_feature_count"] == 2
+    assert doc.OCWLastSync["mounting_feature_count"] == 4
 
 
 def test_repeated_full_sync_keeps_component_group_tree_bounded(monkeypatch):

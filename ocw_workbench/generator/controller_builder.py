@@ -51,6 +51,20 @@ class CutoutBooleanPlan:
 
 class ControllerBuilder:
     MIN_FEATURE_SIZE = 0.5
+    FASTENER_PRESETS = {
+        "m2_pan_head": {
+            "nominal_diameter": 2.0,
+            "clearance_diameter": 2.4,
+            "head_diameter": 4.0,
+            "head_height": 1.6,
+        },
+        "m3_pan_head": {
+            "nominal_diameter": 3.0,
+            "clearance_diameter": 3.2,
+            "head_diameter": 5.8,
+            "head_height": 2.2,
+        },
+    }
 
     def __init__(
         self,
@@ -76,15 +90,56 @@ class ControllerBuilder:
         pcb_shape = self._build_pcb_shape(controller)
         return shapes.create_feature(self.doc, "PCB", pcb_shape)
 
+    def describe_pcb_reference(self, controller: Any) -> dict[str, Any]:
+        surface = self._pcb_surface(controller)
+        return {
+            "surface": surface.to_dict(),
+            "offset_x": self._pcb_surface_offset_x(controller, surface),
+            "offset_y": self._pcb_surface_offset_y(controller, surface),
+            "z": self._pcb_z(controller),
+            "top_z": self._pcb_top_z(controller),
+            "thickness": self._pcb_thickness(controller),
+        }
+
+    def describe_mounting_hardware(self, controller: Any) -> list[dict[str, Any]]:
+        controller_data = self._controller_to_dict(controller)
+        hardware: list[dict[str, Any]] = []
+        for hole in controller_data.get("mounting_holes", []):
+            if not isinstance(hole, dict):
+                continue
+            profile = self._mounting_profile(controller_data, hole)
+            hole_id = str(hole.get("id") or "mount")
+            hardware.append(
+                {
+                    "id": hole_id,
+                    "x": float(hole.get("x", 0.0) or 0.0),
+                    "y": float(hole.get("y", 0.0) or 0.0),
+                    "hole_diameter": float(profile["hole_diameter"]),
+                    "boss_outer_diameter": float(profile["boss_outer_diameter"]),
+                    "boss_height": float(profile["boss_height"]),
+                    "counterbore_diameter": float(profile["counterbore_diameter"]),
+                    "counterbore_depth": float(profile["counterbore_depth"]),
+                    "fastener_type": str(profile["fastener_type"]),
+                    "screw_diameter": float(profile["screw_diameter"]),
+                    "screw_head_diameter": float(profile["screw_head_diameter"]),
+                    "screw_head_height": float(profile["screw_head_height"]),
+                    "screw_length": float(profile["screw_length"]),
+                }
+            )
+        return hardware
+
     def build_mounting_support_features(self, controller: Any) -> list[Any]:
         controller_data = self._controller_to_dict(controller)
         supports = []
         for hole in controller_data.get("mounting_holes", []):
             if not isinstance(hole, dict):
                 continue
-            feature = self._build_mounting_boss_feature(hole, controller_data)
-            if feature is not None:
-                supports.append(feature)
+            boss_feature = self._build_mounting_boss_feature(hole, controller_data)
+            if boss_feature is not None:
+                supports.append(boss_feature)
+            screw_feature = self._build_mounting_screw_feature(hole, controller_data)
+            if screw_feature is not None:
+                supports.append(screw_feature)
         return supports
 
     def build_component_feature(self, controller: Any, component: Any):
@@ -95,14 +150,15 @@ class ControllerBuilder:
         return shapes.create_feature(self.doc, f"OCW_Component_{component_id}", shape)
 
     def plan_body_build(self, controller: Any) -> BodyBuildPlan:
+        controller_data = self._controller_to_dict(controller)
         surface = self.resolve_surface(controller)
         body_height = self._body_height(controller)
         cavity_surface = None
         cavity_offset = None
         cavity_height = None
         if self._supports_shell_geometry(surface):
-            wall = max(float(getattr(controller, "wall_thickness", 0.0) or 0.0), self.MIN_FEATURE_SIZE)
-            bottom = max(float(getattr(controller, "bottom_thickness", 0.0) or 0.0), self.MIN_FEATURE_SIZE)
+            wall = max(float(controller_data.get("wall_thickness", 0.0) or 0.0), self.MIN_FEATURE_SIZE)
+            bottom = max(float(controller_data.get("bottom_thickness", 0.0) or 0.0), self.MIN_FEATURE_SIZE)
             cavity_height = body_height - bottom
             if cavity_height > self.MIN_FEATURE_SIZE:
                 cavity_surface = self._offset_surface(surface, inset=wall)
@@ -117,16 +173,17 @@ class ControllerBuilder:
         )
 
     def plan_top_plate_build(self, controller: Any) -> TopPlateBuildPlan:
+        controller_data = self._controller_to_dict(controller)
         surface = self.resolve_surface(controller)
         z_offset = self._body_height(controller)
         tongue_surface = None
         tongue_offset = None
         tongue_height = None
         if self._supports_shell_geometry(surface):
-            wall = max(float(getattr(controller, "wall_thickness", 0.0) or 0.0), self.MIN_FEATURE_SIZE)
-            clearance = max(float(getattr(controller, "inner_clearance", 0.0) or 0.0), 0.0)
-            inset = max(float(getattr(controller, "lid_inset", 0.0) or 0.0), 0.0)
-            bottom = max(float(getattr(controller, "bottom_thickness", 0.0) or 0.0), self.MIN_FEATURE_SIZE)
+            wall = max(float(controller_data.get("wall_thickness", 0.0) or 0.0), self.MIN_FEATURE_SIZE)
+            clearance = max(float(controller_data.get("inner_clearance", 0.0) or 0.0), 0.0)
+            inset = max(float(controller_data.get("lid_inset", 0.0) or 0.0), 0.0)
+            bottom = max(float(controller_data.get("bottom_thickness", 0.0) or 0.0), self.MIN_FEATURE_SIZE)
             body_height = self._body_height(controller)
             tongue_height = min(inset, max(body_height - bottom, 0.0))
             if tongue_height > self.MIN_FEATURE_SIZE:
@@ -140,7 +197,7 @@ class ControllerBuilder:
         return TopPlateBuildPlan(
             surface=surface,
             z_offset=z_offset,
-            top_thickness=float(controller.top_thickness),
+            top_thickness=float(controller_data.get("top_thickness", 0.0) or 0.0),
             tongue_surface=tongue_surface,
             tongue_offset=tongue_offset,
             tongue_height=tongue_height if tongue_surface is not None else None,
@@ -440,8 +497,9 @@ class ControllerBuilder:
         return surface.shape in {"rectangle", "rounded_rect"}
 
     def _build_component_shape(self, controller: Any, component: dict[str, Any], resolved: dict[str, Any]):
+        controller_data = self._controller_to_dict(controller)
         visual_height = self._component_visual_height(component)
-        top_z = self._body_height(controller) + float(getattr(controller, "top_thickness", 0.0) or 0.0)
+        top_z = self._body_height(controller) + float(controller_data.get("top_thickness", 0.0) or 0.0)
         pcb_top_z = self._pcb_top_z(controller)
         top_keepout = resolved["resolved_mechanical"].keepout_top
         visual_mechanical = self._component_visual_mechanical(component)
@@ -828,13 +886,14 @@ class ControllerBuilder:
         )
 
     def _build_mounting_boss_feature(self, hole: dict[str, Any], controller_data: dict[str, Any]) -> Any | None:
-        diameter = float(hole.get("diameter", 0.0) or 0.0)
+        profile = self._mounting_profile(controller_data, hole)
+        diameter = float(profile["hole_diameter"])
         x = float(hole.get("x", 0.0) or 0.0)
         y = float(hole.get("y", 0.0) or 0.0)
         if diameter <= 0.0:
             return None
-        outer_diameter = max(diameter + 3.0, 6.0)
-        boss_height = self._pcb_z(controller_data)
+        outer_diameter = float(profile["boss_outer_diameter"])
+        boss_height = float(profile["boss_height"])
         if boss_height <= self.MIN_FEATURE_SIZE:
             return None
         outer = shapes.translate_shape(
@@ -850,8 +909,49 @@ class ControllerBuilder:
             z=0.0,
         )
         shape = outer.cut(inner)
+        counterbore_depth = float(profile["counterbore_depth"])
+        counterbore_diameter = float(profile["counterbore_diameter"])
+        if (
+            counterbore_depth > self.MIN_FEATURE_SIZE
+            and counterbore_diameter > diameter
+            and counterbore_diameter < outer_diameter
+        ):
+            recess_height = min(counterbore_depth, boss_height)
+            recess = shapes.translate_shape(
+                shapes.make_cylinder_shape(counterbore_diameter / 2.0, recess_height),
+                x=x - (counterbore_diameter / 2.0),
+                y=y - (counterbore_diameter / 2.0),
+                z=boss_height - recess_height,
+            )
+            shape = shape.cut(recess)
         hole_id = str(hole.get("id") or "mount")
         return shapes.create_feature(self.doc, f"OCW_Boss_{hole_id}", shape)
+
+    def _build_mounting_screw_feature(self, hole: dict[str, Any], controller_data: dict[str, Any]) -> Any | None:
+        profile = self._mounting_profile(controller_data, hole)
+        screw_diameter = float(profile["screw_diameter"])
+        screw_head_diameter = float(profile["screw_head_diameter"])
+        screw_head_height = float(profile["screw_head_height"])
+        screw_length = float(profile["screw_length"])
+        if screw_diameter <= 0.0 or screw_length <= self.MIN_FEATURE_SIZE:
+            return None
+        x = float(hole.get("x", 0.0) or 0.0)
+        y = float(hole.get("y", 0.0) or 0.0)
+        shaft = shapes.translate_shape(
+            shapes.make_cylinder_shape(screw_diameter / 2.0, screw_length),
+            x=x - (screw_diameter / 2.0),
+            y=y - (screw_diameter / 2.0),
+            z=0.0,
+        )
+        head = shapes.translate_shape(
+            shapes.make_cylinder_shape(screw_head_diameter / 2.0, screw_head_height),
+            x=x - (screw_head_diameter / 2.0),
+            y=y - (screw_head_diameter / 2.0),
+            z=max(self._pcb_top_z(controller_data), self.MIN_FEATURE_SIZE),
+        )
+        shape = shapes.fuse_shapes([shaft, head])
+        hole_id = str(hole.get("id") or "mount")
+        return shapes.create_feature(self.doc, f"OCW_Screw_{hole_id}", shape)
 
     def _build_component_mount_core(
         self,
@@ -939,9 +1039,57 @@ class ControllerBuilder:
     def _pcb_top_z(self, controller: Any) -> float:
         return self._pcb_z(controller) + self._pcb_thickness(controller)
 
+    def _mounting_profile(self, controller_data: dict[str, Any], hole: dict[str, Any]) -> dict[str, float | str]:
+        mounting_defaults = self._mapping(controller_data.get("mounting"))
+        fastener_type = str(hole.get("fastener_type") or mounting_defaults.get("fastener_type") or self._default_fastener_type(hole))
+        preset = self.FASTENER_PRESETS.get(fastener_type, self.FASTENER_PRESETS["m3_pan_head"])
+        hole_diameter = max(float(hole.get("diameter", preset["clearance_diameter"]) or preset["clearance_diameter"]), self.MIN_FEATURE_SIZE)
+        boss_height = self._pcb_z(controller_data)
+        boss_outer_diameter = max(
+            float(hole.get("boss_outer_diameter", mounting_defaults.get("boss_outer_diameter", 0.0)) or 0.0),
+            hole_diameter + 3.0,
+            6.0,
+        )
+        screw_diameter = max(
+            min(float(preset["nominal_diameter"]), hole_diameter - 0.2),
+            self.MIN_FEATURE_SIZE,
+        )
+        screw_head_diameter = max(
+            float(hole.get("screw_head_diameter", mounting_defaults.get("screw_head_diameter", preset["head_diameter"])) or preset["head_diameter"]),
+            screw_diameter + 1.0,
+        )
+        screw_head_height = max(
+            float(hole.get("screw_head_height", mounting_defaults.get("screw_head_height", preset["head_height"])) or preset["head_height"]),
+            self.MIN_FEATURE_SIZE,
+        )
+        counterbore_depth = max(float(hole.get("counterbore_depth", mounting_defaults.get("counterbore_depth", 0.0)) or 0.0), 0.0)
+        counterbore_diameter = max(
+            float(hole.get("counterbore_diameter", mounting_defaults.get("counterbore_diameter", screw_head_diameter)) or screw_head_diameter),
+            hole_diameter,
+        )
+        return {
+            "fastener_type": fastener_type,
+            "hole_diameter": hole_diameter,
+            "boss_outer_diameter": boss_outer_diameter,
+            "boss_height": boss_height,
+            "counterbore_depth": counterbore_depth,
+            "counterbore_diameter": counterbore_diameter,
+            "screw_diameter": screw_diameter,
+            "screw_head_diameter": screw_head_diameter,
+            "screw_head_height": screw_head_height,
+            "screw_length": self._pcb_top_z(controller_data),
+        }
+
+    def _default_fastener_type(self, hole: dict[str, Any]) -> str:
+        diameter = float(hole.get("diameter", 0.0) or 0.0)
+        if diameter <= 2.6:
+            return "m2_pan_head"
+        return "m3_pan_head"
+
     def _body_height(self, controller: Any) -> float:
-        top_thickness = max(float(getattr(controller, "top_thickness", 0.0) or 0.0), self.MIN_FEATURE_SIZE)
-        total_height = max(float(getattr(controller, "height", 0.0) or 0.0), top_thickness + self.MIN_FEATURE_SIZE)
+        controller_data = self._controller_to_dict(controller)
+        top_thickness = max(float(controller_data.get("top_thickness", 0.0) or 0.0), self.MIN_FEATURE_SIZE)
+        total_height = max(float(controller_data.get("height", 0.0) or 0.0), top_thickness + self.MIN_FEATURE_SIZE)
         return max(total_height - top_thickness, self.MIN_FEATURE_SIZE)
 
     def _offset_surface(self, surface: SurfacePrimitive, inset: float) -> SurfacePrimitive | None:

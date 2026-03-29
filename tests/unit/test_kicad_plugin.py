@@ -9,7 +9,7 @@ from ocw_kicad.board import create_board_outline
 from ocw_kicad.keepout_renderer import render_keepouts
 from ocw_kicad.loader import load_layout
 from ocw_kicad.placer import place_mounting_holes
-from ocw_kicad.plugin import import_layout
+from ocw_kicad.plugin import build_roundtrip_import_descriptor, import_layout
 
 
 class FakeFootprint:
@@ -146,6 +146,17 @@ def test_load_layout_valid_fixture():
     assert len(payload["footprints"]) == 2
     assert len(payload["mounting_holes"]) == 2
     assert len(payload["keepouts"]) == 2
+    assert payload["mechanical_stackup"] == {}
+    assert payload["mounting"] == {}
+    assert payload["roundtrip"] == {}
+
+
+def test_roundtrip_descriptor_uses_defaults_for_basic_layout():
+    descriptor = build_roundtrip_import_descriptor("tests/fixtures/controller.kicad.layout.yaml")
+
+    assert descriptor["import_strategy"] == "kicad_stepup_board_import"
+    assert descriptor["component_reference_key"] == "component_id"
+    assert descriptor["coordinate_system"] == "ocw_top_left_mm"
 
 
 def test_import_layout_creates_outline_holes_keepouts_and_footprints():
