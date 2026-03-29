@@ -286,10 +286,6 @@ class OpenControllerWorkbench((Gui.Workbench if Gui is not None else object)):
         project_toolbar_commands = ["OCW_ImportTemplateFromFCStd"]
         project_menu_commands = ["OCW_CreateController", "OCW_ImportTemplateFromFCStd"]
         place_type_commands = component_toolbar_command_ids() + ["OCW_OpenComponentPalette"]
-        component_commands = [
-            "OCW_AddComponent",
-            "OCW_OpenComponentPalette",
-        ]
         layout_commands = [
             "OCW_ApplyLayout",
             "OCW_DragMoveComponent",

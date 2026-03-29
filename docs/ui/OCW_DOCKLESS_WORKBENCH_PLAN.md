@@ -39,9 +39,9 @@ These elements already conform to a FreeCAD-native workbench pattern and require
 
 ## 2. What Is Currently Dock-Dependent (The Problem)
 
-### 2.1 All Toolbar Commands call `ensure_workbench_ui()` first
+### 2.1 Historical dock dependency pattern
 
-Every command in OCW calls `ensure_workbench_ui(doc, focus="...")` before doing anything. This function:
+This section describes the original dock-coupled pattern that the current implementation has been moving away from. Historically, commands called `ensure_workbench_ui(doc, focus="...")` before doing anything. That function:
 1. Creates `ProductWorkbenchPanel` (the full 5-panel stepper UI)
 2. Shows it in a dock widget via `create_or_reuse_dock()`
 3. Calls `panel.<specific_method>()`
@@ -52,7 +52,7 @@ panel = ensure_workbench_ui(doc, focus="layout")
 result = panel.layout_panel.apply_auto_layout()
 ```
 
-The command cannot do anything without a live dock panel. If `ensure_workbench_ui()` fails (headless, no Qt), the command crashes.
+That pattern is no longer the default for the direct-action command set.
 
 **Example — `DragMoveComponentCommand.Activated()` (`drag_move_component.py:18`):**
 ```python
@@ -60,7 +60,7 @@ ensure_workbench_ui(doc, focus="components")
 started = start_component_drag_mode(doc)
 ```
 
-Even drag mode — which is pure 3D interaction — requires the dock to be open.
+That specific drag dependency is now removed.
 
 ### 2.2 The Five Core Panels are Dock-Only Workflows
 
@@ -90,9 +90,9 @@ Many commands call `panel.layout_panel.apply_auto_layout()` or `panel.constraint
 | `OCW_Array*` | `panel.array_selection_*()` | Yes — call service directly |
 | `OCW_Rotate/Mirror/Align` | `panel.apply_selection_transform/arrangement()` | Yes — call service directly |
 
-### 2.4 `AddComponentCommand` Opens Dock Before Starting Placement
+### 2.4 `AddComponentCommand` docking status
 
-`add_component.py:18–38`: calls `ensure_workbench_ui(doc, focus="components")` even when the only purpose is to start 3D placement. The dock is opened as a prerequisite.
+Resolved in the current implementation: `AddComponentCommand` starts placement directly when a template is active and only falls back to the palette path when needed.
 
 ---
 
@@ -119,9 +119,9 @@ A Fasteners-style toolbar would have: `OCW_PlaceButton`, `OCW_PlaceEncoder`, `OC
 
 ## 4. Required Architecture Changes for Dockless OCW
 
-### 4.1 Decouple Commands from `ensure_workbench_ui()`
+### 4.1 Decouple Commands from dock-opening helpers
 
-Commands must call services directly. The dock may optionally be refreshed **after** the action via a separate notification path — but the dock must not be a prerequisite.
+Commands should call services or direct interaction helpers. The dock may optionally be refreshed **after** the action via a separate notification path, but the dock must not be a prerequisite for direct tools.
 
 **Pattern change:**
 
@@ -152,7 +152,7 @@ Add one `PlaceComponentTypeCommand` per type, registered in `Initialize()` and i
 - `Activated()` → picks best variant for the type → starts `ViewPlaceController`
 - Icon: the component type icon
 
-### 4.4 `ensure_workbench_ui()` Becomes Optional Notification
+### 4.4 Dock opening is explicit, refresh remains optional
 
 After a command runs, the dock (if open) should refresh. This is done via a lightweight notification:
 
@@ -254,9 +254,15 @@ Move `apply_auto_layout()`, `validate()` etc. to service layer if not already th
 - `Workbench.Activated()` still opens the dock as a welcome screen
 - All command `Activated()` methods do NOT call `ensure_workbench_ui()` anymore
 - Dock (if open) is refreshed via `_refresh_active_workbench_if_open(doc)`
-- `ensure_workbench_ui()` is renamed to `open_workbench_dock()` to clarify intent
+- `open_workbench_dock()` is the explicit dock-opening API; `ensure_workbench_ui()` remains only as a compatibility alias
 
-**Impact:** Full dockless operation possible; dock becomes opt-in context panel.
+**Impact:** Near-dockless operation for direct tools; the dock remains an explicit opt-in context panel.
+
+### Package D status
+
+- Mostly implemented.
+- Direct tools no longer require the dock.
+- Remaining dock-aware commands are now explicit UI/navigation entry points or plugin-selection actions.
 
 ---
 
