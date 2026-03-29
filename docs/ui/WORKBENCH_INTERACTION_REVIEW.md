@@ -1,5 +1,7 @@
 # OCW Workbench Interaction Review
 
+**Status:** active main focus
+
 **Date:** 2026-03-28
 **Scope:** Command quality, toolbar registration, selection-driven behavior, dock role — compared against the Fasteners Workbench UX model.
 

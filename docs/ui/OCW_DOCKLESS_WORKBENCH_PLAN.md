@@ -1,5 +1,7 @@
 # OCW Dockless Workbench Plan
 
+**Status:** active supporting strategy
+
 **Date:** 2026-03-29
 **Goal:** Remove dependency on the permanent dock/sidebar as the primary workflow. Make OCW feel like FastenersWB — toolbar-first, selection-driven, direct-action.
 

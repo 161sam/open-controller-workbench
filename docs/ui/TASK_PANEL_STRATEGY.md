@@ -1,5 +1,7 @@
 # Task Panel Strategy
 
+**Status:** partially outdated, superseded in priority by WORKBENCH_INTERACTION_REVIEW.md
+
 ## Current State
 
 The current Workbench UI is centered around a persistent right-side dock created in [`ocw_workbench/gui/docking.py`](../../ocw_workbench/gui/docking.py) and assembled in [`ocw_workbench/workbench.py`](../../ocw_workbench/workbench.py).

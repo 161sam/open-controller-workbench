@@ -1,5 +1,7 @@
 # Fasteners Workbench — Reference Analysis for OCW
 
+**Status:** active reference
+
 **Date:** 2026-03-29
 **Purpose:** Technical patterns from FastenersWB that OCW should adopt, adapt, or explicitly skip.
 

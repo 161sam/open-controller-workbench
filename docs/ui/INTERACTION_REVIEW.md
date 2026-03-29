@@ -1,5 +1,7 @@
 # Interaction System Review — 2026-03-28
 
+**Status:** partially outdated reference
+
 ## Architecture Overview
 
 The interaction system is split across three layers:

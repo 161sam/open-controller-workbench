@@ -1,5 +1,7 @@
 # Dock UI Redesign Summary
 
+**Status:** partially outdated summary
+
 ## Scope
 
 This document summarizes the current release-ready dock UI state of Open Controller Workbench after the dock cleanup, validation integration, and direct-interaction MVP work.

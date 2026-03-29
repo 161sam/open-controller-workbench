@@ -1,5 +1,7 @@
 # Feature Improvement Review — Open Controller Workbench UI
 
+**Status:** partially outdated reference
+
 **Date:** 2026-03-28
 **Scope:** Existing features only. No new features. Stability, UX, and maintainability.
 
@@ -22,36 +24,36 @@
 
 ## 2. Biggest Problems
 
-### BUG (critical): Orphaned Widgets in CreatePanel
+### VERIFIED: CreatePanel orphaned widget bug is mostly fixed
 
-**File:** [`create_panel.py:916–919`](../../ocw_workbench/gui/panels/create_panel.py)
+**File:** [`create_panel.py:901–922`](../../ocw_workbench/gui/panels/create_panel.py)
 
-Only the combo boxes are added to the layout:
+The previous bug is no longer present for the main controls. The current code adds row widgets and summaries to the form:
 
 ```python
-selection_form.addRow("Template", template)
-selection_form.addRow("Variant", variant)
+selection_form.addRow("Template", template_fav_row)
+selection_form.addRow(template_summary)
+selection_form.addRow("Variant", variant_fav_row)
+selection_form.addRow(variant_summary)
 ```
 
-The following widgets are **created, connected, and populated with data — but never inserted into any layout:**
+Still worth tracking:
 
-- `template_summary` — template description text (always invisible)
-- `variant_summary` — variant description text (always invisible)
-- `favorite_template_button` — "Favorite" button (not clickable, not visible)
-- `favorite_variant_button` — "Favorite" button (not clickable, not visible)
-- `favorite_template_status` / `favorite_variant_status` — status labels (redundant with ★ in combo)
+- `template_summary` and `variant_summary` are visible.
+- `favorite_template_button` and `favorite_variant_button` are visible and connected.
+- `favorite_template_status` / `favorite_variant_status` are still created and updated, but not inserted into any layout.
 
-**Impact:** Users cannot read template descriptions or set favorites, even though all backend code works correctly.
+**Impact:** The original visibility bug is fixed. Remaining cleanup is limited to redundant status labels.
 
-### UX: `active_project` buried in collapsed section
+### VERIFIED: `active_project` is already outside the collapsed section
 
-**File:** [`create_panel.py:941–948`](../../ocw_workbench/gui/panels/create_panel.py)
+**File:** [`create_panel.py:947–953`](../../ocw_workbench/gui/panels/create_panel.py)
 
-The `active_project` label (shows: "template X | 3 components | layout grid | ...") is inside `document_actions_section`, which is **collapsed by default**. Users cannot see whether a project is already loaded.
+The current code adds `active_project` directly to `action_layout` before the collapsed `document_actions_section`, so the visibility issue has already been fixed.
 
 ### Fragile level detector in `set_status()`
 
-**File:** [`workbench.py:431–436`](../../ocw_workbench/workbench.py)
+**File:** [`workbench.py:476–486`](../../ocw_workbench/workbench.py)
 
 Level is determined by string matching:
 ```python
@@ -59,17 +61,17 @@ level = "error" if message.lower().startswith("could not") ...
 ```
 Any text change in a panel status message breaks the feedback level.
 
-### Inefficiency: `ControllerService()` instantiated per call
+### VERIFIED: no per-call `ControllerService()` instantiation in `_FavoriteComponentCommand`
 
-**File:** [`workbench.py:158`](../../ocw_workbench/workbench.py)
+**File:** [`workbench.py:141–152`](../../ocw_workbench/workbench.py)
 
-`_FavoriteComponentCommand._favorite_component()` creates a new `ControllerService()` on every call, transitively initializing all sub-services.
+The current implementation does not create a `ControllerService()` in `_FavoriteComponentCommand`. It reads favorites via `UserDataService()` during initialization and resolves the component once via `LibraryService()`.
 
-### Inline stylesheet is 250+ lines of Python string
+### VERIFIED: workbench stylesheet already extracted to QSS
 
-**File:** [`workbench.py:1182`](../../ocw_workbench/workbench.py)
+**File:** [`workbench.py:745–753`](../../ocw_workbench/workbench.py), [`workbench.py:1248–1254`](../../ocw_workbench/workbench.py), [`resources/ui/workbench_shell.qss`](../../resources/ui/workbench_shell.qss)
 
-No IDE syntax highlighting, no CSS tooling, hard to maintain.
+`workbench.py` now loads stylesheet content from `resources/ui/workbench_shell.qss`, so the previous inline-string maintainability issue is no longer current.
 
 ---
 
@@ -79,43 +81,39 @@ No IDE syntax highlighting, no CSS tooling, hard to maintain.
 
 | Problem | File | Line |
 |---|---|---|
-| Orphaned widgets: template/variant summary + favorite buttons | `create_panel.py` | 900–920 |
-| `active_project` always visible (not collapsed) | `create_panel.py` | 941–948 |
+| Remove orphaned `favorite_template_status` / `favorite_variant_status` labels or surface them intentionally | `create_panel.py` | 861–866, 545–555, 585–599 |
 
 ### MEDIUM — Fix next
 
 | Problem | File | Line |
 |---|---|---|
-| `set_status()` level heuristic → explicit level parameter | `workbench.py` | 431 |
-| `LayoutPanel`: validation status out of collapsible | `layout_panel.py` | 386–401 |
-| `ConstraintsPanel`: `results_overview` + `next_step` redundant outputs | `constraints_panel.py` | 375–376 |
+| `set_status()` level heuristic → explicit level parameter | `workbench.py` | 476–486 |
+| `LayoutPanel`: validation status out of collapsible | `layout_panel.py` | Verified fixed at 371, 391 |
+| `ConstraintsPanel`: `results_overview` + `next_step` redundant outputs | `constraints_panel.py` | `results_overview` no longer exists; re-check `review_value` + `next_step` at 183–196, 364–370 |
 
 ### LOW — Fix later
 
 | Problem | File | Line |
 |---|---|---|
-| `_FavoriteComponentCommand` creates new service per call | `workbench.py` | 158 |
+| `_FavoriteComponentCommand` creates new service per call | `workbench.py` | Verified fixed at 141–152 |
 | `favorite_template_status` / `favorite_variant_status` labels redundant | `create_panel.py` | 861–866 |
-| Extract stylesheet from Python string | `workbench.py` | 1182 |
+| Extract stylesheet from Python string | `workbench.py` | Verified fixed at 1248–1254 |
 
 ---
 
 ## 4. Recommended Implementation Order
 
-### Package 1 (this session) — CreatePanel visible context
-1. Fix orphaned widgets: template_summary, variant_summary, favorite buttons
-2. Move `active_project` out of collapsed section
+### Package 1 (this session) — shell + small UI cleanup
+1. Remove or intentionally place `favorite_template_status` / `favorite_variant_status`
 
 ### Package 2 — Shell feedback stability
-3. Fix `set_status()` level detection
+2. Fix `set_status()` level detection
 
 ### Package 3 — Layout/Validate panel improvements
-4. LayoutPanel: current state inline
-5. ConstraintsPanel: reduce redundancy
+3. Verify whether `ConstraintsPanel` still needs `review_value` plus `next_step`, then reduce overlap if confirmed
 
 ### Package 4 — Code quality
-6. `_FavoriteComponentCommand` optimization
-7. Stylesheet extraction
+4. Keep current external QSS loading and avoid regressions back to inline styles
 
 ---
 

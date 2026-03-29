@@ -1,5 +1,7 @@
 # Dock Refactor Plan
 
+**Status:** obsolete as primary roadmap, superseded by WORKBENCH_INTERACTION_REVIEW.md and OCW_DOCKLESS_WORKBENCH_PLAN.md
+
 ## Scope
 
 This document captures the **current technical state** of the Open Controller Workbench dock UI and defines a **low-risk refactor sequence** for the next implementation steps.
