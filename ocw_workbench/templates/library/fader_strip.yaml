@@ -17,6 +17,10 @@ controller:
     corner_radius: 8
   height: 30
   top_thickness: 3
+  wall_thickness: 3
+  bottom_thickness: 3
+  lid_inset: 1.5
+  inner_clearance: 0.35
 zones:
   - id: "fader_lane"
     type: "column"
@@ -52,6 +56,8 @@ components:
 layout:
   strategy: "zone"
   config:
+    grid_mm: 1
+    padding_mm: 10
     spacing_mm: 24
 parameters:
   - id: "fader_length"
@@ -105,3 +111,11 @@ constraints:
   profile: "default"
 defaults:
   io_strategy: "direct_gpio"
+  component_defaults:
+    by_zone:
+      button_row:
+        tags:
+          - "utility"
+      fader_lane:
+        tags:
+          - "mix"

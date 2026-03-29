@@ -15,6 +15,10 @@ controller:
     corner_radius: 8
   height: 28
   top_thickness: 3
+  wall_thickness: 3
+  bottom_thickness: 3
+  lid_inset: 1.5
+  inner_clearance: 0.35
 zones:
   - id: "transport_buttons"
     type: "row"
@@ -51,8 +55,15 @@ components:
 layout:
   strategy: "row"
   config:
+    grid_mm: 1
+    padding_mm: 10
     spacing_mm: 22
 constraints:
   profile: "default"
 defaults:
   io_strategy: "direct_gpio"
+  component_defaults:
+    by_zone:
+      transport_buttons:
+        tags:
+          - "transport"

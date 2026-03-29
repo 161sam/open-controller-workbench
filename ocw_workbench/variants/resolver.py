@@ -45,13 +45,25 @@ class VariantResolver:
         resolved = self._apply_overrides(resolved, variant.get("overrides"), context=f"variant '{variant_id}'")
         resolved = self._apply_overrides(resolved, runtime_overrides, context=f"runtime overrides for '{variant_id}'")
         resolved["variant"] = deepcopy(variant_meta)
+        variant_values = (
+            variant.get("overrides", {}).get("parameters")
+            if isinstance(variant.get("overrides"), dict) and isinstance(variant.get("overrides", {}).get("parameters"), dict)
+            else None
+        )
         runtime_values = runtime_overrides.get("parameters") if isinstance(runtime_overrides, dict) and isinstance(runtime_overrides.get("parameters"), dict) else None
+        resolved_values = deepcopy(variant_values) if isinstance(variant_values, dict) else {}
+        if isinstance(runtime_values, dict):
+            resolved_values.update(deepcopy(runtime_values))
         runtime_preset_id = (
             str(runtime_overrides.get("parameter_preset_id"))
             if isinstance(runtime_overrides, dict) and runtime_overrides.get("parameter_preset_id") is not None
             else None
         )
-        return self.parameter_resolver.apply(resolved, values=runtime_values, preset_id=runtime_preset_id)
+        return self.parameter_resolver.apply(
+            resolved,
+            values=resolved_values or None,
+            preset_id=runtime_preset_id,
+        )
 
     def _apply_overrides(
         self,

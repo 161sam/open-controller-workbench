@@ -16,10 +16,13 @@ def test_variant_generator_replaces_fader_component():
 def test_variant_generator_adds_oled_component():
     project = VariantGenerator().generate_from_variant("pad_grid_4x4_oled")
     component_ids = {component["id"] for component in project["components"]}
+    oled = next(component for component in project["components"] if component["id"] == "oled_status")
 
     assert "oled_status" in component_ids
     assert len(project["components"]) == 17
     assert project["controller"]["surface"]["width"] == 220
+    assert oled["zone_id"] == "display_zone"
+    assert oled["tags"] == ["status", "oled"]
 
 
 def test_variant_generator_sets_handedness_for_display_nav_variants():

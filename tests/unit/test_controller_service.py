@@ -446,7 +446,7 @@ def test_create_from_template_pad_grid_uses_template_layout_without_cutout_overl
     assert state["meta"]["layout"]["config"]["cols"] == 4
     assert state["meta"]["layout"]["config"]["spacing_x_mm"] == 36.0
     assert state["meta"]["layout"]["config"]["spacing_y_mm"] == 36.0
-    assert state["meta"]["layout"]["config"]["padding_mm"] == 10.0
+    assert state["meta"]["layout"]["config"]["padding_mm"] == 12.0
 
     placements = [(component["x"], component["y"]) for component in state["components"]]
     assert len(set(placements)) == 16

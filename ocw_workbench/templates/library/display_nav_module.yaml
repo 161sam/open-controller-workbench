@@ -15,6 +15,10 @@ controller:
     corner_radius: 8
   height: 30
   top_thickness: 3
+  wall_thickness: 3
+  bottom_thickness: 3
+  lid_inset: 1.5
+  inner_clearance: 0.35
 zones:
   - id: "display_zone"
     type: "grid"
@@ -54,6 +58,8 @@ components:
 layout:
   strategy: "zone"
   config:
+    grid_mm: 1
+    padding_mm: 10
     spacing_x_mm: 32
     spacing_y_mm: 24
 parameters:
@@ -112,3 +118,13 @@ constraints:
   profile: "default"
 defaults:
   io_strategy: "direct_gpio"
+  component_defaults:
+    by_zone:
+      display_zone:
+        tags:
+          - "status"
+          - "template"
+      nav_zone:
+        tags:
+          - "navigation"
+          - "template"

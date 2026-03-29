@@ -44,3 +44,9 @@ overrides:
       spacing_y_mm: 36
   defaults:
     io_strategy: "matrix"
+    component_defaults:
+      by_zone:
+        display_zone:
+          tags:
+            - "status"
+            - "oled"

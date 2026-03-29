@@ -18,6 +18,10 @@ controller:
     corner_radius: 10
   height: 32
   top_thickness: 3
+  wall_thickness: 3
+  bottom_thickness: 3
+  lid_inset: 1.5
+  inner_clearance: 0.35
 zones:
   - id: "pad_matrix"
     type: "grid"
@@ -30,6 +34,8 @@ components: []
 layout:
   strategy: "grid"
   config:
+    grid_mm: 1
+    padding_mm: 12
     rows: "${parameters.pad_count_y}"
     cols: "${parameters.pad_count_x}"
     spacing_x_mm: 36
@@ -89,6 +95,9 @@ parameter_presets:
 parameter_bindings:
   component_grids:
     - id_prefix: "pad"
+      group_id: "pad_matrix"
+      group_role: "performance_pad_matrix"
+      label_pattern: "Pad {row},{col}"
       count_x_parameter: "pad_count_x"
       count_y_parameter: "pad_count_y"
       component:
@@ -99,3 +108,9 @@ constraints:
   profile: "default"
 defaults:
   io_strategy: "matrix"
+  component_defaults:
+    by_type:
+      pad:
+        tags:
+          - "performance"
+          - "grid"

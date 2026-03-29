@@ -23,6 +23,12 @@ class Component:
         address: str | None = None,
         row: int | None = None,
         col: int | None = None,
+        label: str | None = None,
+        visible: bool | None = None,
+        tags: list[str] | None = None,
+        properties: dict[str, Any] | None = None,
+        group_id: str | None = None,
+        group_role: str | None = None,
         pins: dict[str, Any] | None = None,
         rotation: float | None = None,
         zone_id: str | None = None,
@@ -44,6 +50,12 @@ class Component:
         self.address = address
         self.row = row
         self.col = col
+        self.label = label
+        self.visible = True if visible is None else bool(visible)
+        self.tags = deepcopy(tags) if tags is not None else None
+        self.properties = deepcopy(properties) if properties is not None else None
+        self.group_id = group_id
+        self.group_role = group_role
         self.pins = deepcopy(pins) if pins is not None else None
         self.rotation = 0.0 if rotation is None else float(rotation)
         self.zone_id = zone_id

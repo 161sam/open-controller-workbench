@@ -263,12 +263,31 @@ class TemplateParameterResolver:
         count_y = int(values[count_y_parameter])
         id_prefix = str(binding.get("id_prefix") or "item")
         start_index = int(binding.get("start_index", 1) or 1)
+        group_id = str(binding.get("group_id") or id_prefix)
+        group_role = str(binding.get("group_role") or "").strip() or None
+        label_pattern = str(binding.get("label_pattern") or "").strip() or None
         generated: list[dict[str, Any]] = []
         next_index = start_index
-        for _row in range(count_y):
-            for _column in range(count_x):
+        for row_index in range(count_y):
+            for column_index in range(count_x):
                 item = deepcopy(component)
                 item["id"] = f"{id_prefix}{next_index}"
+                item.setdefault("row", row_index)
+                item.setdefault("col", column_index)
+                item.setdefault("group_id", group_id)
+                if group_role is not None:
+                    item.setdefault("group_role", group_role)
+                if label_pattern is not None:
+                    item.setdefault(
+                        "label",
+                        label_pattern.format(
+                            index=next_index,
+                            row=row_index + 1,
+                            col=column_index + 1,
+                            row_index=row_index,
+                            col_index=column_index,
+                        ),
+                    )
                 generated.append(item)
                 next_index += 1
         return generated

@@ -64,6 +64,9 @@ def test_parameter_bindings_generate_component_grid_and_mapped_component_refs():
             "component_grids": [
                 {
                     "id_prefix": "pad",
+                    "group_id": "pad_matrix",
+                    "group_role": "performance_pad_matrix",
+                    "label_pattern": "Pad {row},{col}",
                     "count_x_parameter": "pad_count_x",
                     "count_y_parameter": "pad_count_y",
                     "component": {"type": "pad", "library_ref": "generic_mpc_pad_30mm", "zone": "pad_matrix"},
@@ -80,6 +83,11 @@ def test_parameter_bindings_generate_component_grid_and_mapped_component_refs():
     assert resolved["components"][0]["library_ref"] == "generic_45mm_linear_fader"
     assert len(resolved["components"]) == 7
     assert resolved["components"][1]["id"] == "pad1"
+    assert resolved["components"][1]["group_id"] == "pad_matrix"
+    assert resolved["components"][1]["group_role"] == "performance_pad_matrix"
+    assert resolved["components"][1]["row"] == 0
+    assert resolved["components"][1]["col"] == 0
+    assert resolved["components"][1]["label"] == "Pad 1,1"
 
 
 def test_parameter_bindings_map_component_selection_for_display_and_knob_profiles():

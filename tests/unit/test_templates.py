@@ -76,10 +76,21 @@ def test_template_generator_outputs_controller_project():
     assert project["components"][0]["zone_id"] is not None
 
 
+def test_template_generator_applies_controller_shell_defaults():
+    project = TemplateGenerator().generate_from_template("encoder_module")
+
+    assert project["controller"]["wall_thickness"] == 3.0
+    assert project["controller"]["bottom_thickness"] == 3.0
+    assert project["controller"]["lid_inset"] == 1.5
+    assert project["controller"]["inner_clearance"] == 0.35
+
+
 def test_template_generator_preserves_pad_grid_layout_config():
     project = TemplateGenerator().generate_from_template("pad_grid_4x4")
 
     assert project["layout"]["strategy"] == "grid"
+    assert project["layout"]["config"]["grid_mm"] == 1
+    assert project["layout"]["config"]["padding_mm"] == 12
     assert project["layout"]["config"]["rows"] == 4
     assert project["layout"]["config"]["cols"] == 4
     assert project["layout"]["config"]["spacing_x_mm"] == 36
@@ -97,6 +108,21 @@ def test_parameterized_pad_grid_template_changes_component_count_and_case_size()
     assert project["controller"]["depth"] == 110.0
     assert project["layout"]["config"]["rows"] == 2
     assert project["layout"]["config"]["cols"] == 8
+    assert project["components"][0]["group_id"] == "pad_matrix"
+    assert project["components"][0]["group_role"] == "performance_pad_matrix"
+    assert project["components"][0]["label"] == "Pad 1,1"
+    assert project["components"][0]["tags"] == ["performance", "grid"]
+    assert project["components"][-1]["label"] == "Pad 2,8"
+
+
+def test_template_component_defaults_apply_by_zone_and_type():
+    project = TemplateGenerator().generate_from_template("display_nav_module")
+
+    display = next(component for component in project["components"] if component["id"] == "oled_status")
+    button = next(component for component in project["components"] if component["id"] == "btn_back")
+
+    assert display["tags"] == ["status", "template"]
+    assert button["tags"] == ["navigation", "template"]
 
 
 def test_parameterized_fader_template_switches_library_ref():

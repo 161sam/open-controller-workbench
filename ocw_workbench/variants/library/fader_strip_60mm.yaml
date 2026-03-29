@@ -11,6 +11,10 @@ variant:
   version: "1.0"
 
 overrides:
+  parameters:
+    fader_length: 60
+    case_width: 90.0
+    case_depth: 150.0
   controller:
     surface:
       width: 90
