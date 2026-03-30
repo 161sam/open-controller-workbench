@@ -8,7 +8,7 @@ from ocw_workbench.variants.registry import VariantRegistry
 
 
 def test_variant_loader_loads_fader_strip_variant():
-    variant = VariantLoader().load("ocw_workbench/variants/library/fader_strip_60mm.yaml")
+    variant = VariantLoader().load("plugins/plugin_midicontroller/variants/fader_strip_60mm.yaml")
 
     assert variant.id == "fader_strip_60mm"
     assert variant.template_id == "fader_strip"

@@ -20,15 +20,15 @@ def _reset_plugin_service_after_test():
 
 
 def test_plugin_manifest_loads_internal_template_pack() -> None:
-    manifest = load_plugin_manifest("ocw_workbench/plugins/internal/default_templates/manifest.yaml")
+    manifest = load_plugin_manifest("ocw_workbench/plugins/internal/default_exporters/manifest.yaml")
 
-    assert manifest.plugin_id == "default_templates"
-    assert manifest.plugin_type == "template_pack"
+    assert manifest.plugin_id == "default_exporters"
+    assert manifest.plugin_type == "exporter"
     assert manifest.domain_type is None
-    assert manifest.provides_templates is True
+    assert manifest.provides_templates is False
     assert manifest.provides_components is False
     assert manifest.provides_commands is False
-    assert manifest.entrypoints.templates == "../../../templates/library"
+    assert manifest.entrypoints.module == "hooks.py"
 
 
 def test_plugin_manifest_rejects_incompatible_api_version(tmp_path: Path) -> None:
@@ -60,19 +60,16 @@ def test_plugin_loader_loads_internal_plugins_and_registers_sources_and_exporter
 
     plugin_ids = {descriptor.plugin_id for descriptor in registry.plugin_descriptors()}
     assert {
-        "core_components",
-        "default_templates",
-        "default_variants",
         "default_exporters",
         "basic_components_pack",
         "basic_templates_pack",
         "basic_variants_pack",
     } <= plugin_ids
-    assert any(path.name == "components" for path in registry.component_sources())
-    assert any(path.name == "library" for path in registry.template_sources())
-    assert any(path.name == "library" for path in registry.variant_sources())
     assert any(path.name == "templates" for path in registry.template_sources())
     assert any(path.name == "variants" for path in registry.variant_sources())
+    assert any("basic_components_pack" in str(path) for path in registry.component_sources())
+    assert any("basic_templates_pack" in str(path) for path in registry.template_sources())
+    assert any("basic_variants_pack" in str(path) for path in registry.variant_sources())
     assert "bom_yaml" in registry.exporters()
     assert "kicad_layout" in registry.exporters()
 

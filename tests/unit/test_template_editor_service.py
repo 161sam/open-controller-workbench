@@ -111,7 +111,7 @@ def test_template_editor_service_requires_explicit_overwrite(monkeypatch, tmp_pa
 
 def test_template_editor_service_builds_parameter_editor_model_from_template():
     service = TemplateEditorService()
-    payload = service.load_template("ocw_workbench/templates/library/fader_strip.yaml")
+    payload = service.load_template("plugins/plugin_midicontroller/templates/fader_strip.yaml")
 
     model = service.build_parameter_editor_model(payload)
 
@@ -122,7 +122,7 @@ def test_template_editor_service_builds_parameter_editor_model_from_template():
 
 def test_template_editor_service_applies_parameter_defaults_and_resolves_preview():
     service = TemplateEditorService()
-    payload = service.load_template("ocw_workbench/templates/library/pad_grid_4x4.yaml")
+    payload = service.load_template("plugins/plugin_midicontroller/templates/pad_grid_4x4.yaml")
 
     updated = service.apply_parameter_defaults(
         payload,
@@ -168,7 +168,7 @@ def test_template_inspector_panel_maps_parameters_and_can_reset_defaults(monkeyp
     monkeypatch.setattr("ocw_workbench.gui.panels.template_inspector_panel.load_qt", lambda: (None, None, None))
     monkeypatch.setattr("ocw_workbench.gui.widgets.parameter_editor.load_qt", lambda: (None, None, None))
     service = TemplateEditorService()
-    panel = TemplateInspectorPanel("ocw_workbench/templates/library/fader_strip.yaml", template_editor_service=service)
+    panel = TemplateInspectorPanel("plugins/plugin_midicontroller/templates/fader_strip.yaml", template_editor_service=service)
 
     panel.form["parameter_editor"].control_widget("fader_length").setCurrentIndex(0)
     panel.handle_parameter_widget_changed()

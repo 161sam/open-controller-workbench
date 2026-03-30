@@ -35,12 +35,6 @@ def get_variant_source_entries(base_path: str | Path | None = None) -> list[Plug
     if plugin_pack_sources:
         for source in plugin_pack_sources:
             LOGGER.debug("Variant source root: plugin-pack '%s' -> %s", source.plugin_id, source.path)
-    elif not sources:
-        fallback = Path(__file__).resolve().parent / "library"
-        if not fallback.exists():
-            raise FileNotFoundError(f"Variant library path not found: {fallback}")
-        plugin_pack_sources = [PluginSource(plugin_id=None, path=fallback)]
-        LOGGER.debug("Variant source root: fallback -> %s", fallback)
     if OCW_STRICT_PLUGIN_MODE and active_plugin is not None:
         plugin_sources_only = [source for source in plugin_pack_sources if source.plugin_id is not None]
         return _dedupe_source_entries(sources + plugin_sources_only)

@@ -9,6 +9,7 @@ MODULE_ROOT_NAME = "OpenControllerWorkbench"
 RUNTIME_TREE_PATHS = [
     "ocw_kicad",
     "ocw_workbench",
+    "plugins",
     "resources",
     "examples",
     "screenshots",

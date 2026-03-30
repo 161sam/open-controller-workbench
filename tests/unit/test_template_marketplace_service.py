@@ -99,7 +99,7 @@ def _marketplace_service(tmp_path: Path) -> TemplateMarketplaceService:
     manager = PluginManagerService(
         persistence=PluginStatePersistence(base_dir=str(tmp_path / "state")),
         internal_root=Path("ocw_workbench/plugins/internal"),
-        external_root=tmp_path / "external",
+        external_root=Path("ocw_workbench/plugins/external"),
     )
     return TemplateMarketplaceService(
         template_service=TemplateService(),

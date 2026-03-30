@@ -116,9 +116,9 @@ def test_component_library_normalizes_ui_metadata_and_fallback_icon():
     rgb_button = manager.get_component("generic_rgb_arcade_button_24mm")
 
     assert button["ui"]["icon"] == "button.svg"
-    assert button["ui"]["category"] == "controls"
+    assert button["ui"]["category"] == "Buttons & Utility"
     assert "press" in button["ui"]["tags"]
     assert plugin_encoder["ui"]["icon"] == "encoder.svg"
     assert plugin_encoder["ui"]["category"] == "controls"
     assert rgb_button["ui"]["icon"] == "generic.svg"
-    assert rgb_button["ui"]["category"] == "rgb_button"
+    assert rgb_button["ui"]["category"] == "Performance Pads"

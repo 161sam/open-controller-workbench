@@ -31,7 +31,9 @@ def test_plugin_manager_lists_internal_plugins() -> None:
     plugins = service.list_plugins()
     ids = {item["id"] for item in plugins}
 
-    assert {"core_components", "default_templates", "default_variants", "default_exporters"} <= ids
+    assert "default_exporters" in ids
+    assert "basic_components_pack" in ids
+    assert "basic_templates_pack" in ids
 
 
 def test_plugin_manager_persists_enable_disable_state(tmp_path: Path) -> None:
@@ -45,10 +47,29 @@ def test_plugin_manager_persists_enable_disable_state(tmp_path: Path) -> None:
 
 
 def test_required_plugin_cannot_be_disabled(tmp_path: Path) -> None:
-    service = _service(tmp_path)
+    internal_root = tmp_path / "internal"
+    plugin_dir = internal_root / "required_plugin"
+    plugin_dir.mkdir(parents=True)
+    dump_yaml(
+        plugin_dir / "manifest.yaml",
+        {
+            "plugin": {
+                "id": "required_plugin",
+                "name": "Required Plugin",
+                "version": "0.1.0",
+                "api_version": "1.0",
+                "type": "workflow",
+                "non_disableable": True,
+            },
+            "entrypoints": {},
+            "capabilities": [],
+            "dependencies": [],
+        },
+    )
+    service = _service(tmp_path, internal_root=internal_root)
 
     with pytest.raises(ValueError, match="cannot be disabled"):
-        service.set_enabled("core_components", False)
+        service.set_enabled("required_plugin", False)
 
 
 def test_corrupt_plugin_state_file_falls_back_to_defaults(tmp_path: Path) -> None:
@@ -57,7 +78,7 @@ def test_corrupt_plugin_state_file_falls_back_to_defaults(tmp_path: Path) -> Non
     persistence.path.write_text("{ broken json", encoding="utf-8")
     service = _service(tmp_path)
 
-    plugin = service.get_plugin("default_templates")
+    plugin = service.get_plugin("default_exporters")
 
     assert plugin["status"] == "enabled"
 

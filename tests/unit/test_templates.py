@@ -11,7 +11,7 @@ from ocw_workbench.utils.yaml_io import dump_yaml
 
 def test_template_loader_loads_encoder_module():
     loader = TemplateLoader()
-    template = loader.load("ocw_workbench/templates/library/encoder_module.yaml")
+    template = loader.load("plugins/plugin_midicontroller/templates/encoder_module.yaml")
 
     assert template.id == "encoder_module"
     assert template.controller["surface"]["type"] == "rounded_rect"

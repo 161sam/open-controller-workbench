@@ -39,7 +39,7 @@ def test_loader_load_all_keeps_existing_plugins_and_registers_domain_plugin() ->
 
     assert registry.has_plugin("midicontroller")
     assert registry.has_plugin("bike_trailer")
-    assert registry.has_plugin("default_templates")
+    assert registry.has_plugin("basic_templates_pack")
     assert {plugin.plugin_id for plugin in registry.get_domain_plugins()} == {"midicontroller", "bike_trailer"}
     assert registry.get_active_plugin() is not None
     assert registry.get_active_plugin().plugin_id == "midicontroller"
@@ -67,15 +67,15 @@ def test_activation_rejects_non_domain_plugin() -> None:
     registry = ExtensionRegistry()
     registry.register_plugin(
         Plugin(
-            plugin_id="default_templates",
-            name="Default Templates",
+            plugin_id="default_exporters",
+            name="Default Exporters",
             version="0.1.0",
-            plugin_type="template_pack",
+            plugin_type="exporter",
         )
     )
 
     with pytest.raises(ValueError, match="not a domain plugin"):
-        activate_plugin("default_templates", registry=registry)
+        activate_plugin("default_exporters", registry=registry)
 
 
 def test_scan_plugins_supports_simple_plugin_yaml(tmp_path: Path) -> None:
