@@ -15,11 +15,26 @@ def test_midicontroller_templates_describe_clear_starting_points() -> None:
     activate_plugin("midicontroller")
 
     templates = {item["template"]["id"]: item["template"] for item in TemplateRegistry().list_templates()}
+    full_templates = {item["template"]["id"]: item for item in TemplateRegistry().list_templates()}
 
     assert templates["pad_grid_4x4"]["name"] == "Finger Drum Pad Grid"
-    assert "finger-drumming controller" in templates["pad_grid_4x4"]["description"]
+    assert "beat-making or clip-launch controller" in templates["pad_grid_4x4"]["description"]
     assert templates["fader_strip"]["name"] == "Channel Strip"
     assert templates["display_nav_module"]["category"] == "navigation"
+    assert full_templates["pad_grid_4x4"]["metadata"]["workflow_hint"].startswith("Use this when the pads")
+    assert [preset["name"] for preset in full_templates["pad_grid_4x4"]["parameter_presets"]] == [
+        "Studio Finger Drum 4x4",
+        "Clip Launch Bar 8x2",
+        "Hybrid Pad Grid 4x4",
+    ]
+    assert [preset["name"] for preset in full_templates["encoder_module"]["parameter_presets"]] == [
+        "Desktop Macro Bank",
+        "Spacious Performance Macro Bank",
+    ]
+    assert [preset["name"] for preset in full_templates["transport_module"]["parameter_presets"]] == [
+        "Recording Transport",
+        "Editing Shuttle Strip",
+    ]
 
 
 def test_midicontroller_workflow_defaults_prioritize_real_controls() -> None:
@@ -32,10 +47,20 @@ def test_midicontroller_workflow_defaults_prioritize_real_controls() -> None:
     components = {item["id"]: item for item in ComponentLibraryManager().list_components()}
 
     assert all(component["library_ref"] == "generic_ec11_encoder_with_push" for component in project["components"])
+    assert list(groups) == [
+        "OCW Performance Surface",
+        "OCW Mixing & Levels",
+        "OCW Rotary Controls",
+        "OCW Navigation & Feedback",
+        "OCW Buttons & Utility",
+    ]
     assert groups["OCW Performance Surface"] == ["OCW_PlacePad", "OCW_PlaceRgbButton"]
+    assert groups["OCW Rotary Controls"] == ["OCW_PlaceRotaryEncoder", "OCW_PlaceEncoder"]
     assert specs["OCW_PlaceEncoder"].library_ref == "generic_ec11_encoder_with_push"
-    assert components["generic_mpc_pad_30mm"]["ui"]["category"] == "Performance Pads"
-    assert components["omron_b3f_1000"]["ui"]["label"] == "Utility Button 6 mm"
+    assert specs["OCW_PlaceRotaryEncoder"].library_ref == "alps_ec11e15204a3"
+    assert components["generic_mpc_pad_30mm"]["ui"]["category"] == "Performance Surface"
+    assert components["omron_b3f_1000"]["ui"]["label"] == "Tactile Utility Button 6 mm"
+    assert components["adafruit_oled_096_i2c_ssd1306"]["ui"]["category"] == "Navigation & Feedback"
 
 
 def test_bike_trailer_templates_support_starter_size_profiles() -> None:

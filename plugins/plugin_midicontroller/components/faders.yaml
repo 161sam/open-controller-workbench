@@ -3,14 +3,14 @@ components:
     category: "fader"
     manufacturer: "Generic"
     part_number: "SLIDE-45K"
-    description: "45 mm linear potentiometer fader with panel slot and solder lugs"
+    description: "45 mm compact channel fader for tight mixer lanes, monitor strips, or sidecar controls"
     tags:
       - "fader"
       - "linear"
       - "potentiometer"
       - "45mm"
     ui:
-      label: "Channel Fader 45 mm"
+      label: "Compact Channel Fader 45 mm"
       icon: "fader.svg"
       category: "Mixing & Levels"
       tags:
@@ -69,14 +69,14 @@ components:
     category: "fader"
     manufacturer: "Generic"
     part_number: "SLIDE-60K"
-    description: "60 mm linear potentiometer fader with panel slot and solder lugs"
+    description: "60 mm long-throw channel fader for mixer lanes, stems, and expressive level control"
     tags:
       - "fader"
       - "linear"
       - "potentiometer"
       - "60mm"
     ui:
-      label: "Channel Fader 60 mm"
+      label: "Long-Throw Channel Fader 60 mm"
       icon: "fader.svg"
       category: "Mixing & Levels"
       tags:
@@ -86,9 +86,9 @@ components:
         placeable: true
         toolbar: true
         order: 20
-        category: "Mixing"
+        category: "Mixing & Levels"
         label: "Place Channel Fader"
-        tooltip: "Place a channel fader for level control. Click in the 3D view to position it."
+        tooltip: "Place a long-throw channel fader for volume, stem, or send control. Click in the 3D view to position it."
         command_id: "OCW_PlaceFader"
     mechanical:
       body_size_mm:

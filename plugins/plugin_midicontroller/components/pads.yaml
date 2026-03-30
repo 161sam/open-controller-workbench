@@ -3,16 +3,16 @@ components:
     category: "pad"
     manufacturer: "Generic"
     part_number: "PAD-30SQ"
-    description: "30 mm MPC-style square pad with large panel opening and diffuser area"
+    description: "30 mm MPC-style square performance pad for finger drumming, clip launching, and scene triggers"
     tags:
       - "pad"
       - "mpc"
       - "performance"
       - "square"
     ui:
-      label: "Performance Pad 30 mm"
+      label: "Finger Drum Pad 30 mm"
       icon: "pad.svg"
-      category: "Performance Pads"
+      category: "Performance Surface"
       tags:
         - "trigger"
         - "drum"
@@ -23,7 +23,7 @@ components:
         order: 10
         category: "Performance Surface"
         label: "Place Performance Pad"
-        tooltip: "Place a 30 mm performance pad for finger drumming or clip launching. Click in the 3D view to position it."
+        tooltip: "Place a 30 mm finger drum pad for beat playing, clip launching, or scene triggers. Click in the 3D view to position it."
         command_id: "OCW_PlacePad"
     mechanical:
       body_size_mm:

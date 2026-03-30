@@ -1,17 +1,26 @@
 template:
   id: "encoder_module"
   name: "Macro Encoder Bank"
-  description: "Four-knob starter for synth macros, effects, or DAW parameter control."
+  description: "Start a macro, synth, or effects control surface with four encoders laid out for quick hands-on tweaking."
   category: "macro_controls"
   tags:
     - "encoder"
     - "controls"
   version: "1.0"
+metadata:
+  workflow_hint: "Use this when rotary control is the main job of the device."
+  ideal_for:
+    - "Synth macro controls"
+    - "Effects sends"
+    - "Parameter pages"
+  next_step: "Add a display above the encoders or utility buttons below them once the knob spacing feels right."
 controller:
+  width: "${parameters.case_width}"
+  depth: "${parameters.case_depth}"
   surface:
     type: "rounded_rect"
-    width: 120
-    height: 60
+    width: "${parameters.case_width}"
+    height: "${parameters.case_depth}"
     corner_radius: 8
   height: 30
   top_thickness: 3
@@ -51,8 +60,51 @@ layout:
     padding_mm: 10
     rows: 1
     cols: 4
-    spacing_x_mm: 25
+    spacing_x_mm: "${parameters.encoder_spacing}"
     spacing_y_mm: 20
+parameters:
+  - id: "case_width"
+    label: "Case Width"
+    type: "float"
+    default: 120.0
+    min: 104.0
+    max: 180.0
+    step: 4.0
+    unit: "mm"
+    help: "Overall width of the encoder bank."
+  - id: "case_depth"
+    label: "Case Depth"
+    type: "float"
+    default: 60.0
+    min: 56.0
+    max: 90.0
+    step: 2.0
+    unit: "mm"
+    help: "Overall depth of the encoder bank."
+  - id: "encoder_spacing"
+    label: "Encoder Spacing"
+    type: "float"
+    default: 25.0
+    min: 20.0
+    max: 36.0
+    step: 1.0
+    unit: "mm"
+    help: "Center-to-center spacing between the encoders."
+parameter_presets:
+  - id: "desktop_macro_bank"
+    name: "Desktop Macro Bank"
+    description: "Balanced four-encoder section for desktop parameter control."
+    values:
+      case_width: 120.0
+      case_depth: 60.0
+      encoder_spacing: 25.0
+  - id: "spacious_performance_macro_bank"
+    name: "Spacious Performance Macro Bank"
+    description: "More room around each knob for aggressive live tweaking and larger caps."
+    values:
+      case_width: 156.0
+      case_depth: 68.0
+      encoder_spacing: 34.0
 constraints:
   profile: "default"
 defaults:

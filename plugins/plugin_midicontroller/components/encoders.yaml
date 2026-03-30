@@ -3,7 +3,7 @@ components:
     category: "encoder"
     manufacturer: "Alps Alpine"
     part_number: "EC11E15204A3"
-    description: "11 mm incremental rotary encoder, vertical, flat shaft, 20 mm actuator, 30 detents, 15 pulses, no push switch"
+    description: "11 mm rotary encoder for macro, synth, and parameter control when you do not need an integrated push action"
     tags:
       - "encoder"
       - "incremental"
@@ -11,14 +11,20 @@ components:
       - "11mm"
       - "alps"
     ui:
-      label: "Rotary Encoder"
+      label: "Rotary Encoder 11 mm"
       icon: "encoder.svg"
       category: "Rotary Controls"
       tags:
         - "knob"
         - "rotate"
       command:
-        placeable: false
+        placeable: true
+        toolbar: true
+        order: 30
+        category: "Rotary Controls"
+        label: "Place Rotary Encoder"
+        tooltip: "Place a dedicated rotary encoder for synth macros, sends, or parameter control. Click in the 3D view to position it."
+        command_id: "OCW_PlaceRotaryEncoder"
     mechanical:
       body_size_mm:
         width: 11.0
@@ -73,14 +79,14 @@ components:
     category: "encoder"
     manufacturer: "Generic"
     part_number: "EC11-PUSH"
-    description: "11 mm incremental rotary encoder with integrated push switch"
+    description: "11 mm push encoder for browse, confirm, and parameter workflows that need rotate plus press"
     tags:
       - "encoder"
       - "incremental"
       - "push"
       - "ec11"
     ui:
-      label: "Push Encoder"
+      label: "Push Encoder 11 mm"
       icon: "encoder.svg"
       category: "Rotary Controls"
       tags:
@@ -90,9 +96,9 @@ components:
         placeable: true
         toolbar: true
         order: 35
-        category: "Navigation & Feedback"
+        category: "Rotary Controls"
         label: "Place Push Encoder"
-        tooltip: "Place a push encoder for browsing, parameter control, or menu navigation. Click in the 3D view to position it."
+        tooltip: "Place a push encoder for browsing, parameter control, or menu confirmation. Click in the 3D view to position it."
         command_id: "OCW_PlaceEncoder"
     mechanical:
       body_size_mm:
@@ -145,7 +151,7 @@ components:
     category: "encoder"
     manufacturer: "Generic"
     part_number: "EC11-PUSH-LARGE-KNOB"
-    description: "11 mm incremental rotary encoder with integrated push switch and larger knob clearance"
+    description: "11 mm push encoder with larger knob clearance for more comfortable live performance gestures"
     tags:
       - "encoder"
       - "incremental"

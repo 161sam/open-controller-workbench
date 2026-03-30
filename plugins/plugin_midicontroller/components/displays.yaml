@@ -3,7 +3,7 @@ components:
     category: "display"
     manufacturer: "Adafruit"
     part_number: "PID 326"
-    description: "0.96 inch 128x64 monochrome OLED breakout, SSD1306 based, I2C variant"
+    description: "0.96 inch OLED status display for compact parameter readout, menus, and mode feedback"
     tags:
       - "display"
       - "oled"
@@ -12,19 +12,19 @@ components:
       - "128x64"
       - "adafruit"
     ui:
-      label: "OLED Status Display 0.96"
+      label: "OLED Status Display 0.96 in"
       icon: "display.svg"
-      category: "Displays & Feedback"
+      category: "Navigation & Feedback"
       tags:
         - "screen"
         - "status"
       command:
         placeable: true
         toolbar: true
-        order: 30
+        order: 40
         category: "Navigation & Feedback"
         label: "Place OLED Display"
-        tooltip: "Place a status display for menus, mode feedback, or parameter readout. Click in the 3D view to position it."
+        tooltip: "Place a compact OLED display for menus, mode feedback, or parameter readout. Click in the 3D view to position it."
         command_id: "OCW_PlaceDisplay"
     mechanical:
       breakout_size_mm:
@@ -89,7 +89,7 @@ components:
     category: "display"
     manufacturer: "Adafruit"
     part_number: "PID 938"
-    description: "1.3 inch 128x64 monochrome OLED breakout, SSD1306 based, I2C variant"
+    description: "1.3 inch OLED status display for more spacious browsing, preset names, and utility feedback"
     tags:
       - "display"
       - "oled"
@@ -98,9 +98,9 @@ components:
       - "128x64"
       - "1.3inch"
     ui:
-      label: "OLED Status Display 1.3"
+      label: "OLED Status Display 1.3 in"
       icon: "display.svg"
-      category: "Displays & Feedback"
+      category: "Navigation & Feedback"
       tags:
         - "screen"
         - "status"

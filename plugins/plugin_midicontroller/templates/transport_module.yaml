@@ -1,17 +1,26 @@
 template:
   id: "transport_module"
   name: "Transport Control Strip"
-  description: "DAW transport starter with play, stop, record, loop, rewind, and fast-forward buttons."
+  description: "Start a DAW transport section with the core playback and recording buttons users reach for first."
   category: "transport"
   tags:
     - "transport"
     - "button"
   version: "1.0"
+metadata:
+  workflow_hint: "Use this when transport should be immediately visible and easy to hit."
+  ideal_for:
+    - "Recording transport"
+    - "Playback control"
+    - "Editing shuttle strips"
+  next_step: "After the core transport row feels right, add a display or encoder next to it for jog and timeline work."
 controller:
+  width: "${parameters.case_width}"
+  depth: "${parameters.case_depth}"
   surface:
     type: "rounded_rect"
-    width: 150
-    height: 50
+    width: "${parameters.case_width}"
+    height: "${parameters.case_depth}"
     corner_radius: 8
   height: 28
   top_thickness: 3
@@ -57,7 +66,50 @@ layout:
   config:
     grid_mm: 2
     padding_mm: 12
-    spacing_mm: 22
+    spacing_mm: "${parameters.button_spacing}"
+parameters:
+  - id: "case_width"
+    label: "Case Width"
+    type: "float"
+    default: 150.0
+    min: 130.0
+    max: 220.0
+    step: 5.0
+    unit: "mm"
+    help: "Overall width of the transport section."
+  - id: "case_depth"
+    label: "Case Depth"
+    type: "float"
+    default: 50.0
+    min: 46.0
+    max: 70.0
+    step: 2.0
+    unit: "mm"
+    help: "Overall depth of the transport strip."
+  - id: "button_spacing"
+    label: "Button Spacing"
+    type: "float"
+    default: 22.0
+    min: 18.0
+    max: 28.0
+    step: 1.0
+    unit: "mm"
+    help: "Center-to-center spacing between the transport buttons."
+parameter_presets:
+  - id: "recording_transport"
+    name: "Recording Transport"
+    description: "Comfortable button spacing for frequent play, stop, and record work."
+    values:
+      case_width: 150.0
+      case_depth: 50.0
+      button_spacing: 22.0
+  - id: "editing_shuttle_strip"
+    name: "Editing Shuttle Strip"
+    description: "A slightly wider strip with more breathing room for rewind and fast-forward use."
+    values:
+      case_width: 178.0
+      case_depth: 54.0
+      button_spacing: 25.0
 constraints:
   profile: "default"
 defaults:

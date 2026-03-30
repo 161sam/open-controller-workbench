@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import pytest
+
 from ocw_workbench.commands.factory import (
     build_plugin_commands,
     command_specs_by_command_id,
@@ -10,6 +12,14 @@ from ocw_workbench.commands.factory import (
 from ocw_workbench.plugins.activation import activate_plugin
 from ocw_workbench.plugins.registry import ExtensionRegistry, Plugin
 from ocw_workbench.services.plugin_service import reset_plugin_service
+
+
+@pytest.fixture(autouse=True)
+def _activate_midicontroller():
+    reset_plugin_service()
+    activate_plugin("midicontroller")
+    yield
+    reset_plugin_service()
 
 
 def test_plugin_command_specs_include_pad_and_encoder() -> None:
@@ -26,12 +36,14 @@ def test_component_toolbar_groups_are_plugin_driven() -> None:
 
     assert list(groups) == [
         "OCW Performance Surface",
-        "OCW Mixing",
+        "OCW Mixing & Levels",
+        "OCW Rotary Controls",
         "OCW Navigation & Feedback",
         "OCW Buttons & Utility",
     ]
     assert groups["OCW Performance Surface"] == ["OCW_PlacePad", "OCW_PlaceRgbButton"]
-    assert groups["OCW Navigation & Feedback"] == ["OCW_PlaceDisplay", "OCW_PlaceEncoder"]
+    assert groups["OCW Rotary Controls"] == ["OCW_PlaceRotaryEncoder", "OCW_PlaceEncoder"]
+    assert groups["OCW Navigation & Feedback"] == ["OCW_PlaceDisplay"]
 
 
 def test_command_spec_lookup_exposes_command_metadata() -> None:
@@ -40,7 +52,10 @@ def test_command_spec_lookup_exposes_command_metadata() -> None:
     assert specs["OCW_PlacePad"].icon == "pad.svg"
     assert specs["OCW_PlacePad"].category == "Performance Surface"
     assert "Place Performance Pad" in specs["OCW_PlacePad"].tooltip
+    assert specs["OCW_PlaceRotaryEncoder"].category == "Rotary Controls"
+    assert "synth macros" in specs["OCW_PlaceRotaryEncoder"].tooltip
     assert "OCW_PlaceEncoder" in component_toolbar_command_ids()
+    assert "OCW_PlaceRotaryEncoder" in component_toolbar_command_ids()
 
 
 def test_build_plugin_commands_creates_freecad_place_commands() -> None:
@@ -48,6 +63,7 @@ def test_build_plugin_commands_creates_freecad_place_commands() -> None:
 
     assert "OCW_PlacePad" in commands
     assert "OCW_PlaceEncoder" in commands
+    assert "OCW_PlaceRotaryEncoder" in commands
     assert commands["OCW_PlacePad"].component_type == "pad"
     assert commands["OCW_PlaceEncoder"].component_type == "encoder"
 

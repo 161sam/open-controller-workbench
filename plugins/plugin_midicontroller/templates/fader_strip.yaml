@@ -1,12 +1,19 @@
 template:
   id: "fader_strip"
   name: "Channel Strip"
-  description: "Mixer-style starter strip with one channel fader plus solo, mute, and select utility buttons."
+  description: "Start a DAW or mixer channel strip with one main fader and the utility buttons users expect around it."
   category: "mixing"
   tags:
     - "fader"
     - "strip"
   version: "1.0"
+metadata:
+  workflow_hint: "Use this when a single channel lane should define the whole controller section."
+  ideal_for:
+    - "Mixer channel strips"
+    - "Track control lanes"
+    - "Compact utility strips"
+  next_step: "Add an encoder above the fader or duplicate the strip idea into a wider multi-channel layout."
 controller:
   width: "${parameters.case_width}"
   depth: "${parameters.case_depth}"
@@ -91,15 +98,15 @@ parameters:
     help: "Overall strip depth from fader lane to utility button row."
 parameter_presets:
   - id: "long_fader"
-    name: "Long Throw Mixer Strip"
-    description: "Default mixer lane with a 60 mm throw and comfortable bottom button spacing."
+    name: "Mixer Channel Strip"
+    description: "Default long-throw strip with comfortable spacing for solo, mute, and select actions."
     values:
       fader_length: 60
       case_width: 80.0
       case_depth: 140.0
   - id: "compact_fader"
     name: "Compact Utility Strip"
-    description: "Shorter 45 mm travel for tight desktop controllers."
+    description: "Tighter strip for desktop utility controllers, monitor sections, or compact sidecars."
     values:
       fader_length: 45
       case_width: 78.0

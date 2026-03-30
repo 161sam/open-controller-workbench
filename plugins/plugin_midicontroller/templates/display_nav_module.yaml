@@ -1,17 +1,26 @@
 template:
   id: "display_nav_module"
   name: "Display And Navigation Module"
-  description: "Status screen with two push encoders plus back and enter buttons for menu-driven controllers."
+  description: "Start a menu-driven controller section with a status display, two browsing encoders, and dedicated back / enter buttons."
   category: "navigation"
   tags:
     - "display"
     - "navigation"
   version: "1.0"
+metadata:
+  workflow_hint: "Use this when display feedback and browsing are central to the user flow."
+  ideal_for:
+    - "Menu navigation"
+    - "Preset browsing"
+    - "Utility controller sections"
+  next_step: "Tune the display size first, then refine encoder spacing and finally add transport or macro controls around the module."
 controller:
+  width: "${parameters.case_width}"
+  depth: "${parameters.case_depth}"
   surface:
     type: "rounded_rect"
-    width: 160
-    height: 90
+    width: "${parameters.case_width}"
+    height: "${parameters.case_depth}"
     corner_radius: 8
   height: 30
   top_thickness: 3
@@ -60,9 +69,36 @@ layout:
   config:
     grid_mm: 1
     padding_mm: 10
-    spacing_x_mm: 32
+    spacing_x_mm: "${parameters.nav_spacing}"
     spacing_y_mm: 24
 parameters:
+  - id: "case_width"
+    label: "Case Width"
+    type: "float"
+    default: 160.0
+    min: 140.0
+    max: 220.0
+    step: 5.0
+    unit: "mm"
+    help: "Overall width of the navigation section."
+  - id: "case_depth"
+    label: "Case Depth"
+    type: "float"
+    default: 90.0
+    min: 80.0
+    max: 120.0
+    step: 5.0
+    unit: "mm"
+    help: "Overall depth of the navigation section."
+  - id: "nav_spacing"
+    label: "Navigation Spacing"
+    type: "float"
+    default: 32.0
+    min: 24.0
+    max: 42.0
+    step: 1.0
+    unit: "mm"
+    help: "Horizontal spacing between the navigation controls."
   - id: "display_size_inch"
     label: "Display Size"
     type: "enum"
@@ -88,15 +124,21 @@ parameters:
     help: "Select the encoder knob clearance profile."
 parameter_presets:
   - id: "compact_encoder_strip"
-    name: "Compact Status Module"
-    description: "Small OLED and tight knob clearance for compact desktop enclosures."
+    name: "Compact Screen Utility"
+    description: "Small status section for compact desktop devices or side-panel utilities."
     values:
+      case_width: 150.0
+      case_depth: 88.0
+      nav_spacing: 28.0
       display_size_inch: "0.96"
       knob_diameter: 18
   - id: "wide_large_display"
-    name: "Large Display Navigation"
-    description: "Wider visual emphasis with larger knobs around a 1.3 inch display."
+    name: "Preset Browser Section"
+    description: "More visual emphasis and wider encoder spacing for browser-heavy controllers."
     values:
+      case_width: 190.0
+      case_depth: 96.0
+      nav_spacing: 36.0
       display_size_inch: "1.3"
       knob_diameter: 24
 parameter_bindings:

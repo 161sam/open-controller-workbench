@@ -1,13 +1,20 @@
 template:
   id: "pad_grid_4x4"
   name: "Finger Drum Pad Grid"
-  description: "Fast start for a 16-pad finger-drumming controller with enough edge space for later transport or display additions."
+  description: "Start a beat-making or clip-launch controller with a clear 16-pad surface and enough room for later transport or display additions."
   category: "performance"
   tags:
     - "pad"
     - "grid"
     - "performance"
   version: "1.0"
+metadata:
+  workflow_hint: "Use this when the pads are the main reason the controller exists."
+  ideal_for:
+    - "Finger drumming"
+    - "Clip launching"
+    - "Scene triggering"
+  next_step: "Add transport buttons or a status display around the pad matrix once the pad spacing feels right."
 controller:
   width: "${parameters.case_width}"
   depth: "${parameters.case_depth}"
@@ -79,21 +86,29 @@ parameters:
     help: "Overall controller depth."
 parameter_presets:
   - id: "pad_grid_4x4"
-    name: "Performance 4x4"
-    description: "Balanced 16-pad layout for finger drumming and clip launching."
+    name: "Studio Finger Drum 4x4"
+    description: "Balanced 16-pad starter for drum racks, clip launching, and general performance work."
     values:
       pad_count_x: 4
       pad_count_y: 4
       case_width: 180.0
       case_depth: 180.0
   - id: "pad_grid_8x2"
-    name: "Wide 8x2 Launch Strip"
-    description: "Shallow controller for clip launches, scene triggers, or transport-adjacent pad work."
+    name: "Clip Launch Bar 8x2"
+    description: "Wide shallow pad strip for clip rows, scene triggers, or performance shortcuts."
     values:
       pad_count_x: 8
       pad_count_y: 2
       case_width: 300.0
       case_depth: 110.0
+  - id: "pad_grid_4x4_hybrid"
+    name: "Hybrid Pad Grid 4x4"
+    description: "Keeps the 4x4 pad core but leaves more side space for encoders, transport, or a small display."
+    values:
+      pad_count_x: 4
+      pad_count_y: 4
+      case_width: 220.0
+      case_depth: 190.0
 parameter_bindings:
   component_grids:
     - id_prefix: "pad"

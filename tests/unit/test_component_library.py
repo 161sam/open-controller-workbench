@@ -1,5 +1,17 @@
+import pytest
+
 from ocw_workbench.library.manager import ComponentLibraryManager
+from ocw_workbench.plugins.activation import activate_plugin
+from ocw_workbench.services.plugin_service import reset_plugin_service
 from ocw_workbench.utils.yaml_io import load_yaml
+
+
+@pytest.fixture(autouse=True)
+def _activate_midicontroller():
+    reset_plugin_service()
+    activate_plugin("midicontroller")
+    yield
+    reset_plugin_service()
 
 
 def test_load_all_components():
@@ -120,5 +132,5 @@ def test_component_library_normalizes_ui_metadata_and_fallback_icon():
     assert "press" in button["ui"]["tags"]
     assert plugin_encoder["ui"]["icon"] == "encoder.svg"
     assert plugin_encoder["ui"]["category"] == "controls"
-    assert rgb_button["ui"]["icon"] == "generic.svg"
-    assert rgb_button["ui"]["category"] == "Performance Pads"
+    assert rgb_button["ui"]["icon"] == "button.svg"
+    assert rgb_button["ui"]["category"] == "Performance Surface"

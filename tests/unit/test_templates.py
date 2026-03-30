@@ -2,11 +2,21 @@ from pathlib import Path
 
 import pytest
 
+from ocw_workbench.plugins.activation import activate_plugin
+from ocw_workbench.services.plugin_service import reset_plugin_service
 from ocw_workbench.templates.generator import TemplateGenerator
 from ocw_workbench.templates.loader import TemplateLoader
 from ocw_workbench.templates.registry import TemplateRegistry
 from ocw_workbench.templates.resolver import TemplateResolver
 from ocw_workbench.utils.yaml_io import dump_yaml
+
+
+@pytest.fixture(autouse=True)
+def _activate_midicontroller():
+    reset_plugin_service()
+    activate_plugin("midicontroller")
+    yield
+    reset_plugin_service()
 
 
 def test_template_loader_loads_encoder_module():
