@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from copy import deepcopy
+import importlib.util
+from pathlib import Path
 from typing import Any
 
 from ocw_workbench.freecad_api import gui as freecad_gui
@@ -15,6 +17,7 @@ from ocw_workbench.services.controller_state_service import (
 )
 from ocw_workbench.services.document_sync_service import DocumentSyncService, SyncMode
 from ocw_workbench.services.library_service import LibraryService
+from ocw_workbench.services.plugin_service import get_plugin_service
 from ocw_workbench.services.template_service import TemplateService
 from ocw_workbench.services.variant_service import VariantService
 
@@ -115,7 +118,72 @@ class ControllerService:
         return self.state_service.list_variants(template_id=template_id, category=category, tag=tag)
 
     def get_ui_context(self, doc: Any) -> dict[str, Any]:
-        return self.state_service.get_ui_context(doc)
+        context = self.state_service.get_ui_context(doc)
+        context["layout_intelligence"] = self.get_layout_intelligence(doc)
+        return context
+
+    def get_layout_intelligence(self, doc: Any) -> dict[str, Any]:
+        state = self.state_service.get_state(doc)
+        module = self._plugin_layout_intelligence_module(state)
+        if module is None:
+            return {}
+        builder = getattr(module, "build_layout_intelligence", None)
+        if builder is None:
+            return {}
+        return builder(
+            state,
+            template_service=self.template_service,
+            library_service=self.library_service,
+        )
+
+    def suggest_component_placement(self, doc: Any, library_ref: str, component_id: str | None = None) -> dict[str, Any]:
+        state = self.state_service.get_state(doc)
+        module = self._plugin_layout_intelligence_module(state)
+        if module is None:
+            return {
+                "component_id": component_id or str(library_ref).split(".")[-1],
+                "library_ref": library_ref,
+                "x": 0.0,
+                "y": 0.0,
+                "rotation": 0.0,
+                "zone_id": None,
+                "placement_preference": "manual",
+                "role": "",
+                "reason": "No plugin-specific placement intelligence is available.",
+            }
+        suggest = getattr(module, "suggest_component_placement", None)
+        if suggest is None:
+            raise ValueError("Plugin layout intelligence module does not expose suggest_component_placement")
+        return suggest(
+            state,
+            library_ref,
+            component_id=component_id,
+            template_service=self.template_service,
+            library_service=self.library_service,
+        )
+
+    def apply_suggested_addition(self, doc: Any, addition_id: str) -> dict[str, Any]:
+        state = self.state_service.get_state(doc)
+        module = self._plugin_layout_intelligence_module(state)
+        if module is None:
+            raise ValueError("No plugin-specific layout intelligence is available for this document")
+        builder = getattr(module, "build_suggested_addition", None)
+        if builder is None:
+            raise ValueError("Plugin layout intelligence module does not expose build_suggested_addition")
+        components = builder(
+            state,
+            addition_id,
+            template_service=self.template_service,
+            library_service=self.library_service,
+        )
+        if not components:
+            raise ValueError(f"Unknown or empty suggested addition: {addition_id}")
+        return self.add_components(
+            doc,
+            components,
+            primary_id=str(components[0]["id"]),
+            transaction_name=f"OCW Add Suggested {addition_id}",
+        )
 
     def add_component(
         self,
@@ -259,6 +327,26 @@ class ControllerService:
             recompute=False,
         )
         return state
+
+    def _plugin_layout_intelligence_module(self, state: dict[str, Any]) -> Any | None:
+        plugin_id = str(state.get("meta", {}).get("plugin_id") or "").strip()
+        if not plugin_id:
+            return None
+        registry = get_plugin_service().registry()
+        if not registry.has_plugin(plugin_id):
+            return None
+        root_path = registry.plugin(plugin_id).root_path
+        if root_path is None:
+            return None
+        module_path = Path(root_path) / "layout_intelligence.py"
+        if not module_path.exists():
+            return None
+        spec = importlib.util.spec_from_file_location(f"ocw_layout_intelligence_{plugin_id}", module_path)
+        if spec is None or spec.loader is None:
+            return None
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        return module
 
     def toggle_selection(self, doc: Any, component_id: str, make_primary: bool = True) -> dict[str, Any]:
         state = self.state_service.toggle_selection(doc, component_id, make_primary=make_primary)

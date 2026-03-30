@@ -80,6 +80,8 @@ components:
         - "This entry targets the breakout board, not the bare OLED glass module."
     ocf:
       control_type: "display"
+      role: "feedback"
+      placement_preference: "centered_above_group"
       supports:
         - "text"
         - "icons"
@@ -161,6 +163,8 @@ components:
         - "This entry targets the breakout board, not the bare OLED glass module."
     ocf:
       control_type: "display"
+      role: "feedback"
+      placement_preference: "centered_above_group"
       supports:
         - "text"
         - "icons"

@@ -62,6 +62,8 @@ components:
       estimated_height_below_pcb_mm: 5.0
     ocf:
       control_type: "pad"
+      role: "primary_control"
+      placement_preference: "aligned_with_group"
       supports:
         - "press"
       default_logical_role: "performance_pad"

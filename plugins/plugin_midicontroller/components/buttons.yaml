@@ -68,6 +68,8 @@ components:
         - "Footprint name is a project-local default and may need mapping to your KiCad library."
     ocf:
       control_type: "button"
+      role: "utility"
+      placement_preference: "top_row"
       supports:
         - "press"
       default_logical_role: "generic_button"

@@ -35,3 +35,15 @@ Build a plausible first MIDI controller concept without leaving the normal Gener
 3. Use snapping and inline editing to clean up spacing, alignment, and reachability.
 4. Check panel openings, keepouts, and mounting space once the layout feels plausible.
 5. Continue toward KiCad-oriented export and manufacturing outputs after the control surface is stable.
+
+## Smart Next Steps
+
+The MIDI plugin now carries lightweight layout-intelligence metadata for common follow-up moves.
+
+- `Finger Drum Pad Grid`: utility strip, navigation encoder pair, or display header
+- `Macro Encoder Bank`: display header or compact utility buttons
+- `Channel Strip`: display header or one top encoder
+- `Display And Navigation Module`: small transport row
+- `Transport Control Strip`: display header or jog encoder
+
+These suggestions use deterministic placement preferences such as `right_of_main`, `top_row`, `centered_above_group`, and `bottom_transport_row`.

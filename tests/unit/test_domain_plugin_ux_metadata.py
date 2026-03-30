@@ -101,4 +101,5 @@ def test_bike_trailer_component_and_toolbar_labels_match_build_flow() -> None:
 
 def test_domain_quickstart_docs_exist() -> None:
     assert Path("docs/workflows/midicontroller_quickstart.md").exists()
+    assert Path("docs/workflows/midicontroller_layout_intelligence.md").exists()
     assert Path("docs/workflows/bike_trailer_quickstart.md").exists()

@@ -61,6 +61,8 @@ components:
       estimated_height_below_pcb_mm: 4.0
     ocf:
       control_type: "fader"
+      role: "primary_control"
+      placement_preference: "aligned_with_group"
       supports:
         - "analog_input"
       default_logical_role: "generic_fader"
@@ -133,6 +135,8 @@ components:
       estimated_height_below_pcb_mm: 4.0
     ocf:
       control_type: "fader"
+      role: "primary_control"
+      placement_preference: "aligned_with_group"
       supports:
         - "analog_input"
       default_logical_role: "generic_fader"

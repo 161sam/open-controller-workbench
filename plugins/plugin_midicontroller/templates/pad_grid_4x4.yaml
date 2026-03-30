@@ -15,6 +15,79 @@ metadata:
     - "Clip launching"
     - "Scene triggering"
   next_step: "Add transport buttons or a status display around the pad matrix once the pad spacing feels right."
+  smart_defaults:
+    primary_group_role: "performance_pad_matrix"
+    primary_zone_id: "pad_matrix"
+    edge_margin_mm: 12
+    spacing_mm: 18
+    default_placement_preference: "right_of_main"
+  layout_zones:
+    - id: "main_pad_surface"
+      label: "Main Pad Surface"
+      purpose: "Primary performance pad matrix."
+      source_group_role: "performance_pad_matrix"
+    - id: "right_utility_strip"
+      label: "Right Utility Strip"
+      purpose: "Mode, shift, or scene buttons beside the pad area."
+      placement_preference: "right_of_main"
+    - id: "top_navigation_row"
+      label: "Top Navigation Row"
+      purpose: "Encoders or utility controls above the pad matrix."
+      placement_preference: "top_row"
+    - id: "display_header"
+      label: "Display Header"
+      purpose: "Status display centered above the pad area."
+      placement_preference: "centered_above_group"
+  suggested_additions:
+    - id: "utility_strip_right"
+      label: "Add Utility Strip"
+      description: "Adds a simple right-side strip with shift, scene, and mode buttons."
+      placement_preference: "right_of_main"
+      zone_id: "right_utility_strip"
+      group_id: "pad_utility_strip"
+      group_role: "utility_strip"
+      components:
+        - id: "shift"
+          library_ref: "omron_b3f_1000"
+          type: "button"
+          label: "Shift"
+        - id: "scene"
+          library_ref: "omron_b3f_1000"
+          type: "button"
+          label: "Scene"
+        - id: "mode"
+          library_ref: "omron_b3f_1000"
+          type: "button"
+          label: "Mode"
+    - id: "navigation_encoder_pair"
+      label: "Add Navigation Encoder Pair"
+      description: "Adds two push encoders above the pad grid for browsing or page switching."
+      placement_preference: "top_row"
+      zone_id: "top_navigation_row"
+      group_id: "pad_navigation_top"
+      group_role: "navigation_strip"
+      spacing_mm: 28
+      components:
+        - id: "nav_left"
+          library_ref: "generic_ec11_encoder_with_push"
+          type: "encoder"
+          label: "Browse"
+        - id: "nav_right"
+          library_ref: "generic_ec11_encoder_with_push"
+          type: "encoder"
+          label: "Page"
+    - id: "display_header"
+      label: "Add Display Header"
+      description: "Adds a compact OLED centered above the pad grid for mode and clip feedback."
+      placement_preference: "centered_above_group"
+      zone_id: "display_header"
+      group_id: "pad_display_header"
+      group_role: "feedback_header"
+      components:
+        - id: "display"
+          library_ref: "adafruit_oled_096_i2c_ssd1306"
+          type: "display"
+          label: "Status"
 controller:
   width: "${parameters.case_width}"
   depth: "${parameters.case_depth}"
@@ -42,11 +115,11 @@ layout:
   strategy: "grid"
   config:
     grid_mm: 2
-    padding_mm: 14
+    padding_mm: 10
     rows: "${parameters.pad_count_y}"
     cols: "${parameters.pad_count_x}"
-    spacing_x_mm: 34
-    spacing_y_mm: 34
+    spacing_x_mm: 36
+    spacing_y_mm: 36
 parameters:
   - id: "pad_count_x"
     label: "Pad Count X"

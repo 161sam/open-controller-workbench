@@ -71,6 +71,8 @@ components:
         - "Footprint name is a project-local default and may need mapping to your KiCad library."
     ocf:
       control_type: "encoder"
+      role: "primary_control"
+      placement_preference: "right_of_main"
       supports:
         - "rotate"
       default_logical_role: "generic_encoder"
@@ -142,6 +144,8 @@ components:
         - "Footprint name is a project-local default and may need mapping to your KiCad library."
     ocf:
       control_type: "encoder"
+      role: "navigation"
+      placement_preference: "right_of_main"
       supports:
         - "rotate"
         - "press"
@@ -210,6 +214,8 @@ components:
         - "Footprint name is a project-local default and may need mapping to your KiCad library."
     ocf:
       control_type: "encoder"
+      role: "navigation"
+      placement_preference: "right_of_main"
       supports:
         - "rotate"
         - "press"

@@ -54,6 +54,8 @@ class TemplateGenerator:
             project["firmware"] = deepcopy(resolved["firmware"])
         if resolved.get("ocf"):
             project["ocf"] = deepcopy(resolved["ocf"])
+        if isinstance(resolved.get("metadata"), dict) and resolved["metadata"]:
+            project["metadata"] = deepcopy(resolved["metadata"])
         if resolved.get("variant"):
             project["variant"] = deepcopy(resolved["variant"])
         if isinstance(resolved.get("resolved_parameters"), dict):

@@ -59,6 +59,8 @@ components:
       estimated_height_below_pcb_mm: 8.0
     ocf:
       control_type: "button_rgb"
+      role: "utility"
+      placement_preference: "top_row"
       supports:
         - "press"
         - "rgb_output"
