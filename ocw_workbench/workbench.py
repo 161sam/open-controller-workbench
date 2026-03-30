@@ -16,6 +16,7 @@ except ImportError:
 
 from ocw_workbench.gui.interaction.lifecycle import InteractionSessionManager
 from ocw_workbench.gui.interaction.view_drag_controller import ViewDragController
+from ocw_workbench.gui.interaction.inline_edit_controller import InlineEditController
 from ocw_workbench.gui.interaction.view_pick_controller import ViewPickController
 from ocw_workbench.gui.interaction.view_place_controller import ViewPlaceController
 from ocw_workbench.gui.interaction.tool_manager import get_tool_manager
@@ -418,6 +419,13 @@ class ProductWorkbenchPanel:
             on_finished=self._handle_pick_finished,
             on_selected=self._handle_pick_selected,
         )
+        self.inline_edit_controller = InlineEditController(
+            controller_service=self.controller_service,
+            overlay_renderer=self.overlay_renderer,
+            on_status=self.set_status,
+            on_finished=self._handle_inline_edit_finished,
+            on_changed=self._handle_inline_edit_changed,
+        )
         self.form = self._build_shell()
         self.widget = self.form["widget"]
         self.create_panel = CreatePanel(
@@ -461,6 +469,7 @@ class ProductWorkbenchPanel:
         self.refresh_all()
         self.focus_panel("create")
         self.pick_controller.start(self.doc)
+        self.inline_edit_controller.start(self.doc)
 
     def refresh_all(self) -> None:
         self.create_panel.refresh()
@@ -716,10 +725,12 @@ class ProductWorkbenchPanel:
     def reject(self) -> bool:
         self.interaction_manager.cancel_active(reason="cancel", publish_status=False)
         _cancel_standalone_direct_interactions(self.doc, reason="cancel", publish_status=False)
+        self.inline_edit_controller.cancel(publish_status=False)
         return True
 
     def start_place_mode(self, template_id: str) -> bool:
         self.pick_controller.cancel(publish_status=False)
+        self.inline_edit_controller.cancel(publish_status=False)
         self.interaction_manager.cancel_active(reason="switch", publish_status=False)
         _cancel_standalone_direct_interactions(self.doc, reason="switch", publish_status=False)
         started = self.place_controller.start(self.doc, template_id)
@@ -729,6 +740,7 @@ class ProductWorkbenchPanel:
 
     def start_drag_mode(self) -> bool:
         self.pick_controller.cancel(publish_status=False)
+        self.inline_edit_controller.cancel(publish_status=False)
         self.interaction_manager.cancel_active(reason="switch", publish_status=False)
         _cancel_standalone_direct_interactions(self.doc, reason="switch", publish_status=False)
         started = self.drag_controller.start(self.doc)
@@ -740,10 +752,12 @@ class ProductWorkbenchPanel:
         self.interaction_manager.handle_document_changed(doc)
         if doc is not self.doc:
             _cancel_standalone_direct_interactions(self.doc, reason="document_changed", publish_status=False)
+            self.inline_edit_controller.cancel(reason="document_changed", publish_status=False)
 
     def handle_document_closed(self) -> None:
         self.interaction_manager.handle_document_closed(self.doc)
         _cancel_standalone_direct_interactions(self.doc, reason="document_closed", publish_status=False)
+        self.inline_edit_controller.cancel(reason="document_closed", publish_status=False)
 
     def _build_shell(self) -> dict[str, Any]:
         _qtcore, _qtgui, qtwidgets = load_qt()
@@ -947,6 +961,7 @@ class ProductWorkbenchPanel:
     def _handle_selection_changed(self, _component_id: str | None) -> None:
         self.info_panel.refresh()
         self.refresh_overlay()
+        self.inline_edit_controller.refresh_selection()
         context = self.controller_service.get_ui_context(self.doc)
         selection_count = int(context.get("selection_count", 0))
         if selection_count <= 0:
@@ -1007,6 +1022,7 @@ class ProductWorkbenchPanel:
         except Exception as exc:
             log_exception("Failed to refresh UI after interaction finished", exc)
         self.pick_controller.start(self.doc)
+        self.inline_edit_controller.start(self.doc)
 
     def _handle_pick_finished(self, controller: Any) -> None:
         pass
@@ -1017,6 +1033,15 @@ class ProductWorkbenchPanel:
             self.focus_panel("components")
         except Exception as exc:
             log_exception("Failed to refresh UI after pick selection", exc)
+
+    def _handle_inline_edit_finished(self, controller: Any) -> None:
+        pass
+
+    def _handle_inline_edit_changed(self) -> None:
+        try:
+            self.refresh_context_panels(refresh_components=True)
+        except Exception as exc:
+            log_exception("Failed to refresh UI after inline edit update", exc)
 
     def _selected_components_in_order(self) -> list[dict[str, Any]]:
         state = self.controller_service.get_state(self.doc)

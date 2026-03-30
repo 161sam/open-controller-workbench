@@ -181,8 +181,9 @@ class ControllerService:
         return self.update_controller(doc, updates)
 
     def update_component(self, doc: Any, component_id: str, updates: dict[str, Any]) -> dict[str, Any]:
+        current_component = self.state_service.get_component(doc, component_id)
         state = self.state_service.update_component(doc, component_id, updates)
-        mode = self._resolve_component_update_sync_mode(updates)
+        mode = self._resolve_component_update_sync_mode(updates, component=current_component)
         self.update_document(
             doc,
             mode=mode,
@@ -200,7 +201,12 @@ class ControllerService:
         previous_state = deepcopy(self.state_service.get_state(doc))
         combined_updates = [updates for updates in updates_by_component.values() if isinstance(updates, dict)]
         mode = SyncMode.STATE_ONLY
-        if any(self._resolve_component_update_sync_mode(updates) == SyncMode.FULL for updates in combined_updates):
+        component_lookup = {component["id"]: component for component in previous_state["components"]}
+        if any(
+            self._resolve_component_update_sync_mode(updates, component=component_lookup.get(component_id)) == SyncMode.FULL
+            for component_id, updates in updates_by_component.items()
+            if isinstance(updates, dict)
+        ):
             mode = SyncMode.FULL
         try:
             with document_transaction(doc, transaction_name):
@@ -323,11 +329,29 @@ class ControllerService:
             self.state_service.save_state(doc, previous_state)
             raise
 
-    def _resolve_component_update_sync_mode(self, updates: dict[str, Any]) -> str:
+    def _resolve_component_update_sync_mode(self, updates: dict[str, Any], component: dict[str, Any] | None = None) -> str:
         geometry_fields = {"x", "y", "rotation", "library_ref", "zone_id", "type", "group_id", "group_role"}
         if any(field in geometry_fields for field in updates):
             return SyncMode.FULL
+        if "properties" in updates and self._properties_affect_geometry(component, updates.get("properties")):
+            return SyncMode.FULL
         return SyncMode.STATE_ONLY
+
+    def _properties_affect_geometry(
+        self,
+        component: dict[str, Any] | None,
+        properties: Any,
+    ) -> bool:
+        if not isinstance(properties, dict) or component is None:
+            return False
+        category = str(component.get("type") or "")
+        geometry_properties_by_category = {
+            "button": {"cap_width", "cap_depth", "cap_height"},
+            "rgb_button": {"cap_width", "cap_depth", "cap_height"},
+            "fader": {"cap_depth", "cap_height", "cap_length"},
+        }
+        relevant = geometry_properties_by_category.get(category, set())
+        return any(key in relevant for key in properties)
 
 
 ProjectService = ControllerService

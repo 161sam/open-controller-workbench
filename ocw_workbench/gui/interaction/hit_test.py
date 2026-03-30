@@ -41,3 +41,13 @@ def hit_test_components(items: list[dict[str, Any]], x: float, y: float) -> str 
         if item.get("id", "").startswith("component:") and hit_test_item(item, x, y):
             return item["source_component_id"]
     return None
+
+
+def hit_test_inline_handle(items: list[dict[str, Any]], x: float, y: float) -> dict[str, Any] | None:
+    for item in items:
+        item_id = str(item.get("id") or "")
+        if not item_id.startswith("inline_handle:"):
+            continue
+        if hit_test_item(item, x, y):
+            return item
+    return None

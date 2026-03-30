@@ -18,6 +18,8 @@ _CURSOR_BY_ROLE = {
     "pick": "PointingHandCursor",
     "drag_ready": "OpenHandCursor",
     "drag_active": "ClosedHandCursor",
+    "edit_ready": "PointingHandCursor",
+    "edit_active": "ClosedHandCursor",
 }
 
 

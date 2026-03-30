@@ -6,6 +6,7 @@ import logging
 from typing import Any
 
 from ocw_workbench.generator.controller_builder import ControllerBuilder
+from ocw_workbench.gui.interaction.inline_edit_state import load_inline_edit_state
 from ocw_workbench.gui.interaction.view_place_preview import load_preview_state
 from ocw_workbench.gui.overlay.colors import overlay_style
 from ocw_workbench.gui.overlay.labels import component_label, issue_label, zone_label
@@ -188,6 +189,7 @@ class OverlayService:
             items.extend(constraint_overlay["items"])
 
         items.extend(self._preview_items(doc))
+        items.extend(self._inline_edit_items(doc, resolved_components))
 
         return {
             "enabled": True,
@@ -273,6 +275,73 @@ class OverlayService:
             )
         )
         items.extend(self._preview_snap_items(preview, template_id))
+        return items
+
+    def _inline_edit_items(self, doc: Any, resolved_components: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        context = self.controller_service.get_ui_context(doc)
+        settings = deepcopy(context.get("ui", {}))
+        if settings.get("active_interaction") not in {None, "inline_edit"}:
+            return []
+        selected_component_id = context.get("selection")
+        selected_ids = context.get("selected_ids", [])
+        if not isinstance(selected_component_id, str) or len(selected_ids) != 1:
+            return []
+        component = next((item for item in resolved_components if item["id"] == selected_component_id), None)
+        if component is None:
+            return []
+        inline_state = load_inline_edit_state(doc) or {}
+        hovered_handle_id = inline_state.get("hovered_handle_id")
+        active_handle_id = inline_state.get("active_handle_id")
+        items: list[dict[str, Any]] = []
+        width, height = self._resolved_component_size(component)
+        rotation = float(component.get("rotation", 0.0) or 0.0)
+        x = float(component["x"])
+        y = float(component["y"])
+        items.append(
+            self._inline_handle_circle(
+                handle_id=f"move:{selected_component_id}",
+                component_id=selected_component_id,
+                x=x,
+                y=y,
+                diameter=3.2,
+                hovered_handle_id=hovered_handle_id,
+                active_handle_id=active_handle_id,
+                kind="move",
+            )
+        )
+        rotate_x, rotate_y = self._rotate_point(0.0, (height / 2.0) + 6.0, rotation_deg=rotation, origin=(x, y))
+        items.append(
+            self._inline_handle_circle(
+                handle_id=f"rotate:{selected_component_id}",
+                component_id=selected_component_id,
+                x=rotate_x,
+                y=rotate_y,
+                diameter=3.0,
+                hovered_handle_id=hovered_handle_id,
+                active_handle_id=active_handle_id,
+                kind="rotate",
+            )
+        )
+        parameter = self._inline_parameter_handle(component, width=width, height=height, rotation=rotation)
+        if parameter is not None:
+            handle_x, handle_y = self._rotate_point(
+                float(parameter["local_x"]),
+                float(parameter["local_y"]),
+                rotation_deg=rotation,
+                origin=(x, y),
+            )
+            items.append(
+                self._inline_handle_circle(
+                    handle_id=f"{parameter['parameter']}:{selected_component_id}",
+                    component_id=selected_component_id,
+                    x=handle_x,
+                    y=handle_y,
+                    diameter=3.0,
+                    hovered_handle_id=hovered_handle_id,
+                    active_handle_id=active_handle_id,
+                    kind="parameter",
+                )
+            )
         return items
 
     def _preview_component_payload(self, doc: Any, preview: dict[str, Any], mode: str) -> tuple[dict[str, Any], str, str]:
@@ -391,6 +460,89 @@ class OverlayService:
         if mode == "move":
             return f"{base} | Release to commit"
         return f"{base} | Click to place"
+
+    def _resolved_component_size(self, component: dict[str, Any]) -> tuple[float, float]:
+        shape = component["resolved_mechanical"].keepout_top.to_dict()
+        if shape.get("shape") == "circle":
+            diameter = float(shape.get("diameter", 0.0) or 0.0)
+            return diameter, diameter
+        return float(shape.get("width", 0.0) or 0.0), float(shape.get("height", 0.0) or 0.0)
+
+    def _inline_handle_circle(
+        self,
+        *,
+        handle_id: str,
+        component_id: str,
+        x: float,
+        y: float,
+        diameter: float,
+        hovered_handle_id: str | None,
+        active_handle_id: str | None,
+        kind: str,
+    ) -> dict[str, Any]:
+        item_id = f"inline_handle:{handle_id}"
+        style_kind = "inline_handle"
+        if kind == "rotate":
+            style_kind = "inline_handle_rotate"
+        elif kind == "parameter":
+            style_kind = "inline_handle_parameter"
+        if hovered_handle_id == item_id:
+            style_kind = "inline_handle_hover"
+        if active_handle_id == item_id:
+            style_kind = "inline_handle_active"
+        return circle_item(
+            item_id=item_id,
+            x=x,
+            y=y,
+            diameter=diameter,
+            style=overlay_style(style_kind),
+            source_component_id=component_id,
+            source_ids=[component_id],
+        )
+
+    def _inline_parameter_handle(
+        self,
+        component: dict[str, Any],
+        *,
+        width: float,
+        height: float,
+        rotation: float,
+    ) -> dict[str, Any] | None:
+        library_ref = str(component.get("library_ref") or "")
+        if not library_ref:
+            return None
+        library_component = self.controller_service.library_service.get(library_ref)
+        category = str(component.get("type") or library_component.get("category") or "component")
+        if category != "button":
+            return None
+        properties = component.get("properties") if isinstance(component.get("properties"), dict) else {}
+        panel = library_component.get("mechanical", {}).get("panel", {}) if isinstance(library_component.get("mechanical"), dict) else {}
+        opening = panel.get("recommended_cap_opening_mm", {}) if isinstance(panel, dict) else {}
+        cap_width = float(properties.get("cap_width", opening.get("width", width * 0.7)) or (width * 0.7))
+        return {
+            "parameter": "cap_width",
+            "value": cap_width,
+            "local_x": max(cap_width / 2.0, 2.0) + 2.5,
+            "local_y": 0.0,
+            "rotation": rotation,
+        }
+
+    def _rotate_point(
+        self,
+        local_x: float,
+        local_y: float,
+        *,
+        rotation_deg: float,
+        origin: tuple[float, float],
+    ) -> tuple[float, float]:
+        import math
+
+        angle = math.radians(float(rotation_deg))
+        cos_a = math.cos(angle)
+        sin_a = math.sin(angle)
+        x = float(origin[0]) + (float(local_x) * cos_a) - (float(local_y) * sin_a)
+        y = float(origin[1]) + (float(local_x) * sin_a) + (float(local_y) * cos_a)
+        return x, y
 
     def _preview_snap_items(self, preview: dict[str, Any], item_id: str) -> list[dict[str, Any]]:
         items: list[dict[str, Any]] = []
