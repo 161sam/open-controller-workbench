@@ -22,6 +22,14 @@ Components can now describe:
 - `ocf.role`
 - `ocf.placement_preference`
 
+Suggested additions can also carry UI-facing metadata:
+
+- `label`
+- `tooltip`
+- `icon`
+- `order`
+- `command_id`
+
 ## Template Patterns
 
 Current high-value patterns:
@@ -61,9 +69,29 @@ Anchor selection prefers:
 ## What It Can Do
 
 - expose template-specific next-step suggestions
+- surface those suggestions in the existing `InfoPanel` as clickable `Next Steps`
+- register suggested additions as direct commands such as `OCW_AddUtilityStrip`
 - generate deterministic default positions for suggested additions
 - suggest a sensible default position for a newly added component type
 - keep added controls grouped through `group_id` and `group_role`
+
+## How Users Trigger It
+
+After creating a MIDI controller template, the `InfoPanel` now shows a compact `Next Steps` section.
+
+Typical actions include:
+
+- `Add Utility Strip`
+- `Add Display Header`
+- `Add Navigation Encoder`
+- `Add Transport Buttons`
+
+These actions:
+
+- stay hidden when the current document has no relevant suggestion
+- apply the existing layout-intelligence heuristics
+- add grouped components with deterministic default positions
+- reuse the same plugin logic as the command path
 
 ## What It Does Not Do
 
@@ -76,6 +104,6 @@ Anchor selection prefers:
 
 Later product work can build on this metadata to add:
 
-- quick actions in existing panels
 - template-aware one-click add flows
 - richer secondary-layout patterns for larger controllers
+- lightweight placement previews for next-step actions

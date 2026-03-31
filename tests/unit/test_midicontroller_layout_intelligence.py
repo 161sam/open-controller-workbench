@@ -78,6 +78,8 @@ def test_build_layout_intelligence_returns_preview_additions_for_pad_grid() -> N
     suggestions = {item["id"]: item for item in intelligence["suggested_additions"]}
     assert intelligence["workflow_hint"].startswith("Use this when the pads")
     assert suggestions["utility_strip_right"]["target_zone_id"] == "right_utility_strip"
+    assert suggestions["utility_strip_right"]["command_id"] == "OCW_AddUtilityStrip"
+    assert suggestions["utility_strip_right"]["tooltip"].startswith("Add a right-side utility strip")
     assert len(suggestions["utility_strip_right"]["preview_components"]) == 3
     assert suggestions["display_header"]["preview_components"][0]["y"] < suggestions["utility_strip_right"]["preview_components"][0]["y"]
 

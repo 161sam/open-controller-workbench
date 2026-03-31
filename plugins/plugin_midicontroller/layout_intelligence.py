@@ -33,6 +33,13 @@ def build_layout_intelligence(
         if not isinstance(addition, dict):
             continue
         suggestion = deepcopy(addition)
+        suggestion.setdefault("label", _humanize_addition_id(str(suggestion.get("id") or "")))
+        description = str(suggestion.get("description") or "").strip()
+        suggestion["tooltip"] = str(suggestion.get("tooltip") or description or suggestion["label"])
+        suggestion["category"] = str(suggestion.get("category") or "Next Steps")
+        suggestion["icon"] = str(suggestion.get("icon") or "generic.svg")
+        suggestion["order"] = _safe_int(suggestion.get("order"), default=200)
+        suggestion["command_id"] = str(suggestion.get("command_id") or _command_id_for_addition_id(str(suggestion.get("id") or "")))
         preview_components = build_suggested_addition(
             state,
             str(suggestion.get("id") or ""),
@@ -44,6 +51,7 @@ def build_layout_intelligence(
         if preview_components:
             suggestion["target_zone_id"] = preview_components[0].get("zone_id")
         additions.append(suggestion)
+    additions.sort(key=lambda item: (_safe_int(item.get("order"), default=200), str(item.get("label") or "").lower()))
 
     return {
         "template_id": template.get("template", {}).get("id"),
@@ -217,6 +225,22 @@ def _default_preference_for_role(role: str) -> str:
         "feedback": "centered_above_group",
     }
     return mapping.get(normalized, "right_of_main")
+
+
+def _humanize_addition_id(addition_id: str) -> str:
+    normalized = str(addition_id).replace("_", " ").strip().title()
+    return normalized if normalized.startswith("Add ") else f"Add {normalized}"
+
+
+def _command_id_for_addition_id(addition_id: str) -> str:
+    return f"OCW_{_humanize_addition_id(addition_id).replace(' ', '')}"
+
+
+def _safe_int(value: Any, *, default: int) -> int:
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default
 
 
 def _reason_for_preference(preference: str) -> str:

@@ -37,6 +37,11 @@ metadata:
     - id: "display_header"
       label: "Add Display Header"
       description: "Adds a centered OLED above the encoder bank for parameter names or values."
+      tooltip: "Add a centered OLED above the encoder bank for parameter names and values."
+      category: "Next Steps"
+      icon: "display.svg"
+      order: 10
+      command_id: "OCW_AddDisplayHeader"
       placement_preference: "centered_above_group"
       zone_id: "display_header"
       group_id: "encoder_display_header"
@@ -49,6 +54,11 @@ metadata:
     - id: "utility_buttons"
       label: "Add Utility Buttons"
       description: "Adds two compact buttons for shift or macro-page switching."
+      tooltip: "Add compact utility buttons below the encoder bank for shift and page changes."
+      category: "Next Steps"
+      icon: "button.svg"
+      order: 20
+      command_id: "OCW_AddUtilityButtons"
       placement_preference: "bottom_transport_row"
       zone_id: "utility_row"
       group_id: "encoder_utility_row"

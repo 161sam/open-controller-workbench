@@ -56,6 +56,10 @@ def test_command_spec_lookup_exposes_command_metadata() -> None:
     assert "synth macros" in specs["OCW_PlaceRotaryEncoder"].tooltip
     assert "OCW_PlaceEncoder" in component_toolbar_command_ids()
     assert "OCW_PlaceRotaryEncoder" in component_toolbar_command_ids()
+    assert specs["OCW_AddUtilityStrip"].addition_id == "utility_strip_right"
+    assert specs["OCW_AddUtilityStrip"].category == "Next Steps"
+    assert specs["OCW_AddUtilityStrip"].toolbar is False
+    assert specs["OCW_AddDisplayHeader"].command_type == "apply_suggested_addition"
 
 
 def test_build_plugin_commands_creates_freecad_place_commands() -> None:
@@ -64,8 +68,10 @@ def test_build_plugin_commands_creates_freecad_place_commands() -> None:
     assert "OCW_PlacePad" in commands
     assert "OCW_PlaceEncoder" in commands
     assert "OCW_PlaceRotaryEncoder" in commands
+    assert "OCW_AddUtilityStrip" in commands
     assert commands["OCW_PlacePad"].component_type == "pad"
     assert commands["OCW_PlaceEncoder"].component_type == "encoder"
+    assert commands["OCW_AddUtilityStrip"].addition_id == "utility_strip_right"
 
 
 def test_build_plugin_commands_works_without_plugin_command_files() -> None:

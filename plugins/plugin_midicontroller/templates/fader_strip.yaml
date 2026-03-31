@@ -37,6 +37,11 @@ metadata:
     - id: "channel_display"
       label: "Add Channel Display"
       description: "Adds a compact OLED above the strip for channel names or value feedback."
+      tooltip: "Add a compact display above the strip for channel name and level feedback."
+      category: "Next Steps"
+      icon: "display.svg"
+      order: 10
+      command_id: "OCW_AddChannelDisplay"
       placement_preference: "centered_above_group"
       zone_id: "top_label_area"
       group_id: "channel_display"
@@ -49,6 +54,11 @@ metadata:
     - id: "top_encoder"
       label: "Add Navigation Encoder"
       description: "Adds one push encoder above the strip for trim, send, or page navigation."
+      tooltip: "Add one encoder above the strip for trim, send, or page navigation."
+      category: "Next Steps"
+      icon: "encoder.svg"
+      order: 20
+      command_id: "OCW_AddTopNavigationEncoder"
       placement_preference: "centered_above_group"
       zone_id: "top_encoder"
       group_id: "channel_encoder"

@@ -37,6 +37,11 @@ metadata:
     - id: "display_header"
       label: "Add Display Header"
       description: "Adds a compact OLED above the transport row for timeline, mode, or record feedback."
+      tooltip: "Add a compact OLED above the transport row for timeline and record feedback."
+      category: "Next Steps"
+      icon: "display.svg"
+      order: 10
+      command_id: "OCW_AddDisplayHeader"
       placement_preference: "centered_above_group"
       zone_id: "display_header"
       group_id: "transport_display"
@@ -49,6 +54,11 @@ metadata:
     - id: "jog_encoder"
       label: "Add Navigation Encoder"
       description: "Adds a push encoder to the right for jog, scrub, or locator work."
+      tooltip: "Add a right-side encoder for jog, scrub, or locator work."
+      category: "Next Steps"
+      icon: "encoder.svg"
+      order: 20
+      command_id: "OCW_AddJogEncoder"
       placement_preference: "right_of_main"
       zone_id: "right_navigation"
       group_id: "transport_navigation"

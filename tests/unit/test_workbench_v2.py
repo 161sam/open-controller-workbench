@@ -265,7 +265,7 @@ def test_layout_panel_reads_active_project_layout_defaults():
     layout_panel = LayoutPanel(doc, controller_service=service)
 
     assert current_text(layout_panel.form["preset"]) == "grid"
-    assert widget_value(layout_panel.form["grid_mm"]) == 1.0
+    assert widget_value(layout_panel.form["grid_mm"]) == 2.0
     assert widget_value(layout_panel.form["spacing_mm"]) == 36.0
     assert widget_value(layout_panel.form["padding_mm"]) == 10.0
 
@@ -288,6 +288,24 @@ def test_info_panel_updates_controller_geometry():
     assert state["controller"]["depth"] == 120.0
     assert state["controller"]["surface"]["shape"] == "rounded_rect"
     assert state["controller"]["surface"]["corner_radius"] == 8.0
+
+
+def test_info_panel_shows_midicontroller_next_steps_and_can_apply_them():
+    doc = FakeDocument()
+    service = ControllerService()
+    service.create_from_template(doc, "pad_grid_4x4")
+
+    info_panel = InfoPanel(doc, controller_service=service)
+    info_text = info_panel.refresh()
+
+    assert "Suggested additions: Add Utility Strip, Add Navigation Encoder Pair, Add Display Header" in info_text
+    assert len(info_panel.form["next_step_buttons"]) == 3
+
+    info_panel.apply_suggested_addition("utility_strip_right")
+    state = service.get_state(doc)
+    utility_buttons = [component for component in state["components"] if component.get("group_role") == "utility_strip"]
+
+    assert [component["id"] for component in utility_buttons] == ["shift", "scene", "mode"]
 
 
 def test_product_workbench_panel_orchestrates_iteration_flow():

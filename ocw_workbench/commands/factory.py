@@ -5,6 +5,7 @@ from typing import Any
 
 from ocw_workbench.library.manager import ComponentLibraryManager
 from ocw_workbench.services.plugin_service import get_plugin_service
+from ocw_workbench.services.template_service import TemplateService
 
 
 @dataclass(frozen=True)
@@ -17,6 +18,7 @@ class PluginCommandSpec:
     icon: str
     category: str
     component: str | None = None
+    addition_id: str | None = None
     library_ref: str | None = None
     plugin_id: str | None = None
     toolbar: bool = True
@@ -99,6 +101,10 @@ def create_freecad_command(spec: PluginCommandSpec) -> Any:
         from ocw_workbench.commands.place_component_type import PlaceComponentTypeCommand
 
         return PlaceComponentTypeCommand(spec.component, spec=spec)
+    if spec.command_type == "apply_suggested_addition" and spec.addition_id is not None:
+        from ocw_workbench.commands.apply_suggested_addition import ApplySuggestedAdditionCommand
+
+        return ApplySuggestedAdditionCommand(spec.addition_id, spec=spec)
     raise KeyError(f"Unsupported plugin command type: {spec.command_type}")
 
 
@@ -147,7 +153,60 @@ def _auto_generated_command_metadata(active_plugin_only: bool = True) -> dict[st
         existing = commands.get(command_id)
         if existing is None or int(metadata.get("order", 1000)) < int(existing.get("order", 1000)):
             commands[command_id] = metadata
+    for metadata in _build_suggested_addition_command_metadata(plugin_id=active_plugin.plugin_id):
+        command_id = str(metadata["command_id"])
+        existing = commands.get(command_id)
+        if existing is None or int(metadata.get("order", 1000)) < int(existing.get("order", 1000)):
+            commands[command_id] = metadata
     return commands
+
+
+def _build_suggested_addition_command_metadata(*, plugin_id: str) -> list[dict[str, Any]]:
+    templates = TemplateService().list_templates()
+    additions: dict[str, dict[str, Any]] = {}
+    for entry in templates:
+        template = entry.get("template", {})
+        metadata = entry.get("metadata", {})
+        if not isinstance(template, dict) or not isinstance(metadata, dict):
+            continue
+        template_id = str(template.get("id") or "").strip()
+        if not template_id:
+            continue
+        for raw_addition in metadata.get("suggested_additions", []):
+            if not isinstance(raw_addition, dict):
+                continue
+            addition_id = str(raw_addition.get("id") or "").strip()
+            if not addition_id:
+                continue
+            command_id = str(raw_addition.get("command_id") or _command_id_for_suggested_addition(addition_id))
+            merged_template_ids = [template_id]
+            existing = additions.get(command_id)
+            if existing is not None:
+                merged_template_ids = sorted(
+                    {
+                        *(str(value) for value in existing.get("template_ids", []) if isinstance(value, str)),
+                        template_id,
+                    }
+                )
+            additions[command_id] = {
+                "id": str(raw_addition.get("id") or addition_id),
+                "command_id": command_id,
+                "type": "apply_suggested_addition",
+                "addition_id": addition_id,
+                "label": str(raw_addition.get("label") or _humanize_suggested_addition_id(addition_id)),
+                "tooltip": str(
+                    raw_addition.get("tooltip")
+                    or raw_addition.get("description")
+                    or f"Apply the suggested MIDI layout step '{addition_id}'."
+                ),
+                "icon": str(raw_addition.get("icon") or "generic.svg"),
+                "category": str(raw_addition.get("category") or "Next Steps"),
+                "plugin_id": plugin_id,
+                "toolbar": bool(raw_addition.get("toolbar", False)),
+                "order": _metadata_order(raw_addition.get("order"), default=150),
+                "template_ids": merged_template_ids,
+            }
+    return list(additions.values())
 
 
 def _build_standard_place_command_metadata(component: dict[str, Any], *, plugin_id: str) -> dict[str, Any] | None:
@@ -188,6 +247,7 @@ def _build_spec(command_key: str, metadata: dict[str, Any]) -> PluginCommandSpec
     if label not in tooltip:
         tooltip = f"{label}. {tooltip}"
     component = str(metadata.get("component")) if metadata.get("component") is not None else None
+    addition_id = str(metadata.get("addition_id")) if metadata.get("addition_id") is not None else None
     return PluginCommandSpec(
         id=str(metadata.get("id") or command_key),
         command_id=str(metadata.get("command_id") or _default_command_id(metadata, command_key)),
@@ -197,6 +257,7 @@ def _build_spec(command_key: str, metadata: dict[str, Any]) -> PluginCommandSpec
         icon=str(metadata.get("icon") or "generic.svg"),
         category=str(metadata.get("category") or "Plugin"),
         component=component,
+        addition_id=addition_id,
         library_ref=str(metadata.get("library_ref")) if metadata.get("library_ref") is not None else None,
         plugin_id=str(metadata.get("plugin_id")) if metadata.get("plugin_id") is not None else None,
         toolbar=bool(metadata.get("toolbar", metadata.get("type") == "place_component")),
@@ -212,6 +273,9 @@ def _default_command_id(metadata: dict[str, Any], command_key: str) -> str:
     component = metadata.get("component")
     if isinstance(component, str) and component:
         return _command_id_for_component_type(component)
+    addition_id = metadata.get("addition_id")
+    if isinstance(addition_id, str) and addition_id:
+        return _command_id_for_suggested_addition(addition_id)
     return f"OCW_{_humanize_command_id(command_key).replace(' ', '')}"
 
 
@@ -233,6 +297,16 @@ def _component_type(component: dict[str, Any]) -> str | None:
 def _command_id_for_component_type(component_type: str) -> str:
     suffix = component_type.replace("_", " ").title().replace(" ", "")
     return f"OCW_Place{suffix}"
+
+
+def _command_id_for_suggested_addition(addition_id: str) -> str:
+    suffix = _humanize_suggested_addition_id(addition_id).replace(" ", "")
+    return f"OCW_{suffix}"
+
+
+def _humanize_suggested_addition_id(addition_id: str) -> str:
+    normalized = str(addition_id).replace("_", " ").strip().title()
+    return normalized if normalized.startswith("Add ") else f"Add {normalized}"
 
 
 def _ensure_place_label(label: str) -> str:

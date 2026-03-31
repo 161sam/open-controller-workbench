@@ -11,7 +11,9 @@ from ocw_workbench.gui.panels._common import (
     build_panel_container,
     FallbackValue,
     configure_combo_box,
+    create_hint_label,
     create_form_section_widget,
+    create_section_widget,
     create_text_panel,
     current_text,
     load_qt,
@@ -49,6 +51,12 @@ class InfoPanel:
     def refresh(self) -> str:
         state = self.controller_service.get_state(self.doc)
         context = self.controller_service.get_ui_context(self.doc)
+        layout_intelligence = context.get("layout_intelligence", {})
+        suggested_additions = (
+            layout_intelligence.get("suggested_additions", [])
+            if isinstance(layout_intelligence, dict)
+            else []
+        )
         controller = state["controller"]
         surface = controller.get("surface") or {}
         shape_name = str(surface.get("shape") or "rectangle")
@@ -97,9 +105,12 @@ class InfoPanel:
                 f"Components: {context['component_count']}",
                 layout_text,
                 validation_text,
+                f"Next step hint: {layout_intelligence.get('next_step') or '-'}",
+                f"Suggested additions: {', '.join(str(item.get('label') or '-') for item in suggested_additions) if suggested_additions else '-'}",
             ]
         )
         set_text(self.form["info"], summary_text)
+        self._refresh_next_steps(layout_intelligence)
         apply_status_message(
             self.form["status"],
             "Review controller geometry here, then place or refine components.",
@@ -141,6 +152,29 @@ class InfoPanel:
         self.apply_controller_updates()
         return True
 
+    def apply_suggested_addition(self, addition_id: str) -> dict[str, Any]:
+        state = self.controller_service.apply_suggested_addition(self.doc, addition_id)
+        self.refresh()
+        applied = next(
+            (
+                item
+                for item in self.controller_service.get_ui_context(self.doc).get("layout_intelligence", {}).get("suggested_additions", [])
+                if isinstance(item, dict) and str(item.get("id") or "") == addition_id
+            ),
+            None,
+        )
+        label = str(applied.get("label") or addition_id.replace("_", " ").title()) if isinstance(applied, dict) else addition_id
+        self._publish_status(f"Applied suggested addition '{label}'.", level="success")
+        if self.on_updated is not None:
+            self.on_updated(state)
+        return state
+
+    def handle_apply_suggested_addition(self, addition_id: str) -> None:
+        try:
+            self.apply_suggested_addition(addition_id)
+        except Exception as exc:
+            self._publish_status(friendly_ui_error("Could not apply suggested addition", exc), level="error")
+
     def _sync_surface_fields(self) -> None:
         shape_name = current_text(self.form["surface_shape"]) or "rectangle"
         corner_enabled = shape_name == "rounded_rect"
@@ -171,6 +205,55 @@ class InfoPanel:
         set_tooltip(self.form["corner_radius"], "Corner radius for rounded rectangles.")
         set_tooltip(self.form["apply_button"], "Apply geometry changes and rebuild the model.")
 
+    def _refresh_next_steps(self, layout_intelligence: dict[str, Any]) -> None:
+        additions = (
+            layout_intelligence.get("suggested_additions", [])
+            if isinstance(layout_intelligence, dict)
+            else []
+        )
+        next_step_hint = str(layout_intelligence.get("next_step") or "No suggested workflow step available yet.")
+        set_label_text(self.form["next_steps_hint"], next_step_hint)
+        if "next_step_buttons" not in self.form:
+            return
+        self.form["next_step_buttons"] = []
+        buttons_layout = self.form.get("next_step_buttons_layout")
+        if buttons_layout is not None and hasattr(buttons_layout, "count") and hasattr(buttons_layout, "takeAt"):
+            while buttons_layout.count():
+                item = buttons_layout.takeAt(0)
+                widget = item.widget() if hasattr(item, "widget") else None
+                if widget is not None and hasattr(widget, "deleteLater"):
+                    widget.deleteLater()
+        qtcore, _qtgui, qtwidgets = load_qt()
+        if qtwidgets is None:
+            for addition in additions[:4]:
+                if not isinstance(addition, dict):
+                    continue
+                button = FallbackButton(str(addition.get("label") or "Apply"))
+                set_tooltip(button, str(addition.get("tooltip") or addition.get("description") or "Apply this next step."))
+                button.clicked.connect(lambda _checked=None, addition_id=str(addition.get("id") or ""): self.handle_apply_suggested_addition(addition_id))
+                self.form["next_step_buttons"].append(button)
+            return
+        for index, addition in enumerate(additions[:4]):
+            if not isinstance(addition, dict):
+                continue
+            label = str(addition.get("label") or "Apply")
+            tooltip = str(addition.get("tooltip") or addition.get("description") or label)
+            detail = str(addition.get("description") or "")
+            button = set_button_role(qtwidgets.QPushButton(label), "secondary" if index else "primary")
+            set_tooltip(button, tooltip)
+            if hasattr(button, "clicked"):
+                button.clicked.connect(
+                    lambda _checked=False, addition_id=str(addition.get("id") or ""): self.handle_apply_suggested_addition(addition_id)
+                )
+            if detail:
+                button.setText(f"{label} - {detail}")
+            if buttons_layout is not None and hasattr(buttons_layout, "addWidget"):
+                buttons_layout.addWidget(button)
+            self.form["next_step_buttons"].append(button)
+        visible = bool(self.form["next_step_buttons"])
+        if hasattr(self.form["next_steps_section"], "setVisible"):
+            self.form["next_steps_section"].setVisible(visible)
+
 
 def _build_form() -> dict[str, Any]:
     _qtcore, _qtgui, qtwidgets = load_qt()
@@ -194,6 +277,9 @@ def _build_form() -> dict[str, Any]:
             "corner_radius": FallbackValue(0.0),
             "apply_button": FallbackButton("Apply Geometry"),
             "info": FallbackText(),
+            "next_steps_section": FallbackLabel(),
+            "next_steps_hint": FallbackLabel("No suggested workflow step available yet."),
+            "next_step_buttons": [],
             "status": FallbackLabel(),
         }
 
@@ -262,6 +348,17 @@ def _build_form() -> dict[str, Any]:
     settings_layout.addRow("", apply_button)
 
     info = create_text_panel(qtwidgets, max_height=88)
+    next_steps_section, next_steps_layout = create_section_widget(qtwidgets, "Next Steps")
+    next_steps_hint = create_hint_label(
+        qtwidgets,
+        "Suggested additions appear here when the active template has a clear next move.",
+    )
+    next_steps_layout.addWidget(next_steps_hint)
+    next_steps_buttons_host = qtwidgets.QWidget()
+    next_steps_buttons_layout = qtwidgets.QVBoxLayout(next_steps_buttons_host)
+    next_steps_buttons_layout.setContentsMargins(0, 0, 0, 0)
+    next_steps_buttons_layout.setSpacing(6)
+    next_steps_layout.addWidget(next_steps_buttons_host)
     status = qtwidgets.QLabel()
     status.setWordWrap(True)
     top_row = qtwidgets.QHBoxLayout()
@@ -270,6 +367,7 @@ def _build_form() -> dict[str, Any]:
     top_row.addWidget(settings_box, 2)
     layout.addLayout(top_row)
     layout.addWidget(info)
+    layout.addWidget(next_steps_section)
     layout.addWidget(status)
     widget = wrap_widget_in_scroll_area(content)
     return {
@@ -291,5 +389,10 @@ def _build_form() -> dict[str, Any]:
         "corner_radius": corner_radius,
         "apply_button": apply_button,
         "info": info,
+        "next_steps_section": next_steps_section,
+        "next_steps_layout": next_steps_layout,
+        "next_steps_hint": next_steps_hint,
+        "next_step_buttons_layout": next_steps_buttons_layout,
+        "next_step_buttons": [],
         "status": status,
     }

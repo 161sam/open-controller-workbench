@@ -33,6 +33,11 @@ metadata:
     - id: "transport_buttons"
       label: "Add Transport Buttons"
       description: "Adds a small transport row below the navigation section."
+      tooltip: "Add a compact transport row below the display and navigation section."
+      category: "Next Steps"
+      icon: "button.svg"
+      order: 10
+      command_id: "OCW_AddTransportButtons"
       placement_preference: "bottom_transport_row"
       zone_id: "bottom_transport"
       group_id: "display_nav_transport"
