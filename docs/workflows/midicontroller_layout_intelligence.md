@@ -25,10 +25,14 @@ Components can now describe:
 Suggested additions can also carry UI-facing metadata:
 
 - `label`
+- `short_label`
 - `tooltip`
 - `icon`
+- `priority`
+- `group`
 - `order`
 - `command_id`
+- `status_message`
 
 ## Template Patterns
 
@@ -69,7 +73,8 @@ Anchor selection prefers:
 ## What It Can Do
 
 - expose template-specific next-step suggestions
-- surface those suggestions in the existing `InfoPanel` as clickable `Next Steps`
+- build template-specific workflow cards with one primary action and a short secondary action list
+- surface those suggestions in the existing `InfoPanel` as clickable workflow actions
 - register suggested additions as direct commands such as `OCW_AddUtilityStrip`
 - generate deterministic default positions for suggested additions
 - suggest a sensible default position for a newly added component type
@@ -77,7 +82,15 @@ Anchor selection prefers:
 
 ## How Users Trigger It
 
-After creating a MIDI controller template, the `InfoPanel` now shows a compact `Next Steps` section.
+After creating a MIDI controller template, the `InfoPanel` now shows a compact `Workflow Card`.
+
+Each card includes:
+
+- the template title
+- a short workflow hint
+- a compact `Ideal for` summary
+- one `Primary Action`
+- a short `Next Steps` list
 
 Typical actions include:
 
@@ -92,6 +105,7 @@ These actions:
 - apply the existing layout-intelligence heuristics
 - add grouped components with deterministic default positions
 - reuse the same plugin logic as the command path
+- surface the most likely next build step first
 
 ## What It Does Not Do
 

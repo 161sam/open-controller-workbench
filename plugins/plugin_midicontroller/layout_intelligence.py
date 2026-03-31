@@ -19,12 +19,14 @@ def build_layout_intelligence(
     if template is None:
         return {
             "template_id": None,
+            "template_name": None,
             "workflow_hint": None,
             "ideal_for": [],
             "next_step": None,
             "layout_zones": [],
             "smart_defaults": {},
             "suggested_additions": [],
+            "workflow_card": {},
         }
 
     metadata = deepcopy(template.get("metadata", {})) if isinstance(template.get("metadata"), dict) else {}
@@ -32,14 +34,7 @@ def build_layout_intelligence(
     for addition in metadata.get("suggested_additions", []):
         if not isinstance(addition, dict):
             continue
-        suggestion = deepcopy(addition)
-        suggestion.setdefault("label", _humanize_addition_id(str(suggestion.get("id") or "")))
-        description = str(suggestion.get("description") or "").strip()
-        suggestion["tooltip"] = str(suggestion.get("tooltip") or description or suggestion["label"])
-        suggestion["category"] = str(suggestion.get("category") or "Next Steps")
-        suggestion["icon"] = str(suggestion.get("icon") or "generic.svg")
-        suggestion["order"] = _safe_int(suggestion.get("order"), default=200)
-        suggestion["command_id"] = str(suggestion.get("command_id") or _command_id_for_addition_id(str(suggestion.get("id") or "")))
+        suggestion = _normalize_suggested_addition(addition)
         preview_components = build_suggested_addition(
             state,
             str(suggestion.get("id") or ""),
@@ -51,16 +46,30 @@ def build_layout_intelligence(
         if preview_components:
             suggestion["target_zone_id"] = preview_components[0].get("zone_id")
         additions.append(suggestion)
-    additions.sort(key=lambda item: (_safe_int(item.get("order"), default=200), str(item.get("label") or "").lower()))
+    additions.sort(
+        key=lambda item: (
+            0 if str(item.get("priority") or "secondary") == "primary" else 1,
+            _safe_int(item.get("order"), default=200),
+            str(item.get("label") or "").lower(),
+        )
+    )
+    workflow_card = _build_workflow_card(
+        template=template,
+        workflow_hint=str(metadata.get("workflow_hint") or ""),
+        ideal_for=deepcopy(metadata.get("ideal_for", [])) if isinstance(metadata.get("ideal_for"), list) else [],
+        additions=additions,
+    )
 
     return {
         "template_id": template.get("template", {}).get("id"),
+        "template_name": template.get("template", {}).get("name"),
         "workflow_hint": metadata.get("workflow_hint"),
         "ideal_for": deepcopy(metadata.get("ideal_for", [])) if isinstance(metadata.get("ideal_for"), list) else [],
         "next_step": metadata.get("next_step"),
         "layout_zones": deepcopy(metadata.get("layout_zones", [])) if isinstance(metadata.get("layout_zones"), list) else [],
         "smart_defaults": deepcopy(metadata.get("smart_defaults", {})) if isinstance(metadata.get("smart_defaults"), dict) else {},
         "suggested_additions": additions,
+        "workflow_card": workflow_card,
     }
 
 
@@ -225,6 +234,54 @@ def _default_preference_for_role(role: str) -> str:
         "feedback": "centered_above_group",
     }
     return mapping.get(normalized, "right_of_main")
+
+
+def _normalize_suggested_addition(addition: dict[str, Any]) -> dict[str, Any]:
+    suggestion = deepcopy(addition)
+    suggestion.setdefault("label", _humanize_addition_id(str(suggestion.get("id") or "")))
+    description = str(suggestion.get("description") or "").strip()
+    suggestion["short_label"] = str(suggestion.get("short_label") or suggestion["label"])
+    suggestion["tooltip"] = str(suggestion.get("tooltip") or description or suggestion["label"])
+    suggestion["category"] = str(suggestion.get("category") or "Next Steps")
+    suggestion["group"] = str(suggestion.get("group") or "utility")
+    suggestion["icon"] = str(suggestion.get("icon") or "generic.svg")
+    suggestion["priority"] = str(suggestion.get("priority") or "secondary")
+    suggestion["order"] = _safe_int(suggestion.get("order"), default=200)
+    suggestion["command_id"] = str(suggestion.get("command_id") or _command_id_for_addition_id(str(suggestion.get("id") or "")))
+    suggestion["status_message"] = str(
+        suggestion.get("status_message")
+        or f"{suggestion['label']} added."
+    )
+    return suggestion
+
+
+def _build_workflow_card(
+    *,
+    template: dict[str, Any],
+    workflow_hint: str,
+    ideal_for: list[Any],
+    additions: list[dict[str, Any]],
+) -> dict[str, Any]:
+    primary_action = next(
+        (
+            item
+            for item in additions
+            if isinstance(item, dict) and str(item.get("priority") or "secondary") == "primary"
+        ),
+        additions[0] if additions else None,
+    )
+    secondary_actions = [
+        item
+        for item in additions
+        if isinstance(item, dict) and item is not primary_action
+    ][:4]
+    return {
+        "template_title": str(template.get("template", {}).get("name") or template.get("template", {}).get("id") or "-"),
+        "short_description": workflow_hint or "",
+        "ideal_for": [str(item) for item in ideal_for if isinstance(item, str) and item.strip()][:3],
+        "primary_action": deepcopy(primary_action) if isinstance(primary_action, dict) else None,
+        "secondary_actions": deepcopy(secondary_actions),
+    }
 
 
 def _humanize_addition_id(addition_id: str) -> str:

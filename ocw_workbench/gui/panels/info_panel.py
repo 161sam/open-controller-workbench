@@ -8,17 +8,17 @@ from ocw_workbench.gui.panels._common import (
     FallbackCombo,
     FallbackLabel,
     FallbackText,
-    build_panel_container,
     FallbackValue,
+    build_panel_container,
     configure_combo_box,
-    create_hint_label,
     create_form_section_widget,
+    create_hint_label,
     create_section_widget,
     create_text_panel,
     current_text,
     load_qt,
-    set_combo_items,
     set_button_role,
+    set_combo_items,
     set_label_text,
     set_size_policy,
     set_text,
@@ -52,6 +52,7 @@ class InfoPanel:
         state = self.controller_service.get_state(self.doc)
         context = self.controller_service.get_ui_context(self.doc)
         layout_intelligence = context.get("layout_intelligence", {})
+        workflow_card = layout_intelligence.get("workflow_card", {}) if isinstance(layout_intelligence, dict) else {}
         suggested_additions = (
             layout_intelligence.get("suggested_additions", [])
             if isinstance(layout_intelligence, dict)
@@ -95,6 +96,8 @@ class InfoPanel:
                 f"Layout: {layout.get('strategy', '-')} "
                 f"from {layout.get('source', 'manual')}."
             )
+        primary_action = workflow_card.get("primary_action", {}) if isinstance(workflow_card, dict) else {}
+        secondary_actions = workflow_card.get("secondary_actions", []) if isinstance(workflow_card, dict) else []
         summary_text = "\n".join(
             [
                 f"Template: {context['template_id'] or '-'}",
@@ -105,12 +108,15 @@ class InfoPanel:
                 f"Components: {context['component_count']}",
                 layout_text,
                 validation_text,
+                f"Workflow: {workflow_card.get('template_title') or context['template_id'] or '-'}",
                 f"Next step hint: {layout_intelligence.get('next_step') or '-'}",
+                f"Primary action: {primary_action.get('label') or '-'}",
+                f"Next steps: {', '.join(str(item.get('label') or '-') for item in secondary_actions) if secondary_actions else '-'}",
                 f"Suggested additions: {', '.join(str(item.get('label') or '-') for item in suggested_additions) if suggested_additions else '-'}",
             ]
         )
         set_text(self.form["info"], summary_text)
-        self._refresh_next_steps(layout_intelligence)
+        self._refresh_workflow_card(workflow_card, layout_intelligence)
         apply_status_message(
             self.form["status"],
             "Review controller geometry here, then place or refine components.",
@@ -153,18 +159,20 @@ class InfoPanel:
         return True
 
     def apply_suggested_addition(self, addition_id: str) -> dict[str, Any]:
-        state = self.controller_service.apply_suggested_addition(self.doc, addition_id)
-        self.refresh()
-        applied = next(
+        current_layout = self.controller_service.get_ui_context(self.doc).get("layout_intelligence", {})
+        addition = next(
             (
                 item
-                for item in self.controller_service.get_ui_context(self.doc).get("layout_intelligence", {}).get("suggested_additions", [])
+                for item in current_layout.get("suggested_additions", [])
                 if isinstance(item, dict) and str(item.get("id") or "") == addition_id
             ),
             None,
         )
-        label = str(applied.get("label") or addition_id.replace("_", " ").title()) if isinstance(applied, dict) else addition_id
-        self._publish_status(f"Applied suggested addition '{label}'.", level="success")
+        state = self.controller_service.apply_suggested_addition(self.doc, addition_id)
+        self.refresh()
+        label = str(addition.get("label") or addition_id.replace("_", " ").title()) if isinstance(addition, dict) else addition_id
+        status_message = str(addition.get("status_message") or "") if isinstance(addition, dict) else ""
+        self._publish_status(status_message or f"Applied suggested addition '{label}'.", level="success")
         if self.on_updated is not None:
             self.on_updated(state)
         return state
@@ -205,41 +213,75 @@ class InfoPanel:
         set_tooltip(self.form["corner_radius"], "Corner radius for rounded rectangles.")
         set_tooltip(self.form["apply_button"], "Apply geometry changes and rebuild the model.")
 
-    def _refresh_next_steps(self, layout_intelligence: dict[str, Any]) -> None:
+    def _refresh_workflow_card(self, workflow_card: dict[str, Any], layout_intelligence: dict[str, Any]) -> None:
         additions = (
             layout_intelligence.get("suggested_additions", [])
             if isinstance(layout_intelligence, dict)
             else []
         )
-        next_step_hint = str(layout_intelligence.get("next_step") or "No suggested workflow step available yet.")
-        set_label_text(self.form["next_steps_hint"], next_step_hint)
-        if "next_step_buttons" not in self.form:
-            return
+        primary_action = workflow_card.get("primary_action") if isinstance(workflow_card, dict) else None
+        secondary_actions = workflow_card.get("secondary_actions", []) if isinstance(workflow_card, dict) else []
+        title = str(workflow_card.get("template_title") or "No template workflow available yet.")
+        short_description = str(workflow_card.get("short_description") or layout_intelligence.get("next_step") or "")
+        ideal_for = workflow_card.get("ideal_for", []) if isinstance(workflow_card, dict) else []
+        ideal_for_text = ", ".join(str(item) for item in ideal_for if isinstance(item, str) and item.strip())
+        set_label_text(self.form["workflow_card_title"], title)
+        set_label_text(self.form["workflow_card_hint"], short_description or "No suggested workflow step available yet.")
+        set_label_text(
+            self.form["workflow_card_ideal_for"],
+            f"Ideal for: {ideal_for_text}" if ideal_for_text else "Ideal for: -",
+        )
         self.form["next_step_buttons"] = []
-        buttons_layout = self.form.get("next_step_buttons_layout")
-        if buttons_layout is not None and hasattr(buttons_layout, "count") and hasattr(buttons_layout, "takeAt"):
-            while buttons_layout.count():
-                item = buttons_layout.takeAt(0)
-                widget = item.widget() if hasattr(item, "widget") else None
-                if widget is not None and hasattr(widget, "deleteLater"):
-                    widget.deleteLater()
+        primary_button = self.form["primary_action_button"]
+        visible = bool(primary_action or secondary_actions or additions)
         qtcore, _qtgui, qtwidgets = load_qt()
         if qtwidgets is None:
-            for addition in additions[:4]:
+            if isinstance(primary_action, dict):
+                primary_button.text = str(primary_action.get("label") or "Primary Action")
+                set_tooltip(primary_button, str(primary_action.get("tooltip") or primary_action.get("description") or "Apply this workflow step."))
+                primary_button.clicked = FallbackButton().clicked
+                primary_button.clicked.connect(
+                    lambda _checked=None, addition_id=str(primary_action.get("id") or ""): self.handle_apply_suggested_addition(addition_id)
+                )
+                primary_button.visible = True
+            else:
+                primary_button.visible = False
+            for addition in secondary_actions[:4]:
                 if not isinstance(addition, dict):
                     continue
-                button = FallbackButton(str(addition.get("label") or "Apply"))
+                button = FallbackButton(str(addition.get("short_label") or addition.get("label") or "Apply"))
                 set_tooltip(button, str(addition.get("tooltip") or addition.get("description") or "Apply this next step."))
-                button.clicked.connect(lambda _checked=None, addition_id=str(addition.get("id") or ""): self.handle_apply_suggested_addition(addition_id))
+                button.clicked.connect(
+                    lambda _checked=None, addition_id=str(addition.get("id") or ""): self.handle_apply_suggested_addition(addition_id)
+                )
                 self.form["next_step_buttons"].append(button)
+            self.form["workflow_card_section"].visible = visible
             return
-        for index, addition in enumerate(additions[:4]):
+
+        self._clear_action_layout(self.form.get("next_step_buttons_layout"))
+        if isinstance(primary_action, dict):
+            primary_label = str(primary_action.get("label") or "Primary Action")
+            primary_tooltip = str(primary_action.get("tooltip") or primary_action.get("description") or primary_label)
+            primary_button.setText(primary_label)
+            set_tooltip(primary_button, primary_tooltip)
+            if hasattr(primary_button, "clicked"):
+                try:
+                    primary_button.clicked.disconnect()
+                except Exception:
+                    pass
+                primary_button.clicked.connect(
+                    lambda _checked=False, addition_id=str(primary_action.get("id") or ""): self.handle_apply_suggested_addition(addition_id)
+                )
+            primary_button.setVisible(True)
+        else:
+            primary_button.setVisible(False)
+        for addition in secondary_actions[:4]:
             if not isinstance(addition, dict):
                 continue
-            label = str(addition.get("label") or "Apply")
+            label = str(addition.get("short_label") or addition.get("label") or "Apply")
             tooltip = str(addition.get("tooltip") or addition.get("description") or label)
             detail = str(addition.get("description") or "")
-            button = set_button_role(qtwidgets.QPushButton(label), "secondary" if index else "primary")
+            button = set_button_role(qtwidgets.QPushButton(label), "secondary")
             set_tooltip(button, tooltip)
             if hasattr(button, "clicked"):
                 button.clicked.connect(
@@ -247,12 +289,19 @@ class InfoPanel:
                 )
             if detail:
                 button.setText(f"{label} - {detail}")
-            if buttons_layout is not None and hasattr(buttons_layout, "addWidget"):
-                buttons_layout.addWidget(button)
+            self.form["next_step_buttons_layout"].addWidget(button)
             self.form["next_step_buttons"].append(button)
-        visible = bool(self.form["next_step_buttons"])
-        if hasattr(self.form["next_steps_section"], "setVisible"):
-            self.form["next_steps_section"].setVisible(visible)
+        if hasattr(self.form["workflow_card_section"], "setVisible"):
+            self.form["workflow_card_section"].setVisible(visible)
+
+    def _clear_action_layout(self, layout: Any) -> None:
+        if layout is None or not hasattr(layout, "count") or not hasattr(layout, "takeAt"):
+            return
+        while layout.count():
+            item = layout.takeAt(0)
+            widget = item.widget() if hasattr(item, "widget") else None
+            if widget is not None and hasattr(widget, "deleteLater"):
+                widget.deleteLater()
 
 
 def _build_form() -> dict[str, Any]:
@@ -277,8 +326,11 @@ def _build_form() -> dict[str, Any]:
             "corner_radius": FallbackValue(0.0),
             "apply_button": FallbackButton("Apply Geometry"),
             "info": FallbackText(),
-            "next_steps_section": FallbackLabel(),
-            "next_steps_hint": FallbackLabel("No suggested workflow step available yet."),
+            "workflow_card_section": FallbackLabel(),
+            "workflow_card_title": FallbackLabel("No template workflow available yet."),
+            "workflow_card_hint": FallbackLabel("No suggested workflow step available yet."),
+            "workflow_card_ideal_for": FallbackLabel("Ideal for: -"),
+            "primary_action_button": FallbackButton("Primary Action"),
             "next_step_buttons": [],
             "status": FallbackLabel(),
         }
@@ -324,17 +376,6 @@ def _build_form() -> dict[str, Any]:
     configure_combo_box(surface_shape)
     surface_shape.addItems(["rectangle", "rounded_rect"])
     apply_button = set_button_role(qtwidgets.QPushButton("Apply Geometry"), "primary")
-    set_tooltip(width, "Overall controller width in millimeters.")
-    set_tooltip(depth, "Overall controller depth in millimeters.")
-    set_tooltip(height, "Overall controller height in millimeters.")
-    set_tooltip(wall_thickness, "Enclosure wall thickness.")
-    set_tooltip(bottom_thickness, "Bottom panel thickness.")
-    set_tooltip(top_thickness, "Top plate thickness.")
-    set_tooltip(lid_inset, "Inset depth for the lid or top plate.")
-    set_tooltip(inner_clearance, "Clearance between the shell and inner cavity.")
-    set_tooltip(surface_shape, "Top surface shape.")
-    set_tooltip(corner_radius, "Corner radius for rounded rectangles.")
-    set_tooltip(apply_button, "Apply geometry changes and rebuild the model.")
     settings_layout.addRow("Width (mm)", width)
     settings_layout.addRow("Depth (mm)", depth)
     settings_layout.addRow("Height (mm)", height)
@@ -347,18 +388,29 @@ def _build_form() -> dict[str, Any]:
     settings_layout.addRow("Corner radius (mm)", corner_radius)
     settings_layout.addRow("", apply_button)
 
-    info = create_text_panel(qtwidgets, max_height=88)
-    next_steps_section, next_steps_layout = create_section_widget(qtwidgets, "Next Steps")
-    next_steps_hint = create_hint_label(
+    info = create_text_panel(qtwidgets, max_height=110)
+    workflow_card_section, workflow_card_layout = create_section_widget(qtwidgets, "Workflow Card")
+    workflow_card_title = qtwidgets.QLabel("No template workflow available yet.")
+    workflow_card_hint = create_hint_label(
         qtwidgets,
-        "Suggested additions appear here when the active template has a clear next move.",
+        "Suggested actions appear here when the active template has a clear next move.",
     )
-    next_steps_layout.addWidget(next_steps_hint)
+    workflow_card_ideal_for = create_hint_label(qtwidgets, "Ideal for: -")
+    primary_action_label = qtwidgets.QLabel("Primary Action")
+    primary_action_button = set_button_role(qtwidgets.QPushButton("Primary Action"), "primary")
+    secondary_actions_label = qtwidgets.QLabel("Next Steps")
+    workflow_card_layout.addWidget(workflow_card_title)
+    workflow_card_layout.addWidget(workflow_card_hint)
+    workflow_card_layout.addWidget(workflow_card_ideal_for)
+    workflow_card_layout.addWidget(primary_action_label)
+    workflow_card_layout.addWidget(primary_action_button)
+    workflow_card_layout.addWidget(secondary_actions_label)
     next_steps_buttons_host = qtwidgets.QWidget()
     next_steps_buttons_layout = qtwidgets.QVBoxLayout(next_steps_buttons_host)
     next_steps_buttons_layout.setContentsMargins(0, 0, 0, 0)
     next_steps_buttons_layout.setSpacing(6)
-    next_steps_layout.addWidget(next_steps_buttons_host)
+    workflow_card_layout.addWidget(next_steps_buttons_host)
+
     status = qtwidgets.QLabel()
     status.setWordWrap(True)
     top_row = qtwidgets.QHBoxLayout()
@@ -367,7 +419,7 @@ def _build_form() -> dict[str, Any]:
     top_row.addWidget(settings_box, 2)
     layout.addLayout(top_row)
     layout.addWidget(info)
-    layout.addWidget(next_steps_section)
+    layout.addWidget(workflow_card_section)
     layout.addWidget(status)
     widget = wrap_widget_in_scroll_area(content)
     return {
@@ -389,9 +441,11 @@ def _build_form() -> dict[str, Any]:
         "corner_radius": corner_radius,
         "apply_button": apply_button,
         "info": info,
-        "next_steps_section": next_steps_section,
-        "next_steps_layout": next_steps_layout,
-        "next_steps_hint": next_steps_hint,
+        "workflow_card_section": workflow_card_section,
+        "workflow_card_title": workflow_card_title,
+        "workflow_card_hint": workflow_card_hint,
+        "workflow_card_ideal_for": workflow_card_ideal_for,
+        "primary_action_button": primary_action_button,
         "next_step_buttons_layout": next_steps_buttons_layout,
         "next_step_buttons": [],
         "status": status,

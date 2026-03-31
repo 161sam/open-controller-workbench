@@ -77,6 +77,12 @@ def test_build_layout_intelligence_returns_preview_additions_for_pad_grid() -> N
 
     suggestions = {item["id"]: item for item in intelligence["suggested_additions"]}
     assert intelligence["workflow_hint"].startswith("Use this when the pads")
+    assert intelligence["workflow_card"]["template_title"] == "Finger Drum Pad Grid"
+    assert intelligence["workflow_card"]["primary_action"]["id"] == "utility_strip_right"
+    assert [item["id"] for item in intelligence["workflow_card"]["secondary_actions"]] == [
+        "navigation_encoder_pair",
+        "display_header",
+    ]
     assert suggestions["utility_strip_right"]["target_zone_id"] == "right_utility_strip"
     assert suggestions["utility_strip_right"]["command_id"] == "OCW_AddUtilityStrip"
     assert suggestions["utility_strip_right"]["tooltip"].startswith("Add a right-side utility strip")

@@ -298,14 +298,30 @@ def test_info_panel_shows_midicontroller_next_steps_and_can_apply_them():
     info_panel = InfoPanel(doc, controller_service=service)
     info_text = info_panel.refresh()
 
-    assert "Suggested additions: Add Utility Strip, Add Navigation Encoder Pair, Add Display Header" in info_text
-    assert len(info_panel.form["next_step_buttons"]) == 3
+    assert "Primary action: Add Utility Strip" in info_text
+    assert "Next steps: Add Navigation Encoder Pair, Add Display Header" in info_text
+    assert info_panel.form["workflow_card_title"].text == "Finger Drum Pad Grid"
+    assert info_panel.form["primary_action_button"].text == "Add Utility Strip"
+    assert len(info_panel.form["next_step_buttons"]) == 2
 
     info_panel.apply_suggested_addition("utility_strip_right")
     state = service.get_state(doc)
     utility_buttons = [component for component in state["components"] if component.get("group_role") == "utility_strip"]
 
     assert [component["id"] for component in utility_buttons] == ["shift", "scene", "mode"]
+
+
+def test_info_panel_hides_workflow_card_for_documents_without_template_context():
+    doc = FakeDocument()
+    service = ControllerService()
+    service.create_controller(doc, {"id": "demo", "width": 160.0, "depth": 100.0, "height": 30.0})
+
+    info_panel = InfoPanel(doc, controller_service=service)
+    info_panel.refresh()
+
+    assert info_panel.form["workflow_card_title"].text == "No template workflow available yet."
+    assert info_panel.form["primary_action_button"].visible is False
+    assert info_panel.form["workflow_card_section"].visible is False
 
 
 def test_product_workbench_panel_orchestrates_iteration_flow():
