@@ -130,6 +130,7 @@ def test_workflow_state_tracks_completed_pad_grid_steps_and_promotes_next_action
         ideal_for=metadata.get("ideal_for", []),
         additions=resolved,
         workflow_state=workflow_state,
+        all_additions=normalized,
     )
 
     assert workflow_state["signals"]["has_utility_strip"] is True
@@ -138,6 +139,7 @@ def test_workflow_state_tracks_completed_pad_grid_steps_and_promotes_next_action
     assert [item["id"] for item in resolved] == ["display_header", "navigation_encoder_pair"]
     assert workflow_card["primary_action"]["id"] == "display_header"
     assert workflow_card["next_step_hint"].startswith("Adds a compact OLED centered above the pad grid")
+    assert [step["status"] for step in workflow_card["steps"]] == ["completed", "current", "open"]
 
 
 def test_build_layout_intelligence_hides_completed_steps_and_updates_progress() -> None:

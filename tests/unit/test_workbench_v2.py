@@ -302,7 +302,11 @@ def test_info_panel_shows_midicontroller_next_steps_and_can_apply_them():
     assert "Next steps: Add Navigation Encoder Pair, Add Display Header" in info_text
     assert info_panel.form["workflow_card_title"].text == "Finger Drum Pad Grid"
     assert info_panel.form["primary_action_button"].text == "Add Utility Strip"
-    assert len(info_panel.form["next_step_buttons"]) == 2
+    assert [item.text for item in info_panel.form["workflow_progress_items"]] == [
+        "○ Utility Strip (Current)",
+        "○ Navigation Pair",
+        "○ Display Header",
+    ]
 
     info_panel.apply_suggested_addition("utility_strip_right")
     state = service.get_state(doc)
@@ -310,10 +314,13 @@ def test_info_panel_shows_midicontroller_next_steps_and_can_apply_them():
 
     assert [component["id"] for component in utility_buttons] == ["shift", "scene", "mode"]
     assert info_panel.form["primary_action_button"].text == "Add Display Header"
-    assert [button.text for button in info_panel.form["next_step_buttons"]] == [
-        "Navigation Pair",
+    assert [item.text for item in info_panel.form["workflow_progress_items"]] == [
+        "● Utility Strip",
+        "○ Display Header (Current)",
+        "○ Navigation Pair",
     ]
-    assert "1 of 3 typical setup steps completed." in info_panel.form["workflow_card_hint"].text
+    assert "1 of 3 typical setup steps completed." in info_panel.form["workflow_card_progress_summary"].text
+    assert info_panel.form["workflow_card_action_hint"].text.startswith("Adds a compact OLED centered above the pad grid")
 
 
 def test_info_panel_hides_workflow_card_for_documents_without_template_context():

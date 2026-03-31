@@ -56,6 +56,7 @@ def build_layout_intelligence(
         ideal_for=deepcopy(metadata.get("ideal_for", [])) if isinstance(metadata.get("ideal_for"), list) else [],
         additions=additions,
         workflow_state=workflow_state,
+        all_additions=normalized_additions,
     )
     next_step_hint = str(workflow_card.get("next_step_hint") or metadata.get("next_step") or "")
 
@@ -353,6 +354,7 @@ def build_workflow_card(
     ideal_for: list[Any],
     additions: list[dict[str, Any]],
     workflow_state: dict[str, Any],
+    all_additions: list[dict[str, Any]],
 ) -> dict[str, Any]:
     primary_action = next(
         (
@@ -383,6 +385,52 @@ def build_workflow_card(
     short_description = next_step_hint
     if progress_text:
         short_description = f"{short_description} {progress_text}".strip()
+    completed_ids = {
+        str(item)
+        for item in workflow_state.get("completed_additions", [])
+        if isinstance(item, str) and item.strip()
+    }
+    current_action_id = str(primary_action.get("id") or "") if isinstance(primary_action, dict) else ""
+    addition_by_id = {
+        str(addition.get("id") or ""): addition
+        for addition in all_additions
+        if isinstance(addition, dict) and str(addition.get("id") or "")
+    }
+    completed_order = [
+        addition_id
+        for addition_id in addition_by_id
+        if addition_id in completed_ids
+    ]
+    remaining_order = [
+        str(item.get("id") or "")
+        for item in additions
+        if isinstance(item, dict) and str(item.get("id") or "")
+    ]
+    step_order = list(completed_order)
+    if current_action_id and current_action_id not in step_order:
+        step_order.append(current_action_id)
+    for addition_id in remaining_order:
+        if addition_id and addition_id not in step_order:
+            step_order.append(addition_id)
+    steps: list[dict[str, Any]] = []
+    for addition_id in step_order:
+        addition = addition_by_id.get(addition_id)
+        if addition is None:
+            continue
+        status = "open"
+        if addition_id in completed_ids:
+            status = "completed"
+        elif current_action_id and addition_id == current_action_id:
+            status = "current"
+        steps.append(
+            {
+                "id": addition_id,
+                "label": str(addition.get("label") or addition.get("short_label") or addition_id),
+                "short_label": str(addition.get("short_label") or addition.get("label") or addition_id),
+                "description": str(addition.get("description") or ""),
+                "status": status,
+            }
+        )
     return {
         "template_title": str(template.get("template", {}).get("name") or template.get("template", {}).get("id") or "-"),
         "short_description": short_description,
@@ -393,6 +441,7 @@ def build_workflow_card(
         "progress_text": progress_text,
         "completed_steps": completed_count,
         "total_steps": total_count,
+        "steps": steps,
     }
 
 
