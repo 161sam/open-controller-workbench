@@ -22,11 +22,14 @@ This checklist is for preparing `v0.1.0` and later early OCW releases.
 
 - Update `CHANGELOG.md`
 - Update `RELEASE_NOTES_v0.1.md` or the current release-notes document
+- Update `docs/releases/v0x_release_draft.md` for the active visible release
+- Update `docs/release_prep_v0x.md` if screenshot or demo recommendations changed
 - Update `docs/release-process.md` if the workflow or artifact set changes
 - Verify `docs/README.md` points new users to installation and quick-start material
 - Verify README installation and first-run sections
 - Verify `examples/README.md` matches the current demo templates
 - Verify `screenshots/` contains real FreeCAD captures before publishing the public release
+- Verify the recommended 5 screenshots and 2 short GIFs from `docs/release_prep_v0x.md`
 - Verify docs links:
   - user guide
   - workflows

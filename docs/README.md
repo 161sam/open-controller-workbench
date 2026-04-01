@@ -22,5 +22,7 @@ Start here if you want the shortest path into OCW.
 
 - [Changelog](../CHANGELOG.md)
 - [Release Notes v0.1](../RELEASE_NOTES_v0.1.md)
+- [Release Draft v0.x](releases/v0x_release_draft.md)
+- [Release Prep v0.x](release_prep_v0x.md)
 - [Release Checklist](release-checklist.md)
 - [Release Process](release-process.md)

@@ -4,6 +4,14 @@ Design your custom MIDI controllers mechanically and structurally inside FreeCAD
 
 OCW is a FreeCAD workbench for controller enclosures, top plates, real 3D component placement, PCB reference modeling, and KiCad-oriented export data.
 
+## Current UX Highlights
+
+- guided placement with clear target feedback
+- compact mini-inspector and workflow card
+- direct drag interaction in the 3D view
+- hover and selection feedback for existing components
+- on-object actions for fast single-selection edits
+
 ## What Is OCW?
 
 OCW helps you build the mechanical side of a custom controller:
@@ -128,6 +136,8 @@ Architecture references:
 - [Manual UX / QA Checklist](docs/manual_ux_checklist.md)
 - [Demo Flow](docs/demo_flow.md)
 - [UI Visual Language](docs/ui_visual_language.md)
+- [Release Draft v0.x](docs/releases/v0x_release_draft.md)
+- [Release Prep v0.x](docs/release_prep_v0x.md)
 - [Changelog](CHANGELOG.md)
 - [Release Notes v0.1](RELEASE_NOTES_v0.1.md)
 
@@ -151,3 +161,15 @@ Known limits:
 - no full CAD gizmos or global interaction state machine
 - no final public license file is included yet
 - advanced ECAD roundtrip remains a later step beyond `v0.1.0`
+
+## Current Scope
+
+The current visible OCW release line is focused on workflow maturity:
+
+- template-driven start
+- guided placement
+- direct move and inspection
+- on-object actions
+- validation and review
+
+It is not yet a full CAD editing environment or a fully generalized plugin UI platform.
