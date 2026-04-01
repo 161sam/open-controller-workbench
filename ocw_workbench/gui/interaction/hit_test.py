@@ -51,3 +51,13 @@ def hit_test_inline_handle(items: list[dict[str, Any]], x: float, y: float) -> d
         if hit_test_item(item, x, y):
             return item
     return None
+
+
+def hit_test_inline_action(items: list[dict[str, Any]], x: float, y: float) -> dict[str, Any] | None:
+    for item in items:
+        item_id = str(item.get("id") or "")
+        if not item_id.startswith("inline_action:"):
+            continue
+        if hit_test_item(item, x, y):
+            return item
+    return None

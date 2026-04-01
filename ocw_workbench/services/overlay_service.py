@@ -559,6 +559,17 @@ class OverlayService:
                     kind="parameter",
                 )
             )
+        items.extend(
+            self._inline_action_items(
+                component_id=selected_component_id,
+                x=x,
+                y=y,
+                width=width,
+                height=height,
+                rotation=rotation,
+                hovered_handle_id=hovered_handle_id,
+            )
+        )
         return items
 
     def _preview_component_payload(self, doc: Any, preview: dict[str, Any], mode: str) -> tuple[dict[str, Any], str, str]:
@@ -770,6 +781,85 @@ class OverlayService:
             source_component_id=component_id,
             source_ids=[component_id],
         )
+
+    def _inline_action_items(
+        self,
+        *,
+        component_id: str,
+        x: float,
+        y: float,
+        width: float,
+        height: float,
+        rotation: float,
+        hovered_handle_id: str | None,
+    ) -> list[dict[str, Any]]:
+        anchor_x, anchor_y = self._rotate_point(
+            (width / 2.0) + 8.0,
+            -((height / 2.0) + 8.0),
+            rotation_deg=rotation,
+            origin=(x, y),
+        )
+        specs = (
+            {
+                "action_id": "duplicate",
+                "command_id": "OCW_DuplicateOnce",
+                "label": "D",
+                "title": "Duplicate",
+                "offset_y": 0.0,
+                "primary": True,
+            },
+            {
+                "action_id": "rotate_cw_90",
+                "command_id": "OCW_RotateCW90",
+                "label": "R",
+                "title": "Rotate +90",
+                "offset_y": 5.2,
+                "primary": False,
+            },
+            {
+                "action_id": "mirror_horizontal",
+                "command_id": "OCW_MirrorHorizontal",
+                "label": "M",
+                "title": "Mirror",
+                "offset_y": 10.4,
+                "primary": False,
+            },
+        )
+        items: list[dict[str, Any]] = []
+        for spec in specs:
+            item_id = f"inline_action:{spec['action_id']}:{component_id}"
+            style_kind = "inline_action_primary" if spec["primary"] else "inline_action"
+            diameter = 3.6 if spec["primary"] else 3.2
+            if hovered_handle_id == item_id:
+                style_kind = "inline_action_hover"
+                diameter += 0.5
+            action_y = anchor_y + float(spec["offset_y"])
+            items.append(
+                circle_item(
+                    item_id=item_id,
+                    x=anchor_x,
+                    y=action_y,
+                    diameter=diameter,
+                    style=overlay_style(style_kind),
+                    label=str(spec["title"]),
+                    source_component_id=component_id,
+                    source_ids=[component_id],
+                )
+            )
+            items.append(
+                text_item(
+                    item_id=f"{item_id}:label",
+                    x=anchor_x - 0.7,
+                    y=action_y - 0.9,
+                    text=str(spec["label"]),
+                    style=overlay_style("inline_action_label"),
+                    source_component_id=component_id,
+                    source_ids=[component_id],
+                )
+            )
+            items[-2]["action_id"] = str(spec["action_id"])
+            items[-2]["command_id"] = str(spec["command_id"])
+        return items
 
     def _inline_parameter_handle(
         self,

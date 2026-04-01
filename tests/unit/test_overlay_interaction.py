@@ -339,9 +339,13 @@ def test_overlay_summary_reports_selection_layer_and_inline_handles():
     controller_service.select_component(doc, "btn1")
 
     overlay = OverlayService(controller_service=controller_service).build_overlay(doc)
+    item_ids = {item["id"] for item in overlay["items"]}
 
     assert overlay["summary"]["interaction_layer"] == "selection"
     assert overlay["summary"]["handles_visible"] is True
+    assert "inline_action:duplicate:btn1" in item_ids
+    assert "inline_action:rotate_cw_90:btn1" in item_ids
+    assert "inline_action:mirror_horizontal:btn1" in item_ids
 
 
 def test_overlay_hides_inline_handles_during_active_tool_priority():
@@ -359,6 +363,7 @@ def test_overlay_hides_inline_handles_during_active_tool_priority():
     assert overlay["summary"]["interaction_layer"] == "tool_active"
     assert overlay["summary"]["handles_visible"] is False
     assert not any(item["id"].startswith("inline_handle:") for item in overlay["items"])
+    assert not any(item["id"].startswith("inline_action:") for item in overlay["items"])
 
     tools.clear_active_tool()
 
@@ -376,6 +381,7 @@ def test_overlay_hides_inline_handles_when_drag_interaction_is_active():
 
     assert overlay["summary"]["handles_visible"] is False
     assert not any(item["id"].startswith("inline_handle:") for item in overlay["items"])
+    assert not any(item["id"].startswith("inline_action:") for item in overlay["items"])
 
 
 def test_overlay_service_and_hit_test_respect_rect_rotation():

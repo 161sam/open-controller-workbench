@@ -87,6 +87,9 @@ def test_overlay_service_shows_inline_handles_for_single_selected_component() ->
     assert "inline_handle:move:btn1" in item_ids
     assert "inline_handle:rotate:btn1" in item_ids
     assert "inline_handle:cap_width:btn1" in item_ids
+    assert "inline_action:duplicate:btn1" in item_ids
+    assert "inline_action:rotate_cw_90:btn1" in item_ids
+    assert "inline_action:mirror_horizontal:btn1" in item_ids
 
 
 def test_inline_edit_move_handle_updates_component_and_clears_tool_on_commit() -> None:
@@ -180,3 +183,49 @@ def test_inline_edit_hover_marks_handle_in_transient_state() -> None:
 
     state = load_inline_edit_state(doc)
     assert state["hovered_handle_id"] == "inline_handle:rotate:btn1"
+
+
+def test_inline_edit_hover_marks_inline_action_in_transient_state() -> None:
+    doc, _controller_service, _overlay_renderer, controller, _view = _build_controller()
+    action = _overlay_item(doc, "inline_action:duplicate:btn1")
+    geometry = action["geometry"]
+
+    controller.handle_view_event({"Type": "SoLocation2Event", "Position": (geometry["x"], geometry["y"])})
+
+    state = load_inline_edit_state(doc)
+    assert state["hovered_handle_id"] == "inline_action:duplicate:btn1"
+
+
+def test_inline_edit_action_click_invokes_callback_without_starting_session() -> None:
+    reset_tool_manager()
+    doc = FakeDocument()
+    controller_service = ControllerService()
+    controller_service.create_controller(doc, {"id": "demo", "width": 120.0, "depth": 80.0, "height": 30.0, "top_thickness": 3.0})
+    controller_service.add_component(doc, "omron_b3f_1000", component_id="btn1", x=25.0, y=25.0)
+    controller_service.select_component(doc, "btn1")
+    InteractionService(controller_service).update_settings(doc, {"snap_enabled": False})
+    overlay_renderer = OverlayRenderer(OverlayService(controller_service=controller_service))
+    view = FakeView()
+    calls: list[tuple[str, str, str]] = []
+    controller = InlineEditController(
+        controller_service=controller_service,
+        overlay_renderer=overlay_renderer,
+        on_action=lambda action_id, component_id, command_id: calls.append((action_id, component_id, command_id)),
+    )
+    controller._active_view = lambda _doc: view
+    assert controller.start(doc) is True
+
+    action = _overlay_item(doc, "inline_action:duplicate:btn1")
+    geometry = action["geometry"]
+    controller.handle_view_event(
+        {
+            "Type": "SoMouseButtonEvent",
+            "State": "DOWN",
+            "Button": "BUTTON1",
+            "Position": (geometry["x"], geometry["y"]),
+        }
+    )
+
+    assert calls == [("duplicate", "btn1", "OCW_DuplicateOnce")]
+    assert controller.session is None
+    assert load_inline_edit_state(doc)["active_handle_id"] is None

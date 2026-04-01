@@ -4,7 +4,7 @@ from dataclasses import dataclass
 import math
 from typing import Any
 
-from ocw_workbench.gui.interaction.hit_test import hit_test_inline_handle
+from ocw_workbench.gui.interaction.hit_test import hit_test_inline_action, hit_test_inline_handle
 from ocw_workbench.gui.interaction.inline_edit_state import (
     clear_inline_edit_state,
     load_inline_edit_state,
@@ -49,6 +49,7 @@ class InlineEditController:
         on_status: Any | None = None,
         on_finished: Any | None = None,
         on_changed: Any | None = None,
+        on_action: Any | None = None,
         view_callbacks: ViewEventCallbackRegistry | None = None,
     ) -> None:
         self.controller_service = controller_service or ControllerService()
@@ -56,6 +57,7 @@ class InlineEditController:
         self.on_status = on_status
         self.on_finished = on_finished
         self.on_changed = on_changed
+        self.on_action = on_action
         self.doc: Any | None = None
         self.view: Any | None = None
         self.session: InlineEditSession | None = None
@@ -147,6 +149,8 @@ class InlineEditController:
                 return
             if is_left_click_down(event_type, payload):
                 if self.session is None:
+                    if self._invoke_action(screen_x, screen_y):
+                        return
                     self._begin_session(screen_x, screen_y)
                 return
             if is_left_click_up(event_type, payload) and self.session is not None:
@@ -226,16 +230,21 @@ class InlineEditController:
             if self.view is not None:
                 set_interaction_cursor(self.view, self._cursor_role())
             return
-        handle = self._handle_at(screen_x, screen_y)
+        hovered_item_id = None
+        action = self._action_at(screen_x, screen_y)
+        if action is not None:
+            hovered_item_id = str(action["id"])
+        else:
+            handle = self._handle_at(screen_x, screen_y)
+            hovered_item_id = None if handle is None else str(handle["id"])
         selected_id = self._selected_component_id()
-        hovered_handle_id = None if handle is None else str(handle["id"])
         state = load_inline_edit_state(self.doc) or {}
-        if state.get("hovered_handle_id") == hovered_handle_id and state.get("component_id") == selected_id:
+        if state.get("hovered_handle_id") == hovered_item_id and state.get("component_id") == selected_id:
             return
         store_inline_edit_state(
             self.doc,
             component_id=selected_id,
-            hovered_handle_id=hovered_handle_id,
+            hovered_handle_id=hovered_item_id,
             active_handle_id=state.get("active_handle_id"),
             active_handle_type=state.get("active_handle_type"),
         )
@@ -370,6 +379,37 @@ class InlineEditController:
             overlay = self.overlay_renderer.refresh(self.doc)
         return hit_test_inline_handle(list(overlay.get("items", [])), x=float(point[0]), y=float(point[1]))
 
+    def _action_at(self, screen_x: float, screen_y: float) -> dict[str, Any] | None:
+        if self.doc is None:
+            return None
+        point = get_view_point(self.view, screen_x, screen_y) if self.view is not None else None
+        if point is None:
+            return None
+        overlay = getattr(self.doc, "OCWOverlayState", None)
+        if not isinstance(overlay, dict):
+            overlay = self.overlay_renderer.refresh(self.doc)
+        return hit_test_inline_action(list(overlay.get("items", [])), x=float(point[0]), y=float(point[1]))
+
+    def _invoke_action(self, screen_x: float, screen_y: float) -> bool:
+        if self.doc is None:
+            return False
+        action = self._action_at(screen_x, screen_y)
+        if action is None:
+            return False
+        if self.on_action is None:
+            return False
+        action_id = str(action.get("action_id") or "")
+        component_id = str(action.get("source_component_id") or "")
+        command_id = str(action.get("command_id") or "")
+        if not action_id or not component_id:
+            return False
+        self.on_action(action_id, component_id, command_id)
+        self._sync_state()
+        self.overlay_renderer.refresh(self.doc)
+        if self.view is not None:
+            set_interaction_cursor(self.view, self._cursor_role())
+        return True
+
     def _snap_position(self, position: tuple[float, float], *, ignore_component_id: str | None) -> tuple[float, float]:
         if self.doc is None:
             return position
@@ -383,7 +423,8 @@ class InlineEditController:
         for item in overlay.get("items", []) if isinstance(overlay.get("items"), list) else []:
             if item.get("source_component_id") == ignore_component_id:
                 continue
-            if str(item.get("id") or "").startswith("inline_handle:"):
+            item_id = str(item.get("id") or "")
+            if item_id.startswith("inline_handle:") or item_id.startswith("inline_action:"):
                 continue
             items.append(item)
         result = compute_snap(position, SnapContext(overlay_items=tuple(items)))

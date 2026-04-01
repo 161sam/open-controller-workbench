@@ -917,6 +917,38 @@ def test_product_workbench_panel_duplicates_multi_selection_as_group():
     assert doc.transactions[-2:] == [("open", "OCW Duplicate Components"), ("commit", None)]
 
 
+def test_product_workbench_panel_inline_object_action_duplicates_selection() -> None:
+    doc = FakeDocument()
+    service = ControllerService()
+    service.create_controller(doc, {"id": "demo", "width": 160.0, "depth": 100.0, "height": 30.0})
+    service.add_component(doc, "omron_b3f_1000", component_id="btn1", x=10.0, y=10.0)
+    service.set_selected_component_ids(doc, ["btn1"], primary_id="btn1")
+    workbench = ProductWorkbenchPanel(doc, controller_service=service)
+
+    workbench._handle_inline_object_action("duplicate", "btn1", "OCW_DuplicateOnce")
+
+    state = service.get_state(doc)
+    assert len(state["components"]) == 2
+    created = next(component for component in state["components"] if component["id"] != "btn1")
+    assert created["x"] == 22.0
+    assert created["y"] == 10.0
+    assert state["meta"]["selection"] == created["id"]
+
+
+def test_product_workbench_panel_inline_object_action_transforms_selection() -> None:
+    doc = FakeDocument()
+    service = ControllerService()
+    service.create_controller(doc, {"id": "demo", "width": 160.0, "depth": 100.0, "height": 30.0})
+    service.add_component(doc, "adafruit_oled_096_i2c_ssd1306", component_id="disp1", x=20.0, y=20.0, rotation=0.0)
+    service.set_selected_component_ids(doc, ["disp1"], primary_id="disp1")
+    workbench = ProductWorkbenchPanel(doc, controller_service=service)
+
+    workbench._handle_inline_object_action("mirror_horizontal", "disp1", "OCW_MirrorHorizontal")
+
+    component = service.get_component(doc, "disp1")
+    assert component["rotation"] == 180.0
+
+
 def test_product_workbench_panel_creates_grid_array_from_selection():
     doc = FakeDocument()
     service = ControllerService()

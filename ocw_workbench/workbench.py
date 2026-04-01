@@ -439,6 +439,7 @@ class ProductWorkbenchPanel:
             on_status=self.set_status,
             on_finished=self._handle_inline_edit_finished,
             on_changed=self._handle_inline_edit_changed,
+            on_action=self._handle_inline_object_action,
         )
         self.form = self._build_shell()
         self.widget = self.form["widget"]
@@ -1082,6 +1083,20 @@ class ProductWorkbenchPanel:
             self.refresh_context_panels(refresh_components=True)
         except Exception as exc:
             log_exception("Failed to refresh UI after inline edit update", exc)
+
+    def _handle_inline_object_action(self, action_id: str, component_id: str, command_id: str) -> None:
+        if action_id == "duplicate":
+            self.duplicate_selection_once(offset_x=12.0, offset_y=0.0)
+            self.set_status("Duplicated selection from on-object action.", level="success")
+            return
+        if action_id in {"rotate_cw_90", "rotate_ccw_90", "rotate_180", "mirror_horizontal", "mirror_vertical"}:
+            self.apply_selection_transform(action_id)
+            self.set_status(f"{self._transform_label(action_id)} from on-object action.", level="success")
+            return
+        self.set_status(
+            f"Action '{action_id}' is not available for '{component_id}'.",
+            level="warning",
+        )
 
     def _selected_components_in_order(self) -> list[dict[str, Any]]:
         state = self.controller_service.get_state(self.doc)
