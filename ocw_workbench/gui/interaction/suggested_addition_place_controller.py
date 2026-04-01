@@ -10,6 +10,7 @@ from ocw_workbench.gui.interaction.view_event_helpers import (
     get_view_point,
     is_escape_event,
     is_left_click_down,
+    is_left_click_up,
     is_mouse_move,
 )
 from ocw_workbench.gui.interaction.view_place_controller import map_view_point_to_controller_xy
@@ -45,6 +46,9 @@ class SuggestedAdditionPlacementState:
     active_zone_id: str | None = None
     invalid_target: bool = False
     last_status_key: str | None = None
+    is_dragging: bool = False
+    drag_start_position: tuple[float, float] | None = None
+    current_preview_position: tuple[float, float] | None = None
 
     @property
     def is_active(self) -> bool:
@@ -227,6 +231,7 @@ class SuggestedAdditionPlaceController:
         )
         self.overlay_renderer.refresh(self.doc)
         self._update_status_from_feedback(placement_feedback)
+        self.session.current_preview_position = (float(payload["x"]), float(payload["y"]))
         return payload
 
     def handle_view_event(self, info: Any) -> None:
@@ -245,9 +250,19 @@ class SuggestedAdditionPlaceController:
                 self.update_preview_from_screen(float(position[0]), float(position[1]))
                 return
             if position is not None and is_left_click_down(event_type, payload):
+                self.session.is_dragging = True
+                self.session.drag_start_position = (float(position[0]), float(position[1]))
+                self.update_preview_from_screen(float(position[0]), float(position[1]))
+                return
+            if position is not None and is_left_click_up(event_type, payload):
                 preview = self.update_preview_from_screen(float(position[0]), float(position[1]))
                 feedback = preview.get("placement_feedback", {}) if isinstance(preview, dict) else {}
+                was_dragging = self.session.is_dragging
+                self.session.is_dragging = False
+                self.session.drag_start_position = None
                 if (
+                    was_dragging
+                    and
                     preview is not None
                     and bool(preview.get("validation", {}).get("commit_allowed", True))
                     and bool(feedback.get("active_zone_id"))

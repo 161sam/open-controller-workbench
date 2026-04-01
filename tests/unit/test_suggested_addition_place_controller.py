@@ -165,8 +165,51 @@ def test_suggested_addition_place_controller_does_not_commit_outside_target_zone
     before = list(service.get_state(doc)["components"])
 
     controller.handle_view_event({"Type": "SoMouseButtonEvent", "State": "DOWN", "Button": "BUTTON1", "Position": (60, 40)})
+    controller.handle_view_event({"Type": "SoMouseButtonEvent", "State": "UP", "Button": "BUTTON1", "Position": (60, 40)})
 
     assert service.get_state(doc)["components"] == before
     preview = load_preview_state(doc)
     assert preview is not None
     assert preview["placement_feedback"]["invalid_target"] is True
+
+
+def test_suggested_addition_place_controller_drag_commits_on_release_in_active_zone() -> None:
+    doc = FakeDocument()
+    service = ControllerService()
+    interaction_service = InteractionService(service)
+    service.create_from_template(doc, "encoder_module")
+    controller = SuggestedAdditionPlaceController(
+        controller_service=service,
+        interaction_service=interaction_service,
+    )
+    controller.interaction_service.preview_validation_service.validate_components = lambda _doc, *, components: {
+        "valid": True,
+        "severity": None,
+        "status": "Valid placement",
+        "status_code": "valid",
+        "commit_allowed": True,
+        "findings": [],
+        "summary": {"error_count": 0, "warning_count": 0, "total_count": 0},
+    }
+    view = FakeView()
+    controller._active_view = lambda current_doc: view if current_doc is doc else None
+
+    assert controller.start(doc, "display_header") is True
+    bounds = controller.session.target_bounds
+    assert isinstance(bounds, dict)
+
+    controller.handle_view_event({"Type": "SoMouseButtonEvent", "State": "DOWN", "Button": "BUTTON1", "Position": (90, 12)})
+    controller.handle_view_event({"Type": "SoLocation2Event", "Position": (float(bounds["x"]), float(bounds["y"]))})
+
+    assert controller.session is not None
+    assert controller.session.is_dragging is True
+    assert controller.session.current_preview_position == (float(bounds["x"]), float(bounds["y"]))
+
+    controller.handle_view_event(
+        {"Type": "SoMouseButtonEvent", "State": "UP", "Button": "BUTTON1", "Position": (float(bounds["x"]), float(bounds["y"]))}
+    )
+
+    state = service.get_state(doc)
+    displays = [component for component in state["components"] if component.get("zone_id") == "display_header"]
+    assert len(displays) == 1
+    assert controller.session is None

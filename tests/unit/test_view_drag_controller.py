@@ -115,6 +115,11 @@ def test_view_drag_controller_preview_is_visual_only_until_commit():
         },
         "snap": None,
         "axis_lock": None,
+        "components": None,
+        "addition_id": None,
+        "label": None,
+        "target_zone_id": None,
+        "placement_feedback": None,
     }
     assert during_state["components"] == before_state["components"]
     assert during_state["controller"] == before_state["controller"]
@@ -322,6 +327,11 @@ def test_view_drag_controller_clamps_and_snaps_to_bounds():
         },
         "snap": None,
         "axis_lock": None,
+        "components": None,
+        "addition_id": None,
+        "label": None,
+        "target_zone_id": None,
+        "placement_feedback": None,
     }
 
 

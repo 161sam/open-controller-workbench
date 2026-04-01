@@ -134,12 +134,13 @@ def test_place_controller_commit_keeps_session_active_until_escape():
 
     assert controller.start(doc, "omron_b3f_1000") is True
     controller.handle_view_event({"Type": "SoMouseButtonEvent", "State": "DOWN", "Button": "BUTTON1", "Position": (12, 18)})
+    controller.handle_view_event({"Type": "SoMouseButtonEvent", "State": "UP", "Button": "BUTTON1", "Position": (12, 18)})
 
     settings = controller.interaction_service.get_settings(doc)
 
     assert settings["active_interaction"] == "place"
     assert controller.doc is doc
-    assert statuses[-1] == "Placed 'omron_b3f_1000'. Click again to continue or ESC to finish."
+    assert statuses[-1] == "Placed 'omron_b3f_1000'. Hold to drag another, release to place, or ESC to finish."
 
     controller.handle_view_event({"Type": "SoKeyboardEvent", "State": "DOWN", "Key": "ESCAPE"})
 

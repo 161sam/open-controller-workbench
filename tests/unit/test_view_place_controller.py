@@ -87,6 +87,11 @@ def test_preview_metadata_roundtrip():
         "validation": None,
         "snap": None,
         "axis_lock": None,
+        "components": None,
+        "addition_id": None,
+        "label": None,
+        "target_zone_id": None,
+        "placement_feedback": None,
     }
     assert getattr(doc, PREVIEW_METADATA_KEY, None) is None
 
@@ -130,6 +135,11 @@ def test_view_place_controller_preview_updates_metadata_only():
         },
         "snap": None,
         "axis_lock": None,
+        "components": None,
+        "addition_id": None,
+        "label": None,
+        "target_zone_id": None,
+        "placement_feedback": None,
     }
     assert load_preview_state(doc) == payload
     assert after_state == before_state
@@ -175,7 +185,9 @@ def test_view_place_controller_continues_after_commit_for_multiple_clicks():
 
     assert controller.start(doc, "omron_b3f_1000") is True
     controller.handle_view_event({"Type": "SoMouseButtonEvent", "State": "DOWN", "Button": "BUTTON1", "Position": (12, 19)})
+    controller.handle_view_event({"Type": "SoMouseButtonEvent", "State": "UP", "Button": "BUTTON1", "Position": (12, 19)})
     controller.handle_view_event({"Type": "SoMouseButtonEvent", "State": "DOWN", "Button": "BUTTON1", "Position": (30, 41)})
+    controller.handle_view_event({"Type": "SoMouseButtonEvent", "State": "UP", "Button": "BUTTON1", "Position": (30, 41)})
 
     state = controller_service.get_state(doc)
     settings = interaction_service.get_settings(doc)
@@ -191,6 +203,39 @@ def test_view_place_controller_continues_after_commit_for_multiple_clicks():
     assert controller.active_template_id == "omron_b3f_1000"
     assert settings["active_interaction"] == "place"
     assert load_preview_state(doc) is None
+
+
+def test_view_place_controller_drag_updates_preview_and_commits_on_release():
+    doc = FakeDocument()
+    controller_service = ControllerService()
+    interaction_service = InteractionService(controller_service)
+    controller_service.create_controller(doc, {"id": "demo", "width": 100.0, "depth": 80.0, "height": 30.0})
+    controller = ViewPlaceController(
+        controller_service=controller_service,
+        interaction_service=interaction_service,
+    )
+    view = FakeView()
+    controller._active_view = lambda _doc: view
+
+    assert controller.start(doc, "omron_b3f_1000") is True
+    controller.handle_view_event({"Type": "SoMouseButtonEvent", "State": "DOWN", "Button": "BUTTON1", "Position": (12, 19)})
+    controller.handle_view_event({"Type": "SoLocation2Event", "Position": (25, 32)})
+
+    preview = load_preview_state(doc)
+
+    assert preview is not None
+    assert controller.is_dragging is True
+    assert controller.drag_start_position == (12.0, 19.0)
+    assert controller.current_preview_position == (25.0, 32.0)
+
+    controller.handle_view_event({"Type": "SoMouseButtonEvent", "State": "UP", "Button": "BUTTON1", "Position": (25, 32)})
+
+    state = controller_service.get_state(doc)
+    assert len(state["components"]) == 1
+    assert state["components"][0]["x"] == 25.0
+    assert state["components"][0]["y"] == 32.0
+    assert controller.is_dragging is False
+    assert controller.drag_start_position is None
 
 
 def test_view_place_controller_blocks_commit_for_invalid_preview():
@@ -377,7 +422,9 @@ def test_view_place_controller_on_committed_fires_after_each_click():
 
     assert controller.start(doc, "omron_b3f_1000") is True
     controller.handle_view_event({"Type": "SoMouseButtonEvent", "State": "DOWN", "Button": "BUTTON1", "Position": (12, 19)})
+    controller.handle_view_event({"Type": "SoMouseButtonEvent", "State": "UP", "Button": "BUTTON1", "Position": (12, 19)})
     controller.handle_view_event({"Type": "SoMouseButtonEvent", "State": "DOWN", "Button": "BUTTON1", "Position": (30, 41)})
+    controller.handle_view_event({"Type": "SoMouseButtonEvent", "State": "UP", "Button": "BUTTON1", "Position": (30, 41)})
 
     assert len(committed_states) == 2
     assert controller.doc is doc

@@ -10,6 +10,7 @@ from ocw_workbench.gui.interaction.view_event_helpers import (
     get_view_point,
     is_escape_event,
     is_left_click_down,
+    is_left_click_up,
     is_mouse_move,
     is_shift_pressed,
 )
@@ -72,6 +73,9 @@ class ViewPlaceController:
         self._view_callbacks = view_callbacks or ViewEventCallbackRegistry()
         self._last_preview_status: str | None = None
         self._axis_lock: dict[str, Any] | None = None
+        self.is_dragging = False
+        self.drag_start_position: tuple[float, float] | None = None
+        self.current_preview_position: tuple[float, float] | None = None
 
     def start(self, doc: Any, template_id: str) -> bool:
         self.controller_service.library_service.get(template_id)
@@ -86,13 +90,16 @@ class ViewPlaceController:
         self.preview_active = True
         self._last_preview_status = None
         self._axis_lock = None
+        self.is_dragging = False
+        self.drag_start_position = None
+        self.current_preview_position = None
         self.interaction_service.begin_interaction(doc, "place", template_id=template_id)
         if not self._view_callbacks.attach(view, self.handle_view_event):
             self.cancel(reason="error", publish_status=False)
             self._publish_status("Interaction error")
             return False
         set_interaction_cursor(view, "place")
-        self._publish_status(f"Place '{template_id}' in 3D. Move, click to commit, ESC to cancel.")
+        self._publish_status(f"Place '{template_id}' in 3D. Hold to drag, release to place, ESC to cancel.")
         return self._view_callbacks.is_registered
 
     def cancel(self, reason: str = "cancel", publish_status: bool = True) -> None:
@@ -118,6 +125,9 @@ class ViewPlaceController:
         self.preview_active = False
         self._last_preview_status = None
         self._axis_lock = None
+        self.is_dragging = False
+        self.drag_start_position = None
+        self.current_preview_position = None
         self._notify_finished()
         clear_interaction_cursor(view)
         if publish_status:
@@ -146,7 +156,7 @@ class ViewPlaceController:
             raise
         self._continue_after_commit(doc)
         self._notify_committed(state)
-        self._publish_status(f"Placed '{template_id}'. Click again to continue or ESC to finish.")
+        self._publish_status(f"Placed '{template_id}'. Hold to drag another, release to place, or ESC to finish.")
         return state
 
     def update_preview_from_screen(
@@ -189,6 +199,7 @@ class ViewPlaceController:
         )
         self.overlay_renderer.refresh(self.doc)
         self._publish_preview_status(payload)
+        self.current_preview_position = (float(payload["x"]), float(payload["y"]))
         return payload
 
     def handle_view_event(self, info: Any) -> None:
@@ -208,12 +219,24 @@ class ViewPlaceController:
                 self.update_preview_from_screen(float(position[0]), float(position[1]), shift_pressed=shift_pressed)
                 return
             if position is not None and is_left_click_down(event_type, payload):
+                self.is_dragging = True
+                self.drag_start_position = (float(position[0]), float(position[1]))
+                self.update_preview_from_screen(
+                    float(position[0]),
+                    float(position[1]),
+                    shift_pressed=shift_pressed,
+                )
+                return
+            if position is not None and is_left_click_up(event_type, payload):
                 preview = self.update_preview_from_screen(
                     float(position[0]),
                     float(position[1]),
                     shift_pressed=shift_pressed,
                 )
-                if preview is not None and self._preview_allows_commit(preview):
+                was_dragging = self.is_dragging
+                self.is_dragging = False
+                self.drag_start_position = None
+                if was_dragging and preview is not None and self._preview_allows_commit(preview):
                     self.commit()
         except Exception as exc:
             self._handle_interaction_error(exc)
@@ -257,6 +280,9 @@ class ViewPlaceController:
             log_exception("Failed to refresh overlay after placement commit", exc)
         self.preview_active = True
         self._last_preview_status = None
+        self.is_dragging = False
+        self.drag_start_position = None
+        self.current_preview_position = None
 
     def _notify_committed(self, state: dict[str, Any]) -> None:
         if self.on_committed is not None:
