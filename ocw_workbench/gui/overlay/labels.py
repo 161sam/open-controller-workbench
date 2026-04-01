@@ -8,14 +8,20 @@ def component_label(
     severity: str | None = None,
     selected_role: str | None = None,
     hovered: bool = False,
+    context_relevant: bool = False,
+    manipulated: bool = False,
 ) -> str:
     base = f"{component['id']} [{component['type']}]"
-    if selected_role == "primary":
+    if manipulated:
+        base = f"{base} #"
+    elif selected_role == "primary":
         base = f"{base} *"
     elif selected_role == "secondary":
         base = f"{base} +"
     elif hovered:
         base = f"{base} >"
+    elif context_relevant:
+        base = f"{base} ~"
     if severity == "error":
         return f"{base} !"
     if severity == "warning":

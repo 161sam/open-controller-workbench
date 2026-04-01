@@ -191,6 +191,63 @@ def test_overlay_service_marks_hovered_component_before_drag():
 
     assert hovered_item["style"]["kind"] == "component_hover"
     assert hovered_item["label"].endswith(">")
+    assert overlay["summary"]["hovered_component_id"] == "btn1"
+    assert overlay["summary"]["interaction_layer"] == "hover"
+
+
+def test_overlay_service_prioritizes_manipulated_component_over_selection():
+    doc = FakeDocument()
+    controller_service = ControllerService()
+    interaction_service = InteractionService(controller_service)
+    controller_service.create_controller(doc, {"id": "demo", "width": 120.0, "depth": 80.0, "height": 30.0, "top_thickness": 3.0})
+    controller_service.add_component(doc, "omron_b3f_1000", component_id="btn1", x=25.0, y=25.0)
+    controller_service.select_component(doc, "btn1")
+    interaction_service.update_settings(doc, {"move_component_id": "btn1", "hovered_component_id": "btn1"})
+
+    overlay = OverlayService(controller_service=controller_service).build_overlay(doc)
+    item = next(item for item in overlay["items"] if item["id"] == "component:btn1")
+
+    assert item["style"]["kind"] == "component_manipulated"
+    assert item["label"].endswith("#")
+    assert overlay["summary"]["interaction_layer"] == "manipulation"
+
+
+def test_overlay_service_marks_selected_context_component_when_selection_overlaps_context():
+    doc = FakeDocument()
+    controller_service = ControllerService()
+    interaction_service = InteractionService(controller_service)
+    controller_service.create_from_template(doc, "encoder_module")
+    controller_service.select_component(doc, "enc2")
+    feedback = controller_service.resolve_suggested_addition_feedback(doc, "display_header")
+    components = controller_service.build_suggested_addition(doc, "display_header")
+    interaction_service.add_suggested_addition_preview(
+        doc,
+        addition_id="display_header",
+        label="Add Display Header",
+        components=components,
+        target_zone_id="display_header",
+        validation={
+            "valid": True,
+            "severity": None,
+            "status": "Valid placement",
+            "status_code": "valid",
+            "commit_allowed": True,
+            "findings": [],
+            "summary": {"error_count": 0, "warning_count": 0, "total_count": 0},
+        },
+        placement_feedback={
+            **feedback,
+            "hover_zone_id": "display_header",
+            "active_zone_id": "display_header",
+            "invalid_target": False,
+        },
+    )
+
+    overlay = OverlayService(controller_service=controller_service).build_overlay(doc)
+    item = next(item for item in overlay["items"] if item["id"] == "component:enc2")
+
+    assert item["style"]["kind"] == "component_selected_context"
+    assert " *" in item["label"]
 
 
 def test_overlay_service_marks_placement_target_context_and_group_frame() -> None:

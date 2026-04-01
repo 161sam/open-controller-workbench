@@ -479,6 +479,7 @@ class ProductWorkbenchPanel:
             on_status=self.set_status,
             on_suggested_addition_requested=self.start_suggested_addition_place_mode,
             on_suggested_addition_cancelled=self.cancel_active_interaction,
+            on_drag_requested=self.start_drag_mode,
         )
         self.plugin_manager_panel = self._build_plugin_manager_panel()
         self._mount_panels()
@@ -997,8 +998,10 @@ class ProductWorkbenchPanel:
         if selection_count <= 0:
             self.set_status("Selection cleared.", level="info")
             return
-        label = "component" if selection_count == 1 else "components"
-        self.set_status(f"{selection_count} {label} selected.", level="info")
+        if selection_count == 1:
+            self.set_status("1 component selected. Move, duplicate, rotate, or mirror it.", level="info")
+            return
+        self.set_status(f"{selection_count} components selected. Align, distribute, duplicate, or transform them.", level="info")
 
     def _handle_validated(self, _report: dict[str, Any]) -> None:
         self.info_panel.refresh()

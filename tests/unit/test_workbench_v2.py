@@ -476,8 +476,44 @@ def test_info_panel_compacts_selection_context_and_hides_geometry() -> None:
     assert panel.form["context_badge"].text == "Selected"
     assert panel.form["context_title"].text == "enc1"
     assert panel.form["context_subtitle"].text == "Encoder in main_controls"
+    assert panel.form["workflow_card_badge"].text == "Next"
+    assert panel.form["workflow_card_title"].text == "Add Display Header"
     assert panel.form["geometry_section"].visible is False
     assert panel.form["quick_actions_section"].visible is True
+
+
+def test_info_panel_prioritizes_move_selection_when_no_workflow_primary_action() -> None:
+    doc = FakeDocument()
+    service = ControllerService()
+    service.create_controller(doc, {"id": "demo", "width": 160.0, "depth": 100.0, "height": 30.0})
+    service.add_component(doc, "alps_ec11e15204a3", component_id="enc1", x=20.0, y=20.0)
+    service.select_component(doc, "enc1")
+
+    panel = InfoPanel(doc, controller_service=service)
+    panel.refresh()
+
+    assert panel.form["context_badge"].text == "Selected"
+    assert panel.form["workflow_card_badge"].text == "Next"
+    assert panel.form["workflow_card_title"].text == "Selection"
+    assert panel.form["primary_action_button"].text == "Move selection"
+
+
+def test_info_panel_hover_only_does_not_change_selection_context() -> None:
+    doc = FakeDocument()
+    service = ControllerService()
+    service.create_from_template(doc, "encoder_module")
+    panel = ProductWorkbenchPanel(doc, controller_service=service)
+    view = FakeView()
+    panel.pick_controller.cancel(publish_status=False)
+    panel.pick_controller._active_view = lambda current_doc: view if current_doc is doc else None
+    assert panel.pick_controller.start(doc) is True
+
+    before_badge = panel.info_panel.form["context_badge"].text
+    before_title = panel.info_panel.form["context_title"].text
+    panel.pick_controller.handle_view_event({"Type": "SoLocation2Event", "Position": (20, 20)})
+
+    assert panel.info_panel.form["context_badge"].text == before_badge
+    assert panel.info_panel.form["context_title"].text == before_title
 
 
 def test_info_panel_placement_mode_shows_compact_context_and_cancel_focus() -> None:

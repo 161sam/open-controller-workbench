@@ -118,13 +118,20 @@ class OverlayService:
             severity = self._component_severity(findings_by_component, component["id"])
             selected_role: str | None = None
             hovered = component["id"] == hovered_component_id and component["id"] != selected_component_id
+            manipulated = component["id"] == move_component_id
             if component["id"] == selected_component_id:
                 selected_role = "primary"
             elif component["id"] in selected_component_ids:
                 selected_role = "secondary"
             context_relevant = component["id"] in placement_context_ids
             item_kind = "component"
-            if selected_role == "primary":
+            if manipulated:
+                item_kind = "component_manipulated"
+            elif selected_role == "primary" and context_relevant:
+                item_kind = "component_selected_context"
+            elif selected_role == "secondary" and context_relevant:
+                item_kind = "component_selected_secondary_context"
+            elif selected_role == "primary":
                 item_kind = "component_selected"
             elif selected_role == "secondary":
                 item_kind = "component_selected_secondary"
@@ -133,8 +140,14 @@ class OverlayService:
             elif context_relevant:
                 item_kind = "component_context"
             if severity == "error":
-                if hovered:
+                if manipulated:
+                    item_kind = "component_manipulated_error"
+                elif hovered:
                     item_kind = "component_hover_error"
+                elif selected_role == "primary" and context_relevant:
+                    item_kind = "component_selected_context"
+                elif selected_role == "secondary" and context_relevant:
+                    item_kind = "component_selected_secondary_context"
                 elif selected_role in {"primary", "secondary"}:
                     item_kind = "component_selected" if selected_role == "primary" else "component_selected_secondary"
                 elif context_relevant:
@@ -142,7 +155,13 @@ class OverlayService:
                 else:
                     item_kind = "component_error"
             elif severity == "warning":
-                if selected_role == "primary":
+                if manipulated:
+                    item_kind = "component_manipulated_warning"
+                elif selected_role == "primary" and context_relevant:
+                    item_kind = "component_selected_context"
+                elif selected_role == "secondary" and context_relevant:
+                    item_kind = "component_selected_secondary_context"
+                elif selected_role == "primary":
                     item_kind = "component_selected"
                 elif selected_role == "secondary":
                     item_kind = "component_selected_secondary"
@@ -162,7 +181,14 @@ class OverlayService:
                     rotation=float(component.get("rotation", 0.0) or 0.0),
                     shape=shape.to_dict(),
                     style=overlay_style(item_kind),
-                    label=component_label(component, severity=severity, selected_role=selected_role, hovered=hovered),
+                    label=component_label(
+                        component,
+                        severity=severity,
+                        selected_role=selected_role,
+                        hovered=hovered,
+                        context_relevant=context_relevant,
+                        manipulated=manipulated,
+                    ),
                     source_component_id=component["id"],
                     severity=severity,
                 )
@@ -236,6 +262,7 @@ class OverlayService:
                     ui_settings=settings,
                     inline_state=inline_state,
                 ),
+                "hovered_component_id": hovered_component_id,
                 "handles_visible": bool(inline_items),
                 "preview_active": bool(preview_items),
                 "placement_active": placement_active,

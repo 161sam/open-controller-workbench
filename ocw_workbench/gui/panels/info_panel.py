@@ -48,6 +48,7 @@ class InfoPanel:
         on_status: Any | None = None,
         on_suggested_addition_requested: Any | None = None,
         on_suggested_addition_cancelled: Any | None = None,
+        on_drag_requested: Any | None = None,
     ) -> None:
         self.doc = doc
         self.controller_service = controller_service or ControllerService()
@@ -55,6 +56,7 @@ class InfoPanel:
         self.on_status = on_status
         self.on_suggested_addition_requested = on_suggested_addition_requested
         self.on_suggested_addition_cancelled = on_suggested_addition_cancelled
+        self.on_drag_requested = on_drag_requested
         self.form = _build_form()
         self.widget = self.form["widget"]
         self._layout_intelligence: dict[str, Any] = {}
@@ -189,6 +191,16 @@ class InfoPanel:
                 self._publish_status(STATUS_PLACEMENT_CANCELLED, level="info")
         except Exception as exc:
             self._publish_status(friendly_ui_error("Could not cancel guided placement", exc), level="error")
+
+    def handle_drag_requested(self) -> None:
+        try:
+            if callable(self.on_drag_requested):
+                started = bool(self.on_drag_requested())
+                if started:
+                    self.refresh()
+                    self._publish_status("Drag selection in view", level="info")
+        except Exception as exc:
+            self._publish_status(friendly_ui_error("Could not start direct move", exc), level="error")
 
     def _sync_surface_fields(self) -> None:
         shape_name = current_text(self.form["surface_shape"]) or "rectangle"
@@ -335,6 +347,8 @@ class InfoPanel:
         primary_action = workflow_card.get("primary_action") if isinstance(workflow_card, dict) else None
         steps = workflow_card.get("steps", []) if isinstance(workflow_card, dict) else []
         preview = load_preview_state(self.doc)
+        context = self.controller_service.get_ui_context(self.doc)
+        selection_count = int(context.get("selection_count", 0))
         placement_active = isinstance(preview, dict) and str(preview.get("mode") or "") == "suggested_addition"
         active_addition_id = str(preview.get("addition_id") or "") if placement_active else ""
         short_description = str(workflow_card.get("short_description") or layout_intelligence.get("next_step") or "")
@@ -347,6 +361,8 @@ class InfoPanel:
         )
         if placement_active:
             action_hint = self._workflow_status_text(preview)
+        selection_action = selection_count > 0 and not placement_active and not isinstance(primary_action, dict)
+        selection_action_label = "Move selection" if selection_action and selection_count == 1 else ""
         title = (
             str(primary_action.get("label") or "Workflow")
             if isinstance(primary_action, dict) and str(primary_action.get("label") or "").strip()
@@ -354,10 +370,17 @@ class InfoPanel:
         )
         if placement_active:
             title = "Guided placement"
+        elif selection_action:
+            title = "Selection"
+            action_hint = (
+                "Move in view, then duplicate, rotate, or mirror"
+                if selection_count == 1
+                else "Align, distribute, duplicate, or transform the selection"
+            )
         short_hint = self._compact_workflow_hint(short_description, action_hint)
         badge = workflow_badge(
             placement_active=placement_active,
-            has_primary_action=isinstance(primary_action, dict),
+            has_primary_action=bool(selection_action_label) or isinstance(primary_action, dict),
             completed_steps=int(workflow_card.get("completed_steps", 0) or 0),
             total_steps=int(workflow_card.get("total_steps", len(steps)) or len(steps)),
         )
@@ -373,13 +396,23 @@ class InfoPanel:
         set_label_text(self.form["workflow_card_action_hint"], action_hint)
         self.form["workflow_progress_items"] = []
         self.form["next_step_buttons"] = []
+        visible_steps = [] if selection_action else self._visible_workflow_steps(steps, placement_active=placement_active)
         primary_button = self.form["primary_action_button"]
         cancel_button = self.form["workflow_card_cancel_button"]
         apply_button = self.form["apply_button"]
         visible = bool(primary_action or steps or additions)
+        if selection_action:
+            visible = True
         _qtcore, _qtgui, qtwidgets = load_qt()
         if qtwidgets is None:
-            if isinstance(primary_action, dict):
+            if selection_action_label:
+                primary_button.text = selection_action_label
+                set_tooltip(primary_button, "Start direct drag for the current selection.")
+                primary_button.enabled = True
+                primary_button.clicked = FallbackButton().clicked
+                primary_button.clicked.connect(lambda _checked=None: self.handle_drag_requested())
+                primary_button.visible = True
+            elif isinstance(primary_action, dict):
                 primary_button.text = "Placement active" if placement_active else str(primary_action.get("label") or "Primary Action")
                 set_tooltip(primary_button, str(primary_action.get("tooltip") or primary_action.get("description") or "Apply this workflow step."))
                 primary_button.enabled = not placement_active
@@ -398,7 +431,7 @@ class InfoPanel:
             if placement_active:
                 cancel_button.clicked = FallbackButton().clicked
                 cancel_button.clicked.connect(lambda _checked=None: self.handle_cancel_suggested_addition())
-            for step in self._visible_workflow_steps(steps, placement_active=placement_active):
+            for step in visible_steps:
                 if not isinstance(step, dict):
                     continue
                 label = FallbackLabel(workflow_step_text(step))
@@ -408,7 +441,21 @@ class InfoPanel:
             return
 
         self._clear_action_layout(self.form.get("workflow_progress_layout"))
-        if isinstance(primary_action, dict):
+        if selection_action_label:
+            primary_label = selection_action_label
+            primary_tooltip = "Start direct drag for the current selection."
+            primary_button.setText(primary_label)
+            set_tooltip(primary_button, primary_tooltip)
+            if hasattr(primary_button, "clicked"):
+                try:
+                    primary_button.clicked.disconnect()
+                except Exception:
+                    pass
+                primary_button.clicked.connect(lambda _checked=False: self.handle_drag_requested())
+            if hasattr(primary_button, "setEnabled"):
+                primary_button.setEnabled(True)
+            primary_button.setVisible(True)
+        elif isinstance(primary_action, dict):
             primary_label = "Placement active" if placement_active else str(primary_action.get("label") or "Primary Action")
             primary_tooltip = str(primary_action.get("tooltip") or primary_action.get("description") or primary_label)
             primary_button.setText(primary_label)
@@ -440,7 +487,7 @@ class InfoPanel:
             except Exception:
                 pass
             cancel_button.clicked.connect(lambda _checked=False: self.handle_cancel_suggested_addition())
-        for step in self._visible_workflow_steps(steps, placement_active=placement_active):
+        for step in visible_steps:
             if not isinstance(step, dict):
                 continue
             step_copy = dict(step)

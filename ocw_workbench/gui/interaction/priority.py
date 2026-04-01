@@ -36,10 +36,14 @@ def dominant_interaction_layer(
         return "inline_edit_active"
     if inline_state.get("hovered_handle_id") and handles_visible(selection_count=selection_count, ui_settings=ui_settings):
         return "handle_hover"
+    if ui_settings.get("move_component_id"):
+        return "manipulation"
     if selection_count == 1:
         return "selection"
     if selection_count > 1:
         return "multi_selection"
+    if ui_settings.get("hovered_component_id"):
+        return "hover"
     return "idle"
 
 

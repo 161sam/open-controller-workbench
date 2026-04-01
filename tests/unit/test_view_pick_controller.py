@@ -1,5 +1,6 @@
 from ocw_workbench.gui.interaction.view_pick_controller import ViewPickController
 from ocw_workbench.services.controller_service import ControllerService
+from ocw_workbench.services.interaction_service import InteractionService
 
 
 class FakeDocument:
@@ -191,6 +192,40 @@ def test_view_pick_controller_mouse_move_does_not_select():
     controller.handle_view_event({"Type": "SoLocation2Event", "Position": (20, 20)})
 
     assert selected == []
+
+
+def test_view_pick_controller_mouse_move_sets_and_clears_hover_state():
+    doc = FakeDocument()
+    controller_service = ControllerService()
+    interaction_service = InteractionService(controller_service)
+    controller_service.create_controller(doc, {"id": "demo", "width": 100.0, "depth": 80.0, "height": 30.0})
+    controller_service.add_component(doc, "omron_b3f_1000", component_id="btn1", x=20.0, y=20.0)
+    overlay = RecordingOverlayRenderer(
+        items=[
+            {
+                "id": "component:btn1",
+                "type": "rect",
+                "geometry": {"x": 20.0, "y": 20.0, "width": 14.0, "height": 14.0, "rotation": 0.0},
+                "source_component_id": "btn1",
+            }
+        ]
+    )
+    controller = ViewPickController(
+        controller_service=controller_service,
+        interaction_service=interaction_service,
+        overlay_renderer=overlay,
+    )
+    view = FakeView()
+    controller._active_view = lambda _doc: view
+    controller.start(doc)
+
+    controller.handle_view_event({"Type": "SoLocation2Event", "Position": (20, 20)})
+    hovered = controller_service.get_ui_context(doc)["ui"]["hovered_component_id"]
+    controller.handle_view_event({"Type": "SoLocation2Event", "Position": (80, 70)})
+    cleared = controller_service.get_ui_context(doc)["ui"]["hovered_component_id"]
+
+    assert hovered == "btn1"
+    assert cleared is None
 
 
 def test_view_pick_controller_rebinds_when_view_is_recreated():
