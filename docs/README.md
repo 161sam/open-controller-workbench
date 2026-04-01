@@ -7,6 +7,9 @@ Start here if you want the shortest path into OCW.
 - [Installation](plugin-installation.md)
 - [User Guide](user-guide.md)
 - [Workflows](workflows.md)
+- [Manual UX / QA Checklist](manual_ux_checklist.md)
+- [Demo Flow](demo_flow.md)
+- [UI Visual Language](ui_visual_language.md)
 
 ## Architecture
 

@@ -20,6 +20,21 @@
 3. Cutouts prüfen
 4. Export
 
+## Current UX model
+
+OCW now works best as a compact authoring workbench with these visible flows:
+
+- `Template`
+  - start from a template and follow the workflow card
+- `Targeting`
+  - use guided placement in the 3D view
+- `Selected`
+  - select one component and inspect its context in the mini-inspector
+- `Direct manipulation`
+  - drag to place or move directly in the 3D view
+- `On-object actions`
+  - use `Duplicate`, `Rotate +90`, or `Mirror` near the selected component
+
 ## Parameters And Presets
 
 - Templates can expose declarative parameters in the Create panel.
@@ -68,13 +83,15 @@
 - Bis zu 8 Favoriten erscheinen als Icon-Buttons in der Toolbar `OCW Favorites`
 - Favoriten werden in UserData gespeichert und bleiben über Neustarts erhalten
 - `Place In 3D` startet den interaktiven Platzierungsmodus im 3D-View
-- Die Ghost-Vorschau folgt der Maus nur über Overlay-Preview
-- Klick platziert die Komponente; weitere Klicks platzieren sofort weiter
+- Die Ghost-Vorschau folgt der Maus als Overlay-Preview
+- gedrückt halten, ziehen und loslassen platziert direkt
+- ein kurzer Klick bleibt als einfacher Press/Release-Fall gültig
 - `ESC` bricht den aktiven Place-Modus ohne zusätzliche Modelländerung ab
 - `OCW_DragMoveComponent` startet den Drag-Modus für bestehende Komponenten
 - Hover hebt vor dem Ziehen das getroffene Bauteil sichtbar hervor
 - Klicke eine vorhandene Komponente im 3D-View an, ziehe sie und lasse los zum Commit
 - Während des Ziehens bleibt das Modell unverändert; nur das Overlay-Ghost wird aktualisiert
+- bei einer Single-Selection erscheinen kleine On-object Actions für `Duplicate`, `Rotate +90`, und `Mirror`
 
 ## Interactive Placement And Drag
 
@@ -92,8 +109,22 @@
 - If the active document changes, the document closes, or the 3D view becomes unavailable, the current interaction is cancelled and callbacks are removed before another tool can start.
 - A committed drag release applies the model change and then clears preview state and view callbacks.
 - A committed placement click keeps placement active for the next click until `ESC` ends the session.
+- Guided placement uses the same visual language:
+  - `Move over target area`
+  - `Click to place`
+  - `Invalid target`
+  - `Placement cancelled`
 - If an interaction update or commit raises an exception, the session is cleaned up and the workbench reports `Interaction error`.
 - Invalid preview states block commit until the component is moved back to an allowed position.
+
+## Hover, Selection, And On-object Actions
+
+- Hover in the normal 3D view is a subtle orientation state, not a second selection.
+- Selection is visually stronger than hover and drives the mini-inspector context.
+- Placement context remains supportive and should not override the selected object context once placement is no longer active.
+- On-object actions only appear for one selected component.
+- On-object actions are hidden while placement or drag is active.
+- Clicking an on-object action executes immediately and should not drop selection first.
 
 ## Component Property Panel
 

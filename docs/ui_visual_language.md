@@ -24,6 +24,23 @@ Prefer these short status texts:
 
 Do not mix these with alternate phrasings like `No valid target here` or `Cannot place here`.
 
+## Interaction hierarchy
+
+Prefer this visible priority when states compete:
+
+- actively manipulated
+- selected and context relevant
+- selected
+- hovered
+- placement context
+- idle
+
+On-object actions inherit that same rule:
+
+- visible for one selected component
+- hidden during placement and drag
+- hover on an action should not visually demote the selected component
+
 ## Toolbar language
 
 Use short, product-style command labels:
@@ -41,3 +58,13 @@ The visible toolbar should keep the higher-level group language:
 - `Edit`
 - `Workflow`
 - `View`
+
+## Scope limits
+
+Current deliberate limits:
+
+- no on-object delete action
+- no large multi-selection interaction model beyond pragmatic current tools
+- no full CAD gizmos
+- no global interaction state machine
+- no plugin-wide full design-system normalization

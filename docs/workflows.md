@@ -1,6 +1,45 @@
 
 # Workflows
 
+This page now focuses on the user-visible OCW authoring flows before the deeper schema and import pipelines.
+
+## Current Core Workflows
+
+### Workflow A – Start from a template
+
+- open the workbench
+- create a controller from a template
+- read the workflow card
+- use the compact mini-inspector as the current context view
+
+### Workflow B – Add with guided placement
+
+- trigger a suggested addition or add flow
+- move through the target area in the 3D view
+- use hover, active target, and invalid target feedback
+- drag and release to commit placement
+- use `ESC` to cancel cleanly
+
+### Workflow C – Select, inspect, and move
+
+- hover components in the 3D view for pre-selection feedback
+- click to select
+- inspect the selected object in the mini-inspector
+- move it through direct drag interaction
+
+### Workflow D – On-object actions
+
+- select one component
+- use the on-object action overlay
+- run `Duplicate`, `Rotate +90`, or `Mirror`
+- continue directly in the 3D view without returning to the toolbar
+
+### Workflow E – Validate and continue
+
+- keep overlay helpers visible while editing
+- use the workflow card to continue from the current object or placement context
+- validate findings before export or plugin-specific follow-up work
+
 ## Workflow 1 – Setup
 
 - Repo klonen
@@ -176,6 +215,7 @@
 - `ESC`, document close, active document change, unavailable view, and tool switching all flow through the same cancellation path.
 - Successful commits clear transient preview state after the model mutation finishes.
 - Failed preview updates or failed commits clear transient state and leave no active callbacks behind.
+- On-object actions are only visible for a single selected component and are hidden while placement or drag is active.
 
 ## Preview, Commit, And Undo
 
